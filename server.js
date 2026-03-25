@@ -38,6 +38,8 @@ const SaleSchema = new mongoose.Schema({
   salePrice: Number,
   profit: Number,
   shop: String,
+  buyerName: String,
+  notes: String,
   soldAt: String
 });
 
@@ -72,33 +74,53 @@ app.post('/api/stock/add', async (req, res) => {
 
 // Sell phone
 app.post('/api/stock/sell', async (req, res) => {
-  const { imei, salePrice } = req.body;
+  try {
+    const { imei, salePrice, buyerName, notes, shop } = req.body;
 
-  const phone = await Phone.findOne({ imei });
+    if (!imei) return res.status(400).json({ error: 'IMEI required' });
+    if (salePrice === undefined || salePrice === null || salePrice === '') {
+      return res.status(400).json({ error: 'salePrice required' });
+    }
 
-  if (!phone) return res.status(404).json({ error: 'Not found' });
-  if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
+    const phone = await Phone.findOne({ imei });
 
-  phone.status = 'sold';
-  phone.salePrice = parseFloat(salePrice);
-  phone.soldAt = new Date().toISOString();
+    if (!phone) return res.status(404).json({ error: 'Not found' });
+    if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
 
-  await phone.save();
+    const sp = Number(salePrice);
+    if (Number.isNaN(sp)) return res.status(400).json({ error: 'Invalid salePrice' });
 
-  const sale = new Sale({
-    imei: phone.imei,
-    brand: phone.brand,
-    model: phone.model,
-    buyPrice: phone.buyPrice,
-    salePrice: phone.salePrice,
-    profit: phone.salePrice - phone.buyPrice,
-    shop: phone.shop,
-    soldAt: phone.soldAt
-  });
+    const bp = Number(phone.buyPrice) || 0;
+    const profit = sp - bp;
 
-  await sale.save();
+    phone.status = 'sold';
+    phone.salePrice = sp;
+    phone.soldAt = new Date().toISOString();
+    if (shop !== undefined) phone.shop = shop;
 
-  res.json({ success: true });
+    await phone.save();
+
+    const sale = new Sale({
+      imei: phone.imei,
+      brand: phone.brand,
+      model: phone.model,
+      buyPrice: bp,
+      salePrice: sp,
+      profit: profit,
+      shop: phone.shop,
+      buyerName: buyerName || null,
+      notes: notes || null,
+      soldAt: phone.soldAt
+    });
+
+    await sale.save();
+
+    // Return the saved sale so frontend can consume it immediately
+    res.json({ success: true, sale });
+  } catch (err) {
+    console.error('Sell endpoint error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Get sales
