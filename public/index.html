@@ -1,0 +1,2137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mobile HQ</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0e14;
+  --s1:#111318;
+  --s2:#181b22;
+  --s3:#1e2129;
+  --border:#252830;
+  --border2:#1a1d24;
+  --text:#c8cdd8;
+  --text2:#5a6070;
+  --text3:#2e3240;
+  --white:#eceef4;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Syne',sans-serif;
+  --radius:10px;
+  /* accent palette — cool blue-purple theme */
+  --a1:#6c8fff;   /* primary blue */
+  --a2:#9b6cff;   /* purple */
+  --a3:#ff6c8f;   /* pink/red */
+  --a4:#6cffe0;   /* teal */
+  --a5:#ffb86c;   /* amber */
+  --a6:#6cffb8;   /* mint green */
+  /* shop colors */
+  --c456:#6c8fff;
+  --c192:#9b6cff;
+  --cg15:#ff6c8f;
+  --chq:#6cffe0;
+  /* status */
+  --success:#6cffb8;
+  --danger:#ff6c8f;
+  --warn:#ffb86c;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;display:flex;flex-direction:column;}
+
+/* ── TOPBAR ── */
+#topbar{
+  height:52px;background:var(--s1);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 1.2rem;gap:.8rem;
+  flex-shrink:0;z-index:100;overflow-x:auto;
+}
+.logo{
+  font-family:var(--sans);font-size:1.1rem;font-weight:800;
+  color:var(--white);letter-spacing:-.02em;white-space:nowrap;
+  display:flex;align-items:center;gap:6px;
+}
+.logo-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--a1);box-shadow:0 0 10px var(--a1);
+}
+.tsep{width:1px;height:20px;background:var(--border);flex-shrink:0;}
+.shop-tabs{display:flex;gap:3px;flex-shrink:0;}
+.stab{
+  font-family:var(--sans);font-size:.72rem;font-weight:600;
+  padding:4px 11px;border-radius:6px;cursor:pointer;
+  border:1px solid transparent;transition:all .15s;white-space:nowrap;
+  color:var(--text2);
+}
+.stab:hover{color:var(--white);background:var(--s2);}
+.stab[data-s="HQ"].on{background:rgba(108,255,224,.1);border-color:rgba(108,255,224,.3);color:var(--chq);}
+.stab[data-s="456"].on{background:rgba(108,143,255,.1);border-color:rgba(108,143,255,.3);color:var(--c456);}
+.stab[data-s="192"].on{background:rgba(155,108,255,.1);border-color:rgba(155,108,255,.3);color:var(--c192);}
+.stab[data-s="G15"].on{background:rgba(255,108,143,.1);border-color:rgba(255,108,143,.3);color:var(--cg15);}
+.tr{margin-left:auto;display:flex;align-items:center;gap:.8rem;flex-shrink:0;}
+#clk{font-family:var(--mono);font-size:.62rem;color:var(--text2);white-space:nowrap;}
+.conn-pill{
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--mono);font-size:.58rem;
+  padding:3px 8px;border-radius:20px;
+  background:var(--s2);border:1px solid var(--border);
+  color:var(--text2);transition:all .3s;
+}
+.conn-pill.online{border-color:rgba(108,255,184,.3);color:var(--success);}
+.conn-pill .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* ── LAYOUT ── */
+#wrap{display:flex;flex:1;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+#sb{
+  width:180px;min-width:180px;background:var(--s1);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sb-sec{padding:.5rem 0 .3rem;}
+.sb-lbl{
+  font-size:.55rem;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text3);
+  padding:0 .9rem;margin-bottom:.3rem;
+}
+.ni{
+  display:flex;align-items:center;gap:.45rem;padding:.36rem .9rem;
+  cursor:pointer;color:var(--text2);font-size:.72rem;font-weight:500;
+  border-left:2px solid transparent;
+  transition:all .15s;white-space:nowrap;overflow:hidden;
+}
+.ni:hover{color:var(--white);background:rgba(255,255,255,.03);}
+.ni.on{border-left-color:var(--a1);background:rgba(108,143,255,.06);color:var(--a1);}
+.nd{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.sdiv{border:none;border-top:1px solid var(--border2);margin:.3rem .9rem;}
+.sb-stats{
+  padding:.65rem .9rem;font-size:.65rem;
+  border-top:1px solid var(--border);margin-top:auto;
+}
+.sr{display:flex;justify-content:space-between;padding:3px 0;color:var(--text2);}
+.sv{font-weight:600;}
+.sr.hi .sv{color:var(--a5);}
+.sr.gr .sv{color:var(--success);}
+.sr.rd .sv{color:var(--danger);}
+
+/* ── MAIN ── */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+.pg{
+  display:flex;flex-direction:column;flex:1;overflow:hidden;
+  position:absolute;inset:0;
+  opacity:0;pointer-events:none;transform:translateY(8px);
+  transition:opacity .2s,transform .2s;
+}
+.pg.on{opacity:1;pointer-events:auto;transform:none;position:relative;}
+
+/* ── TOOLBAR ── */
+.tb{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  padding:.45rem 1rem;display:flex;align-items:center;
+  gap:.5rem;flex-shrink:0;flex-wrap:wrap;
+}
+.tb-title{
+  font-family:var(--sans);font-size:.95rem;font-weight:700;
+  letter-spacing:-.01em;color:var(--white);
+}
+.tb-badge{
+  font-family:var(--mono);font-size:.62rem;font-weight:500;
+  padding:2px 9px;border-radius:20px;
+}
+.tbsep{width:1px;height:16px;background:var(--border);flex-shrink:0;}
+
+/* ── BUTTONS ── */
+.btn{
+  font-family:var(--sans);font-size:.7rem;font-weight:600;
+  padding:.28rem .75rem;border:1px solid;border-radius:7px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.btn:active{transform:scale(.97);}
+.bg{ background:var(--a1);border-color:var(--a1);color:#05070f;font-weight:700; }
+.bg:hover{ filter:brightness(1.12); }
+.bo{ background:transparent;border-color:var(--border);color:var(--text2); }
+.bo:hover{ border-color:var(--text2);color:var(--white);background:var(--s2); }
+.br{ background:transparent;border-color:rgba(255,108,143,.4);color:var(--danger); }
+.br:hover{ background:rgba(255,108,143,.12); }
+.bv{ background:transparent;border-color:rgba(108,255,184,.4);color:var(--success); }
+.bv:hover{ background:rgba(108,255,184,.1); }
+.bb{ background:transparent;border-color:rgba(108,143,255,.4);color:var(--a1); }
+.bb:hover{ background:rgba(108,143,255,.1); }
+.bx{
+  background:transparent;border:none;color:var(--text2);
+  font-family:var(--mono);font-size:.6rem;padding:.1rem .3rem;
+  cursor:pointer;transition:color .12s,transform .12s;
+}
+.bx:hover{color:var(--danger);transform:scale(1.2);}
+
+/* ── DATE INPUT ── */
+input[type=date]{
+  background:var(--s2);border:1px solid var(--border);border-radius:7px;
+  color:var(--a5);font-family:var(--mono);font-size:.68rem;
+  padding:.24rem .55rem;outline:none;cursor:pointer;
+}
+input[type=date]:focus{border-color:var(--a1);}
+
+/* ── STOCK TABLE ── */
+.stock-scroll{flex:1;overflow:auto;padding:.65rem 1rem 1rem;}
+.cb{margin-bottom:.7rem;}
+.ch{
+  display:flex;align-items:center;gap:.5rem;padding:.28rem .55rem;
+  border-radius:8px 8px 0 0;position:sticky;top:0;z-index:10;
+}
+.cl{font-family:var(--sans);font-size:.82rem;font-weight:700;letter-spacing:-.01em;}
+.cts{margin-left:auto;display:flex;gap:.8rem;font-size:.6rem;color:rgba(255,255,255,.45);}
+.cts b{color:rgba(255,255,255,.8);}
+.cpx .ch{background:rgba(108,255,224,.07);border-left:3px solid var(--a4);}.cpx .cl{color:var(--a4);}
+.cip .ch{background:rgba(108,143,255,.07);border-left:3px solid var(--a1);}.cip .cl{color:var(--a1);}
+.csm .ch{background:rgba(155,108,255,.07);border-left:3px solid var(--a2);}.csm .cl{color:var(--a2);}
+.cot .ch{background:rgba(255,184,108,.07);border-left:3px solid var(--a5);}.cot .cl{color:var(--a5);}
+.cbx .ch{background:rgba(108,255,184,.07);border-left:3px solid var(--a6);}.cbx .cl{color:var(--a6);}
+.cex .ch{background:rgba(255,108,143,.07);border-left:3px solid var(--a3);}.cex .cl{color:var(--a3);}
+table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
+.t th{
+  background:var(--s2);padding:.24rem .38rem;text-align:center;
+  font-size:.54rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text2);border:1px solid var(--border2);white-space:nowrap;
+  position:sticky;top:30px;z-index:9;font-family:var(--mono);
+}
+.t th.l{text-align:left;min-width:155px;}
+.t td{padding:.2rem .38rem;border:1px solid var(--border2);text-align:center;vertical-align:middle;white-space:nowrap;}
+.t td.l{text-align:left;}
+.t tbody tr:hover{background:rgba(255,255,255,.018);}
+.t tfoot tr td{background:var(--s3);color:var(--a5);font-weight:600;font-size:.6rem;font-family:var(--mono);}
+.t input[type=number],.t input[type=text]{
+  background:transparent;border:none;color:var(--white);
+  font-family:var(--mono);font-size:.67rem;text-align:center;
+  width:100%;outline:none;padding:0;min-width:42px;
+}
+.t input[type=text]{text-align:left;}
+.t input:focus{background:rgba(108,143,255,.08);border-radius:3px;}
+.t td.op-cell{color:var(--text2);font-family:var(--mono);}
+.ng{color:var(--success);}.nr{color:var(--danger);}.nb{color:var(--a1);}.ngd{color:var(--a5);}.nz{color:var(--text3);}
+.add-row{
+  width:100%;background:transparent;border:1px dashed var(--border);border-top:none;
+  color:var(--text3);font-family:var(--mono);font-size:.58rem;padding:.2rem;
+  cursor:pointer;letter-spacing:.1em;transition:all .12s;
+}
+.add-row:hover{color:var(--a1);border-color:var(--a1);}
+
+/* ── BOTTOM PANELS ── */
+.bpanels{flex-shrink:0;border-top:1px solid var(--border);background:var(--s1);}
+.scards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:.4rem;padding:.55rem 1rem;}
+.sc{
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;padding:.42rem .6rem;position:relative;overflow:hidden;
+}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc.g::before{background:var(--a5);}
+.sc.gr::before{background:var(--success);}
+.sc.rd::before{background:var(--danger);}
+.sc.bl::before{background:var(--a1);}
+.sc-lbl{font-size:.52rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:2px;font-weight:600;}
+.sc-val{font-family:var(--mono);font-size:.9rem;font-weight:500;}
+.sc-val.g{color:var(--a5);}.sc-val.gr{color:var(--success);}.sc-val.rd{color:var(--danger);}.sc-val.bl{color:var(--a1);}
+.sc-sub{font-size:.54rem;color:var(--text2);margin-top:1px;}
+.expbar{
+  border-top:1px solid var(--border);padding:.42rem 1rem;
+  display:flex;align-items:flex-start;gap:.7rem;flex-wrap:wrap;
+}
+.exp-title{
+  font-family:var(--sans);font-size:.7rem;font-weight:700;
+  color:var(--danger);white-space:nowrap;margin-top:2px;
+}
+.exp-list{display:flex;flex-wrap:wrap;gap:.3rem;flex:1;}
+.ec{
+  display:flex;align-items:center;gap:.28rem;
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:6px;padding:.15rem .42rem;
+}
+.ec input{background:transparent;border:none;color:var(--white);font-family:var(--mono);font-size:.64rem;outline:none;}
+.ec input.ed{width:115px;color:var(--text2);}
+.ec input.ea{width:68px;text-align:right;color:var(--danger);}
+.cfbar{
+  border-top:1px solid var(--border2);padding:.38rem 1rem;
+  display:flex;gap:1.1rem;flex-wrap:wrap;align-items:center;
+}
+.cfi{display:flex;flex-direction:column;gap:1px;}
+.cfl{font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);font-weight:600;}
+.cfv{font-family:var(--mono);font-size:.72rem;font-weight:500;}
+.cfv.p{color:var(--success);}.cfv.n{color:var(--danger);}.cfv.g{color:var(--a5);}
+.carry-w{display:flex;align-items:center;gap:.3rem;font-size:.62rem;color:var(--text2);}
+.carry-w input{
+  background:var(--s2);border:1px solid var(--border);border-radius:6px;
+  color:var(--a5);font-family:var(--mono);font-size:.68rem;
+  padding:.17rem .42rem;width:100px;outline:none;
+}
+.carry-w input:focus{border-color:var(--a1);}
+.cash-pill{
+  background:rgba(255,184,108,.07);border:1px solid rgba(255,184,108,.2);
+  border-radius:7px;padding:.3rem .55rem;
+}
+
+/* ── SCAN PANEL ── */
+.scan-section{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+.scan-section h2{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;}
+.imei-wrap{display:flex;gap:8px;align-items:stretch;}
+.imei-field{
+  flex:1;background:var(--s2);border:1.5px solid var(--border);
+  border-radius:8px;padding:11px 14px;
+  font-family:var(--mono);font-size:.95rem;color:var(--white);
+  outline:none;transition:border-color .2s;letter-spacing:.04em;
+}
+.imei-field:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(108,143,255,.1);}
+.imei-field::placeholder{color:var(--text2);font-size:.78rem;letter-spacing:0;}
+.mode-toggle{
+  display:grid;grid-template-columns:1fr 1fr;gap:3px;
+  background:var(--s2);border-radius:9px;padding:3px;
+  margin-bottom:14px;border:1px solid var(--border);
+}
+.mode-btn{
+  padding:10px;border-radius:7px;border:none;
+  font-family:var(--sans);font-size:.78rem;font-weight:700;
+  cursor:pointer;transition:all .2s;background:transparent;color:var(--text2);
+}
+.mode-btn.active{background:var(--a1);color:#05070f;}
+.mode-btn.active.sell{background:var(--danger);color:#fff;}
+
+/* ── PHONE CARDS ── */
+.phone-card{
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px;
+  margin-bottom:8px;display:flex;align-items:center;gap:12px;
+  transition:border-color .2s,background .2s;
+}
+.phone-card:hover{border-color:var(--a1);background:var(--s2);}
+.phone-icon{
+  width:38px;height:38px;border-radius:9px;
+  background:var(--s2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;flex-shrink:0;
+}
+.phone-info{flex:1;min-width:0;}
+.phone-name{font-weight:700;font-size:.88rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.phone-imei{font-family:var(--mono);font-size:.66rem;color:var(--text2);margin-top:2px;letter-spacing:.02em;}
+.phone-imei2{font-family:var(--mono);font-size:.6rem;color:var(--text3);margin-top:1px;letter-spacing:.02em;}
+.phone-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+.badge{
+  font-size:.6rem;padding:2px 7px;border-radius:20px;
+  font-weight:600;text-transform:uppercase;letter-spacing:.3px;
+  font-family:var(--mono);
+}
+.badge-green{background:rgba(108,255,184,.1);color:var(--success);border:1px solid rgba(108,255,184,.25);}
+.badge-red{background:rgba(255,108,143,.1);color:var(--danger);border:1px solid rgba(255,108,143,.25);}
+.badge-blue{background:rgba(108,143,255,.1);color:var(--a1);border:1px solid rgba(108,143,255,.25);}
+.badge-purple{background:rgba(155,108,255,.1);color:var(--a2);border:1px solid rgba(155,108,255,.25);}
+.badge-gray{background:var(--s2);color:var(--text2);border:1px solid var(--border);}
+.phone-price{font-family:var(--mono);font-size:.8rem;color:var(--a5);text-align:right;flex-shrink:0;}
+.del-btn{
+  background:none;border:none;color:var(--text2);cursor:pointer;
+  padding:5px;border-radius:6px;transition:all .15s;font-size:.9rem;
+}
+.del-btn:hover{color:var(--danger);background:rgba(255,108,143,.1);}
+
+/* ── RESULT PREVIEW ── */
+.result-preview{
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:9px;padding:12px;margin-top:12px;display:none;
+}
+.result-preview.show{display:block;}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+@media(max-width:480px){.form-grid{grid-template-columns:1fr;}}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);}
+.form-group input:not([type=date]):not([type=number]):not([type=checkbox]),
+.form-group select,.form-group textarea{
+  background:var(--s2);border:1.5px solid var(--border);border-radius:8px;
+  padding:9px 12px;font-family:var(--sans);font-size:.85rem;
+  color:var(--white);outline:none;transition:border-color .2s;width:100%;
+}
+.form-group input[type=number]{
+  background:var(--s2);border:1.5px solid var(--border);border-radius:8px;
+  padding:9px 12px;font-family:var(--mono);font-size:.85rem;
+  color:var(--white);outline:none;transition:border-color .2s;width:100%;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{
+  border-color:var(--a1);box-shadow:0 0 0 3px rgba(108,143,255,.08);
+}
+.form-group select option{background:var(--s2);}
+.form-group textarea{resize:vertical;min-height:55px;}
+/* IMEI pair group */
+.imei-pair{
+  grid-column:1/-1;
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:9px;padding:12px;
+}
+.imei-pair-title{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--a1);margin-bottom:8px;display:flex;align-items:center;gap:5px;
+}
+.imei-pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media(max-width:480px){.imei-pair-grid{grid-template-columns:1fr;}}
+.imei-pair-grid input{
+  background:var(--bg);border:1.5px solid var(--border);border-radius:7px;
+  padding:8px 12px;font-family:var(--mono);font-size:.82rem;
+  color:var(--white);outline:none;transition:border-color .2s;width:100%;
+  letter-spacing:.03em;
+}
+.imei-pair-grid input:focus{border-color:var(--a1);}
+.imei-pair-grid input.imei2-field{border-style:dashed;}
+.imei-pair-grid input.imei2-field::placeholder{font-size:.72rem;}
+
+/* ── SEARCH / FILTER ── */
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-wrap input{
+  padding-left:32px;background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;color:var(--white);font-family:var(--mono);font-size:.7rem;
+  padding:.3rem .55rem .3rem 30px;outline:none;width:100%;
+}
+.search-wrap input:focus{border-color:var(--a1);}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:.75rem;pointer-events:none;}
+.filter-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.filter-chip{
+  padding:4px 11px;border-radius:20px;font-size:.67rem;font-weight:700;
+  cursor:pointer;border:1px solid var(--border);background:var(--s2);color:var(--text2);
+  transition:all .15s;font-family:var(--mono);
+}
+.filter-chip.active{background:var(--a1);color:#05070f;border-color:var(--a1);}
+.filter-chip.sell-chip.active{background:var(--danger);border-color:var(--danger);color:#fff;}
+.section-title{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text2);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;
+}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:48px 16px;color:var(--text2);}
+.empty-icon{font-size:2.8rem;margin-bottom:12px;opacity:.6;}
+.empty h3{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:5px;}
+.empty p{font-size:.8rem;}
+
+/* ── MODAL ── */
+#modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
+  display:none;align-items:center;justify-content:center;padding:1rem;
+  backdrop-filter:blur(4px);
+}
+#modal-bg.open{display:flex;}
+#modal{
+  background:var(--s1);border:1px solid var(--border);border-radius:14px;
+  padding:22px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,.5);
+}
+#modal h3{
+  font-family:var(--sans);font-size:1rem;font-weight:700;
+  color:var(--white);margin-bottom:16px;letter-spacing:-.01em;
+}
+.fc{display:flex;flex-direction:column;gap:10px;}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fi{display:flex;flex-direction:column;gap:4px;}
+.fi label{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);}
+.fi input,.fi select,.fi textarea{
+  background:var(--s2);border:1px solid var(--border);border-radius:7px;
+  color:var(--white);font-family:var(--mono);font-size:.72rem;
+  padding:.3rem .55rem;outline:none;
+}
+.fi input:focus,.fi select:focus{border-color:var(--a1);}
+.mf{display:flex;justify-content:flex-end;gap:.5rem;margin-top:18px;}
+.info{
+  background:rgba(108,143,255,.06);border:1px solid rgba(108,143,255,.18);
+  border-radius:7px;padding:.55rem .75rem;font-size:.68rem;color:var(--text2);line-height:1.6;
+}
+
+/* ── CAMERA ── */
+#camModal{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:600;
+  align-items:center;justify-content:center;flex-direction:column;gap:14px;
+}
+#camModal.open{display:flex;}
+#camVideo{
+  width:min(380px,92vw);height:min(280px,55vw);border-radius:12px;
+  border:2px solid var(--a1);object-fit:cover;
+}
+.cam-overlay{
+  background:var(--s1);border-radius:var(--radius);border:1px solid var(--border);
+  padding:14px 18px;text-align:center;width:min(380px,92vw);
+}
+.cam-result{font-family:var(--mono);font-size:.95rem;color:var(--a1);margin-top:8px;min-height:22px;}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:22px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:9px;padding:10px 20px;
+  font-size:.82rem;font-weight:600;z-index:1000;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  max-width:88vw;text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.success{border-color:rgba(108,255,184,.4);color:var(--success);}
+#toast.error{border-color:rgba(255,108,143,.4);color:var(--danger);}
+#toast.warn{border-color:rgba(255,184,108,.4);color:var(--warn);}
+
+/* ── MONTHLY/HQ ── */
+.monthly-scroll{flex:1;overflow-y:auto;padding:.9rem;}
+.shop-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:.65rem;}
+.shop-card-hd{padding:.55rem .85rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:.5rem;}
+.shop-card-name{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:-.01em;}
+.shop-card-body{padding:.65rem .85rem;}
+.shop-stat{display:flex;justify-content:space-between;padding:4px 0;font-size:.7rem;border-bottom:1px solid var(--border2);}
+.shop-stat:last-child{border-bottom:none;}
+
+/* ── WAREHOUSE ── */
+.hq-body{flex:1;overflow:auto;padding:.9rem;}
+.wh-card{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:.55rem .75rem;}
+.wh-cat{font-size:.52rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:2px;}
+.wh-name{font-size:.75rem;font-weight:600;color:var(--white);margin-bottom:3px;}
+.wh-qty{font-family:var(--mono);font-size:1.3rem;color:var(--a5);font-weight:500;}
+.wh-meta{font-size:.6rem;color:var(--text2);}
+
+/* ── SHIPMENTS ── */
+.ship-card{background:var(--s2);border:1px solid var(--border);border-radius:9px;margin-bottom:.55rem;overflow:hidden;}
+.ship-hd{padding:.45rem .75rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+.ship-items{padding:0 .75rem .5rem;}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text2);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  #sb{display:none;}
+  .tb{gap:.3rem;}
+  .tb-title{font-size:.88rem;}
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo"><div class="logo-dot"></div>Mobile HQ</div>
+  <div class="tsep"></div>
+  <div class="shop-tabs">
+    <div class="stab" data-s="HQ" onclick="switchShop('HQ')">HQ</div>
+    <div class="stab on" data-s="456" onclick="switchShop('456')">456</div>
+    <div class="stab" data-s="192" onclick="switchShop('192')">192</div>
+    <div class="stab" data-s="G15" onclick="switchShop('G15')">G15</div>
+  </div>
+  <div class="tr">
+    <div class="conn-pill" id="connPill"><div class="dot"></div><span id="connText">connecting</span></div>
+    <div id="clk">--:--</div>
+  </div>
+</div>
+
+<div id="wrap">
+  <div id="sb">
+    <div class="sb-sec">
+      <div class="sb-lbl">Shop</div>
+      <div class="ni on" id="ni-scan"      onclick="nav('scan')">      <div class="nd" style="background:var(--a1)"></div>IMEI Scan</div>
+      <div class="ni"    id="ni-imeistock" onclick="nav('imeistock')"> <div class="nd" style="background:var(--a2)"></div>IMEI Stock</div>
+      <div class="ni"    id="ni-stock"     onclick="nav('stock')">     <div class="nd" style="background:var(--a5)"></div>Daily Sheet</div>
+      <div class="ni"    id="ni-expenses"  onclick="nav('expenses')">  <div class="nd" style="background:var(--danger)"></div>Expenses</div>
+      <div class="ni"    id="ni-history"   onclick="nav('history')">   <div class="nd" style="background:var(--text2)"></div>History</div>
+    </div>
+    <hr class="sdiv">
+    <div class="sb-sec">
+      <div class="sb-lbl">Head Office</div>
+      <div class="ni" id="ni-hq"        onclick="nav('hq')">       <div class="nd" style="background:var(--chq)"></div>Overview</div>
+      <div class="ni" id="ni-warehouse" onclick="nav('warehouse')"> <div class="nd" style="background:var(--a6)"></div>Warehouse</div>
+      <div class="ni" id="ni-shipments" onclick="nav('shipments')"> <div class="nd" style="background:var(--a4)"></div>Shipments</div>
+      <div class="ni" id="ni-monthly"   onclick="nav('monthly')">   <div class="nd" style="background:var(--a1)"></div>Monthly P&L</div>
+    </div>
+    <hr class="sdiv">
+    <div class="sb-sec">
+      <div class="sb-lbl">Tools</div>
+      <div class="ni" id="ni-backup" onclick="nav('backup')"><div class="nd" style="background:var(--success)"></div>Backup</div>
+      <div class="ni" onclick="openCamera('free')"><div class="nd" style="background:var(--a4)"></div>Barcode Scanner</div>
+    </div>
+    <div class="sb-stats">
+      <div style="font-size:.54rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.3rem" id="sb-lbl2">SHOP 456</div>
+      <div class="sr"><span>In Stock</span><span class="sv" id="sb-is">—</span></div>
+      <div class="sr gr"><span>Sold</span><span class="sv" id="sb-sa">—</span></div>
+      <div class="sr hi"><span>Revenue</span><span class="sv" id="sb-rv">—</span></div>
+    </div>
+  </div>
+
+  <div id="main">
+
+    <!-- ══ IMEI SCAN ══ -->
+    <div class="pg on" id="pg-scan">
+      <div class="tb">
+        <div class="tb-title">IMEI Scan</div>
+        <div class="tb-badge" id="scan-shop-badge" style="background:rgba(108,143,255,.1);border:1px solid rgba(108,143,255,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
+        <div class="tbsep"></div>
+        <button class="btn bb" onclick="openCamera()" style="font-size:.7rem;">📷 Scan Barcode</button>
+      </div>
+      <div class="stock-scroll" style="padding:16px;">
+        <div class="mode-toggle" style="grid-template-columns:1fr 1fr 1fr;">
+          <button class="mode-btn active" id="modeAdd" onclick="setMode('add')">+ Add</button>
+          <button class="mode-btn" id="modeBatch" onclick="setMode('batch')">⊕ Batch Add</button>
+          <button class="mode-btn sell" id="modeSell" onclick="setMode('sell')">$ Sell</button>
+        </div>
+        <div class="scan-section">
+          <h2>Scan or Enter IMEI</h2>
+          <div class="imei-wrap">
+            <input type="text" class="imei-field" id="imeiInput"
+              placeholder="Scan barcode or type 15-digit IMEI…"
+              inputmode="numeric" autocomplete="off" spellcheck="false"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+              onkeydown="if(event.key==='Enter')handleImeiSubmit()">
+            <button class="btn bo" onclick="openCamera('imei1')" title="Use camera">📷</button>
+            <button class="btn bg" onclick="handleImeiSubmit()">Go</button>
+          </div>
+          <p style="font-size:.62rem;color:var(--text2);margin-top:7px;font-family:var(--mono)">Hardware scanner auto-submits on Enter · Scan IMEI 1, details form appears</p>
+        </div>
+        <div class="result-preview" id="resultPreview">
+          <div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:7px" id="previewTitle">Result</div>
+          <div id="previewContent"></div>
+        </div>
+        <!-- ADD FORM -->
+        <div class="scan-section" id="addForm" style="display:none">
+          <h2>Add Phone to Stock</h2>
+          <div class="form-grid">
+            <div class="form-group"><label>Category</label>
+              <select id="fCat">
+                <option value="IPHONE">iPhone</option>
+                <option value="SAMSUNG">Samsung</option>
+                <option value="GOOGLE">Google Pixel</option>
+                <option value="OTHER">Other</option>
+                <option value="BOX">Box / Sealed</option>
+                <option value="EXTRA">Extra / Misc</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Brand</label><input type="text" id="fBrand" placeholder="Samsung, Apple…"
+              oninput="autoSelectCat(this.value,'fCat')"></div>
+            <div class="form-group"><label>Model</label><input type="text" id="fModel" placeholder="Galaxy S24, iPhone 15…"></div>
+            <div class="form-group"><label>Color</label><input type="text" id="fColor" placeholder="Phantom Black…"></div>
+            <div class="form-group"><label>Storage</label>
+              <select id="fStorage">
+                <option value="">— Select —</option>
+                <option>64GB</option><option>128GB</option><option>256GB</option><option>512GB</option><option>1TB</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Buy Price (PKR)</label><input type="number" id="fBuyPrice" placeholder="Cost price"></div>
+            <!-- IMEI PAIR -->
+            <div class="imei-pair">
+              <div class="imei-pair-title">📡 IMEI Numbers</div>
+              <div class="imei-pair-grid">
+                <div>
+                  <div style="font-size:.58rem;font-weight:700;color:var(--a1);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 1 (scanned)</div>
+                  <input type="text" id="fImei1" readonly placeholder="Auto-filled from scan" style="background:var(--bg);opacity:.7;cursor:default;">
+                </div>
+                <div>
+                  <div style="font-size:.58rem;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 2 (optional)</div>
+                  <div style="display:flex;gap:5px;align-items:center">
+                    <input type="text" id="fImei2" class="imei2-field" placeholder="Scan 2nd barcode here…" inputmode="numeric" maxlength="16"
+                      oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                      onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('fBrand').focus();}"
+                      style="flex:1">
+                    <button type="button" class="btn bo" onclick="openCamera('imei2')" title="Scan with camera" style="padding:6px 9px;font-size:.75rem;flex-shrink:0">📷</button>
+                  </div>
+                  <div style="font-size:.58rem;color:var(--text2);margin-top:3px;font-family:var(--mono)">Click field then scan barcode</div>
+                </div>
+              </div>
+            </div>
+            <div class="form-group full"><label>Notes</label><textarea id="fNotes" placeholder="Condition, accessories included…"></textarea></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn bv" onclick="submitAdd()">✅ Add to Stock</button>
+            <button class="btn bo" onclick="cancelForm()">Cancel</button>
+          </div>
+        </div>
+        <!-- SELL FORM -->
+        <div class="scan-section" id="sellForm" style="display:none">
+          <h2>Record Sale</h2>
+          <div id="sellPhoneInfo" style="margin-bottom:12px"></div>
+          <div class="form-grid">
+            <div class="form-group"><label>Sale Price (PKR)</label><input type="number" id="fSalePrice" placeholder="Selling price"></div>
+            <div class="form-group"><label>Buyer Name</label><input type="text" id="fBuyerName" placeholder="Customer name (optional)"></div>
+            <div class="form-group full"><label>Notes</label><textarea id="fSaleNotes" placeholder="Any notes about this sale…"></textarea></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn br" onclick="submitSell()">✅ Confirm Sale</button>
+            <button class="btn bo" onclick="cancelForm()">Cancel</button>
+          </div>
+        </div>
+        <!-- BATCH ADD FORM -->
+        <div class="scan-section" id="batchForm" style="display:none">
+          <h2>⊕ Batch Add Phones</h2>
+          <p style="font-size:.68rem;color:var(--text2);margin-bottom:12px;line-height:1.5">Set the model details once, then scan IMEI pairs one by one. All phones will share the same brand/model/price.</p>
+
+          <!-- Shared details — set once -->
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group"><label>Category</label>
+              <select id="bCat">
+                <option value="IPHONE">iPhone</option>
+                <option value="SAMSUNG">Samsung</option>
+                <option value="GOOGLE">Google Pixel</option>
+                <option value="OTHER">Other</option>
+                <option value="BOX">Box / Sealed</option>
+                <option value="EXTRA">Extra / Misc</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Brand</label><input type="text" id="bBrand" placeholder="Apple, Samsung…"
+              oninput="autoSelectCat(this.value,'bCat')"></div>
+            <div class="form-group"><label>Model</label><input type="text" id="bModel" placeholder="iPhone 14, S24…"></div>
+            <div class="form-group"><label>Color</label><input type="text" id="bColor" placeholder="Black, White…"></div>
+            <div class="form-group"><label>Storage</label>
+              <select id="bStorage"><option value="">—</option><option>64GB</option><option>128GB</option><option>256GB</option><option>512GB</option><option>1TB</option></select>
+            </div>
+            <div class="form-group full"><label>Buy Price (PKR) — same for all</label><input type="number" id="bBuyPrice" placeholder="Cost per unit"></div>
+          </div>
+
+          <!-- IMEI pair scanner -->
+          <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:12px;">
+            <div style="font-size:.6rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">📡 Scan Next IMEI Pair</div>
+            <div class="imei-pair-grid" style="margin-bottom:8px;">
+              <div>
+                <div style="font-size:.58rem;font-weight:700;color:var(--a1);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 1</div>
+                <div style="display:flex;gap:5px;">
+                  <input type="text" id="bImei1" placeholder="Scan IMEI 1…" inputmode="numeric" class="imei2-field" style="flex:1"
+                    oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('bImei2').focus();}">
+                  <button class="btn bo" onclick="openCamera('batch1')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">📷</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:.58rem;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 2 (optional)</div>
+                <div style="display:flex;gap:5px;">
+                  <input type="text" id="bImei2" placeholder="Scan IMEI 2…" inputmode="numeric" class="imei2-field" style="flex:1"
+                    oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();addToBatchQueue();}">
+                  <button class="btn bo" onclick="openCamera('batch')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">📷</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn bb" onclick="addToBatchQueue()" style="width:100%;font-size:.75rem;">+ Add This Phone to Queue</button>
+          </div>
+
+          <!-- Queue -->
+          <div id="batchQueue" style="display:none;margin-bottom:12px;">
+            <div style="font-size:.62rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+              <span>Queue <span id="batchCount" style="color:var(--a1);">0</span> phones</span>
+              <button class="btn bo" onclick="clearBatchQueue()" style="font-size:.6rem;padding:.15rem .4rem;">Clear all</button>
+            </div>
+            <div id="batchList"></div>
+          </div>
+
+          <div style="display:flex;gap:8px;">
+            <button class="btn bv" id="batchSaveBtn" onclick="submitBatch()" style="flex:1;font-size:.78rem;" disabled>💾 Save All to Stock</button>
+            <button class="btn bo" onclick="cancelForm()">Cancel</button>
+          </div>
+        </div>
+        <!-- end batch form -->
+      </div>
+    </div>
+    <!-- ══ IMEI STOCK LIST ══ -->
+    <div class="pg" id="pg-imeistock">
+      <div class="tb">
+        <div class="tb-title">IMEI Stock</div>
+        <div class="tb-badge" id="imei-shop-badge" style="background:rgba(108,143,255,.1);border:1px solid rgba(108,143,255,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
+        <div class="tbsep"></div>
+        <button class="btn bo" style="font-size:.65rem" onclick="loadIMEIData()">↻ Refresh</button>
+        <button class="btn bo" style="font-size:.65rem" onclick="exportIMEICSV()">↓ CSV</button>
+        <button class="btn bo" style="font-size:.65rem" id="groupBtn" onclick="toggleGrouped()">☰ Ungrouped</button>
+      </div>
+      <div class="stock-scroll">
+        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="imeiSearch" placeholder="Search brand, model, IMEI…" oninput="renderIMEIStock()"></div>
+        <div class="filter-row">
+          <div class="filter-chip active" onclick="setIMEIFilter('all',this)">All</div>
+          <div class="filter-chip" onclick="setIMEIFilter('in_stock',this)">In Stock</div>
+          <div class="filter-chip sell-chip" onclick="setIMEIFilter('sold',this)">Sold</div>
+        </div>
+        <div class="section-title"><span id="imeiCount">0 phones</span></div>
+        <div id="imeiList"></div>
+      </div>
+    </div>
+
+    <!-- ══ DAILY STOCK SHEET ══ -->
+    <div class="pg" id="pg-stock">
+      <div class="tb">
+        <div class="tb-title">Daily Sheet</div>
+        <div class="tb-badge" id="stock-badge" style="background:rgba(108,143,255,.1);border:1px solid rgba(108,143,255,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
+        <div class="tbsep"></div>
+        <input type="date" id="work-date" onchange="loadDay()">
+        <div class="tbsep"></div>
+        <button class="btn bg" onclick="saveDay()">💾 Save</button>
+        <button class="btn bo" onclick="openNewDayModal()">+ New Day</button>
+        <div class="tbsep"></div>
+        <button class="btn bo" style="font-size:.62rem" onclick="exportDayCSV()">↓ CSV</button>
+      </div>
+      <div class="stock-scroll" id="stock-wrap">
+        <div style="color:var(--text2);font-size:.78rem;padding:2.5rem;text-align:center">Select a date and shop to load the daily sheet</div>
+      </div>
+      <div class="bpanels" id="bpanels">
+        <div class="scards" id="scards"></div>
+        <div class="expbar">
+          <div class="exp-title">Expenses</div>
+          <div class="exp-list" id="exp-list"></div>
+          <button class="btn bo" onclick="addExp()" style="font-size:.6rem;padding:.15rem .42rem;flex-shrink:0">+ Add</button>
+        </div>
+        <div class="expbar" style="border-top:1px solid var(--border2)">
+          <div class="exp-title" style="color:var(--a1)">Phones Purchased</div>
+          <div class="exp-list" id="purchase-list"></div>
+          <button class="btn bo" onclick="addPurchase()" style="font-size:.6rem;padding:.15rem .42rem;flex-shrink:0">+ Add</button>
+        </div>
+        <div class="expbar" style="border-top:1px solid var(--border2)">
+          <div class="exp-title" style="color:var(--a2)">Cash Transfers</div>
+          <div class="exp-list" id="transfer-list"></div>
+          <button class="btn bo" onclick="addTransfer()" style="font-size:.6rem;padding:.15rem .42rem;flex-shrink:0">+ Add</button>
+        </div>
+        <div class="cfbar">
+          <div class="cfi"><div class="cfl">Sales</div><div class="cfv p" id="cf-sa">Rs 0</div></div>
+          <div class="cfi"><div class="cfl">− Expenses</div><div class="cfv n" id="cf-ex">Rs 0</div></div>
+          <div class="cfi"><div class="cfl">− Purchased</div><div class="cfv n" id="cf-pu">Rs 0</div></div>
+          <div class="cfi"><div class="cfl">− Transfers</div><div class="cfv n" id="cf-tr">Rs 0</div></div>
+          <div class="cfi"><div class="cfl">= Subtotal</div><div class="cfv g" id="cf-sub">Rs 0</div></div>
+          <div class="cfi">
+            <div class="cfl">+ Carry-fwd</div>
+            <div class="carry-w"><span>Rs</span><input type="number" id="cf-carry" placeholder="0" oninput="recalc()"></div>
+          </div>
+          <div class="cfi cash-pill">
+            <div class="cfl">💰 Cash on Hand</div>
+            <div class="cfv g" style="font-size:.88rem" id="cf-fc">Rs 0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ EXPENSES ══ -->
+    <div class="pg" id="pg-expenses">
+      <div class="tb">
+        <div class="tb-title">Shop Expenses</div>
+        <div class="tbsep"></div>
+        <select id="exp-shop-filter" onchange="renderShopExpenses()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="ALL">All Shops</option><option value="456">Shop 456</option><option value="192">Shop 192</option><option value="G15">Shop G15</option>
+        </select>
+        <input type="month" id="exp-month-filter" onchange="renderShopExpenses()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+        <div class="tbsep"></div>
+        <button class="btn bv" onclick="openAddExpenseModal()">+ Add Expense</button>
+      </div>
+      <div class="hq-body" id="exp-body">
+        <div class="empty"><div class="empty-icon">💸</div><h3>No expenses</h3><p>Click + Add Expense</p></div>
+      </div>
+    </div>
+
+    <!-- ══ HISTORY ══ -->
+    <div class="pg" id="pg-history">
+      <div class="tb">
+        <div class="tb-title">History</div>
+        <div class="tbsep"></div>
+        <select id="hist-shop" onchange="loadAllDays()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="ALL">All Shops</option><option value="456">Shop 456</option><option value="192">Shop 192</option><option value="G15">Shop G15</option>
+        </select>
+      </div>
+      <div class="hq-body" id="hist-body">
+        <div class="empty"><div class="empty-icon">📅</div><h3>No history yet</h3><p>Save daily sheets to see them here</p></div>
+      </div>
+    </div>
+
+    <!-- ══ HQ OVERVIEW ══ -->
+    <div class="pg" id="pg-hq">
+      <div class="tb">
+        <div class="tb-title">Head Office</div>
+        <div class="tbsep"></div>
+        <input type="date" id="hq-date" onchange="renderHQ()">
+        <div class="tbsep"></div>
+        <button class="btn bv" onclick="nav('warehouse')">📦 Warehouse</button>
+        <button class="btn bo" onclick="nav('monthly')">→ Monthly P&L</button>
+      </div>
+      <div class="hq-body" id="hq-body"></div>
+    </div>
+
+    <!-- ══ WAREHOUSE ══ -->
+    <div class="pg" id="pg-warehouse">
+      <div class="tb">
+        <div class="tb-title">HQ Warehouse</div>
+        <div class="tb-badge" style="background:rgba(108,255,224,.07);border:1px solid rgba(108,255,224,.25);color:var(--chq);border-radius:20px;padding:2px 10px;">Central Stock</div>
+        <div class="tbsep"></div>
+        <button class="btn bv" onclick="openReceiveModal()">+ Receive Stock</button>
+        <button class="btn bb" onclick="openDispatchModal()">↗ Dispatch</button>
+        <div class="tbsep"></div>
+        <input type="text" id="wh-search" placeholder="Search…" oninput="renderWarehouse()"
+          style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--mono);font-size:.68rem;padding:.24rem .55rem;outline:none;width:140px;">
+      </div>
+      <div class="hq-body" id="wh-body"></div>
+    </div>
+
+    <!-- ══ SHIPMENTS ══ -->
+    <div class="pg" id="pg-shipments">
+      <div class="tb">
+        <div class="tb-title">Shipments</div>
+        <div class="tbsep"></div>
+        <select id="ship-shop-filter" onchange="renderShipments()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="ALL">All</option><option value="HQ">HQ</option><option value="456">456</option><option value="192">192</option><option value="G15">G15</option>
+        </select>
+        <input type="month" id="ship-month-filter" onchange="renderShipments()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+        <div class="tbsep"></div>
+        <button class="btn bb" onclick="openReceiveModal()">+ Log Shipment</button>
+      </div>
+      <div class="hq-body" id="ship-body"></div>
+    </div>
+
+    <!-- ══ MONTHLY P&L ══ -->
+    <div class="pg" id="pg-monthly">
+      <div class="tb">
+        <div class="tb-title">Monthly P&L</div>
+        <div class="tbsep"></div>
+        <input type="month" id="monthly-month" onchange="renderMonthly()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+        <select id="monthly-shop" onchange="renderMonthly()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="ALL">All Shops</option><option value="456">Shop 456</option><option value="192">Shop 192</option><option value="G15">Shop G15</option>
+        </select>
+      </div>
+      <div class="monthly-scroll" id="monthly-body"></div>
+    </div>
+
+    <!-- ══ BACKUP ══ -->
+    <div class="pg" id="pg-backup">
+      <div class="tb"><div class="tb-title">Backup / Restore</div></div>
+      <div class="hq-body" style="padding:1.2rem;max-width:480px;">
+        <div class="scan-section">
+          <h2>💾 Backup</h2>
+          <p style="font-size:.75rem;color:var(--text2);margin-bottom:14px;line-height:1.6">Download a full JSON backup of all stock, sales, daily sheets, expenses, and warehouse data.</p>
+          <button class="btn bv" onclick="doBackup()">⬇ Download Backup</button>
+        </div>
+        <div class="scan-section" style="margin-top:12px">
+          <h2>📂 Restore</h2>
+          <p style="font-size:.75rem;color:var(--text2);margin-bottom:14px;line-height:1.6">Upload a previously downloaded backup file. Existing records will be merged/overwritten.</p>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Backup file (.json)</label>
+            <input type="file" id="restoreFile" accept=".json" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:9px;color:var(--text);font-size:.8rem;width:100%;">
+          </div>
+          <button class="btn br" onclick="doRestore()">⬆ Restore Backup</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BARCODE SCANNER MODAL -->
+<div id="camModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:600;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;">
+  <div style="position:relative;width:min(420px,95vw);">
+    <video id="camVideo" autoplay playsinline muted style="width:100%;border-radius:14px;border:2px solid var(--a1);display:block;max-height:55vw;object-fit:cover;"></video>
+    <!-- Viewfinder overlay -->
+    <div style="position:absolute;inset:0;pointer-events:none;border-radius:12px;overflow:hidden;">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:38%;border:2px solid rgba(108,143,255,.7);border-radius:6px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);"></div>
+      <div id="scanLine" style="position:absolute;top:50%;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,var(--a1),transparent);transform:translateY(-200%);animation:scanAnim 2s ease-in-out infinite;"></div>
+    </div>
+  </div>
+  <style>@keyframes scanAnim{0%,100%{top:31%}50%{top:69%}}</style>
+
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 18px;width:min(420px,95vw);">
+    <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px" id="camLabel">Scanning…</div>
+
+    <!-- Live result -->
+    <div id="camResultBox" style="display:none;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;">
+      <div style="font-size:.58rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Detected</div>
+      <div id="camResult" style="font-family:var(--mono);font-size:.95rem;color:var(--white);word-break:break-all;"></div>
+      <div id="camFormat" style="font-size:.6rem;color:var(--text2);margin-top:2px;"></div>
+    </div>
+
+    <!-- Action buttons shown after a barcode is detected -->
+    <div id="camActions" style="display:none;flex-direction:column;gap:6px;">
+      <div style="font-size:.65rem;color:var(--text2);margin-bottom:2px;">Use this barcode as:</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn bg" id="camUseImei1" onclick="useScanResult('imei1')" style="font-size:.7rem;">IMEI 1</button>
+        <button class="btn bb" id="camUseImei2" onclick="useScanResult('imei2')" style="font-size:.7rem;">IMEI 2</button>
+        <button class="btn bo" onclick="useScanResult('copy')" style="font-size:.7rem;">📋 Copy</button>
+        <button class="btn bo" onclick="clearScanResult()" style="font-size:.7rem;">↺ Rescan</button>
+      </div>
+    </div>
+
+    <!-- Scanning hint when no result yet -->
+    <div id="camHint" style="font-size:.7rem;color:var(--text2);line-height:1.5;">
+      Point camera at an IMEI barcode (14–16 digits).<br>
+      <span style="font-size:.62rem;opacity:.7;">Other barcodes are ignored. Hold steady, ensure good lighting.</span>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn bo" onclick="closeCamera()" style="flex:1;">Close</button>
+      <button class="btn bo" onclick="toggleTorch()" id="torchBtn" style="font-size:.75rem;padding:.28rem .65rem;" title="Toggle flashlight">🔦</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-bg"><div id="modal"></div></div>
+<!-- TOAST -->
+<div id="toast"></div>
+<script>
+const BASE=window.location.origin;
+const SHOPS=['456','192','G15'];
+const SHOP_COLOR={'456':'var(--c456)','192':'var(--c192)','G15':'var(--cg15)','HQ':'var(--chq)'};
+const SHOP_RGBA={'456':'108,143,255','192':'155,108,255','G15':'255,108,143','HQ':'108,255,224'};
+const CATS={
+  GOOGLE:{label:'Google Pixel',cls:'cpx'},
+  IPHONE:{label:'iPhone',cls:'cip'},
+  SAMSUNG:{label:'Samsung',cls:'csm'},
+  OTHER:{label:'Other',cls:'cot'},
+  BOX:{label:'Box / Sealed',cls:'cbx'},
+  EXTRA:{label:'Extra / Misc',cls:'cex',isExtra:true},
+};
+const EXP_CATS=['General','Salary','Rent','Utilities','Transport','Repairs','Marketing','Other'];
+
+// ── DEVICE ROLE ──────────────────────────────────────────────────
+// Phone = scan/add/sell only. Desktop = full access.
+// Override by adding ?mode=desktop or ?mode=phone to the URL.
+function getRole(){
+  const p = new URLSearchParams(location.search);
+  if(p.get('mode')==='desktop') return 'desktop';
+  if(p.get('mode')==='phone')   return 'phone';
+  // Auto-detect: phone if touch device AND narrow screen
+  const isPhone = (window.innerWidth <= 768) && ('ontouchstart' in window);
+  return isPhone ? 'phone' : 'desktop';
+}
+const ROLE = getRole();
+const IS_PHONE = ROLE === 'phone';
+
+// Phone mode: hide desktop-only nav items and show a phone banner
+function applyPhoneMode(){
+  if(!IS_PHONE) return;
+  // Hide pages phones shouldn't access
+  ['ni-stock','ni-expenses','ni-history','ni-hq','ni-warehouse','ni-shipments','ni-monthly','ni-backup']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  // Hide HQ section label and divider
+  // Hide Head Office section and its preceding divider
+  document.querySelectorAll('.sb-lbl').forEach(el=>{
+    if(el.textContent.trim()==='Head Office'){
+      const sec=el.closest('.sb-sec');
+      if(sec){ sec.style.display='none';
+        const prev=sec.previousElementSibling;
+        if(prev&&prev.classList.contains('sdiv'))prev.style.display='none';
+      }
+    }
+  });
+  // Add phone mode banner
+  const banner = document.createElement('div');
+  banner.style.cssText='background:rgba(108,143,255,.08);border-bottom:1px solid rgba(108,143,255,.2);padding:5px 12px;font-size:.65rem;color:var(--a1);font-weight:600;text-align:center;flex-shrink:0;';
+  banner.textContent='📱 Phone Mode — Scan & Add only';
+  document.getElementById('main').prepend(banner);
+}
+
+let activeShop='456',activePage='scan',scanMode='add',pendingIMEI='',camStream=null;
+let dayState={shop:'456',date:today(),cats:{},expenses:[],purchases:[],transfers:[],carryForward:0};
+let allIMEIStock=[],allIMEISales=[],imeiFilter='all';
+let allDays=[],allShopExp=[],allDispatches=[],allShipments=[],hqStock={items:[]};
+
+function $(id){return document.getElementById(id);}
+function today(){return new Date().toISOString().slice(0,10);}
+function ym(d){return d?d.slice(0,7):'';}
+function pkr(n){return 'Rs '+(Number(n)||0).toLocaleString('en-PK');}
+function fmtDate(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'});}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function showToast(msg,type='success'){const t=$('toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
+async function api(method,url,body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(BASE+url,opts);return r.json();
+}
+
+// Clock
+function tickClock(){const d=new Date();$('clk').textContent=d.toLocaleDateString('en-GB')+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+setInterval(tickClock,30000);tickClock();
+
+// Nav
+function nav(page){
+  // Block desktop-only pages on phone
+  const desktopOnly=['stock','expenses','history','hq','warehouse','shipments','monthly','backup'];
+  if(IS_PHONE && desktopOnly.includes(page)){ showToast('Not available on phone mode','warn'); return; }
+  activePage=page;
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  $('pg-'+page)?.classList.add('on');
+  $('ni-'+page)?.classList.add('on');
+  ({
+    scan:()=>$('imeiInput')?.focus(),
+    imeistock:loadIMEIData,
+    stock:()=>{$('work-date').value=$('work-date').value||today();loadDay();},
+    expenses:()=>{$('exp-month-filter').value=ym(today());renderShopExpenses();},
+    history:loadAllDays,
+    hq:()=>{$('hq-date').value=today();renderHQ();},
+    warehouse:loadWarehouse,
+    shipments:loadShipments,
+    monthly:()=>{$('monthly-month').value=ym(today());renderMonthly();},
+    backup:()=>{},
+  }[page]||function(){})();
+}
+
+function switchShop(s){
+  activeShop=s;
+  document.querySelectorAll('.stab').forEach(t=>t.classList.toggle('on',t.dataset.s===s));
+  const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'108,143,255';
+  const label=s==='HQ'?'Head Office':'Shop '+s;
+  ['scan-shop-badge','imei-shop-badge','stock-badge'].forEach(id=>{
+    const el=$(id);if(!el)return;
+    el.textContent=label;
+    el.style.cssText=`background:rgba(${r},.1);border:1px solid rgba(${r},.3);color:${c};border-radius:20px;padding:2px 10px;`;
+  });
+  $('sb-lbl2').textContent=label.toUpperCase();
+  if(['scan','imeistock'].includes(activePage))loadIMEIData();
+  if(activePage==='stock'){dayState.shop=s;loadDay();}
+  loadSidebarStats();
+}
+
+async function loadSidebarStats(){
+  try{
+    const sh=activeShop==='HQ'?null:activeShop;
+    const s=await api('GET',sh?`/api/stats?shop=${sh}`:'/api/stats');
+    $('sb-is').textContent=s.inStock;
+    $('sb-sa').textContent=s.sold;
+    $('sb-rv').textContent=s.totalRevenue>0?pkr(s.totalRevenue):'—';
+    const p=$('connPill');p.classList.add('online');$('connText').textContent='online';
+  }catch(e){
+    const p=$('connPill');p.classList.remove('online');$('connText').textContent='offline';
+  }
+}
+setInterval(loadSidebarStats,12000);
+
+// ── IMEI SCAN ──
+function setMode(m){
+  scanMode=m;
+  $('modeAdd').classList.toggle('active', m==='add');
+  $('modeBatch').classList.toggle('active', m==='batch');
+  $('modeSell').classList.toggle('active', m==='sell');
+  cancelForm();
+  if(m==='batch'){
+    $('batchForm').style.display='block';
+    setTimeout(()=>$('bBrand')?.focus(),80);
+  } else {
+    $('imeiInput')?.focus();
+  }
+}
+
+// ── BATCH ADD ──────────────────────────────────────────────────────
+let batchQueue = []; // [{imei1, imei2}]
+
+function addToBatchQueue(){
+  const imei1 = $('bImei1').value.trim().replace(/\D/g,'');
+  const imei2 = $('bImei2').value.trim().replace(/\D/g,'');
+  if(!imei1){ showToast('IMEI 1 is required','error'); $('bImei1').focus(); return; }
+  if(imei1.length < 14){ showToast('IMEI 1 must be at least 14 digits','error'); return; }
+  // Check for duplicates in queue
+  if(batchQueue.find(e=>e.imei1===imei1||e.imei2===imei1)){
+    showToast('This IMEI is already in the queue','warn'); return;
+  }
+  batchQueue.push({imei1, imei2});
+  $('bImei1').value='';
+  $('bImei2').value='';
+  $('bImei1').focus();
+  renderBatchQueue();
+  showToast(`Phone ${batchQueue.length} added to queue`,'success');
+}
+
+function renderBatchQueue(){
+  const qEl=$('batchQueue');
+  const listEl=$('batchList');
+  const countEl=$('batchCount');
+  const saveBtn=$('batchSaveBtn');
+  if(!batchQueue.length){
+    qEl.style.display='none';
+    saveBtn.disabled=true;
+    return;
+  }
+  qEl.style.display='block';
+  saveBtn.disabled=false;
+  countEl.textContent=batchQueue.length;
+  listEl.innerHTML=batchQueue.map((e,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:5px;font-family:var(--mono);font-size:.68rem;">
+      <span style="color:var(--a1);font-weight:700;min-width:20px;">#${i+1}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="color:var(--white);">IMEI 1: ${e.imei1}</div>
+        <div style="display:flex;gap:4px;margin-top:2px">
+          ${e.imei2?`<span style="font-size:.58rem;background:rgba(108,143,255,.15);color:var(--a1);border:1px solid rgba(108,143,255,.3);padding:1px 5px;border-radius:10px;">2 IMEIs</span>`:`<span style="font-size:.58rem;background:var(--s3);color:var(--text2);border:1px solid var(--border);padding:1px 5px;border-radius:10px;">1 IMEI</span>`}
+        </div>
+      </div>
+      <button class="bx" onclick="removeBatchEntry(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeBatchEntry(i){
+  batchQueue.splice(i,1);
+  renderBatchQueue();
+}
+
+function clearBatchQueue(){
+  batchQueue=[];
+  renderBatchQueue();
+}
+
+async function submitBatch(){
+  if(!batchQueue.length){showToast('Queue is empty','error');return;}
+  const brand=$('bBrand').value.trim();
+  const model=$('bModel').value.trim();
+  const color=$('bColor').value.trim();
+  const storage=$('bStorage').value;
+  const buyPrice=$('bBuyPrice').value;
+  const cat=$('bCat').value;
+  const shop=activeShop==='HQ'?null:activeShop;
+
+  if(!brand&&!model){showToast('Enter at least Brand or Model','error');return;}
+
+  const saveBtn=$('batchSaveBtn');
+  saveBtn.disabled=true;
+  saveBtn.textContent=`Saving 0/${batchQueue.length}…`;
+
+  let saved=0, failed=[];
+  for(const entry of batchQueue){
+    try{
+      const d=await api('POST','/api/stock/add',{
+        imei:entry.imei1, imei2:entry.imei2||'',
+        cat, brand, model, color, storage, buyPrice, shop
+      });
+      if(d.error) failed.push(`${entry.imei1}: ${d.error}`);
+      else saved++;
+    }catch(e){
+      failed.push(`${entry.imei1}: network error`);
+    }
+    saveBtn.textContent=`Saving ${saved+failed.length}/${batchQueue.length}…`;
+  }
+
+  saveBtn.textContent='💾 Save All to Stock';
+  saveBtn.disabled=false;
+
+  if(failed.length){
+    showToast(`⚠ ${saved} saved, ${failed.length} failed`,'warn');
+    console.warn('Batch failures:', failed);
+  } else {
+    showToast(`✅ ${saved} phones added to stock!`,'success');
+  }
+
+  batchQueue=[];
+  renderBatchQueue();
+  $('bImei1').value=''; $('bImei2').value='';
+  loadSidebarStats();
+  setTimeout(()=>$('bImei1')?.focus(),100);
+}
+
+async function handleImeiSubmit(){
+  const raw=$('imeiInput').value.trim().replace(/\D/g,'');
+  if(!raw){showToast('Enter or scan an IMEI','error');return;}
+  if(raw.length<14||raw.length>16){showToast(`IMEI must be 14–16 digits (got ${raw.length})`,'error');return;}
+  pendingIMEI=raw;$('imeiInput').value='';
+  if(scanMode==='add'){
+    try{
+      const r=await api('GET',`/api/lookup/${pendingIMEI}`);
+      if(r.imei){
+        showPreview('⚠️ Already in Stock',phoneCardHTML(r,true));
+        showToast('IMEI already exists!','warn');
+        return;
+      }
+    }catch(e){}
+    showAddForm();
+  }else{
+    try{
+      const r=await api('GET',`/api/lookup/${pendingIMEI}`);
+      if(!r.imei){
+        showToast('IMEI not found in stock','error');
+        showPreview('Not Found',`<p style="color:var(--danger);font-size:.8rem">IMEI <code style="font-family:var(--mono)">${pendingIMEI}</code> is not in stock.</p>`);
+        return;
+      }
+      if(r.status==='sold'){
+        showToast('This phone is already sold!','error');
+        showPreview('Already Sold',phoneCardHTML(r,true));
+        return;
+      }
+      showSellForm(r);
+    }catch(e){showToast('Connection error','error');}
+  }
+}
+
+function showAddForm(){
+  hidePreview();
+  $('fImei1').value=pendingIMEI;
+  $('fImei2').value='';
+  $('addForm').style.display='block';
+  $('addForm').scrollIntoView({behavior:'smooth',block:'nearest'});
+  setTimeout(()=>$('fImei2')?.focus(),150);
+}
+function showSellForm(phone){
+  hidePreview();
+  const imeiLine=phone.imei2?`<div class="phone-imei">IMEI 1: ${phone.imei}</div><div class="phone-imei2">IMEI 2: ${phone.imei2}</div>`:`<div class="phone-imei">${phone.imei}</div>`;
+  $('sellPhoneInfo').innerHTML=`
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px;display:flex;align-items:center;gap:12px">
+      <div class="phone-icon">📱</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:.9rem;color:var(--white)">${phone.brand} ${phone.model}</div>
+        ${imeiLine}
+        <div style="font-size:.72rem;color:var(--text2);margin-top:2px">${[phone.color,phone.storage].filter(Boolean).join(' · ')}</div>
+        ${phone.buyPrice?`<div style="font-size:.72rem;color:var(--a5);margin-top:2px">Cost: ${pkr(phone.buyPrice)}</div>`:''}
+      </div>
+    </div>
+    ${phone.buyPrice?`<div id="profitPreview" style="font-size:.72rem;color:var(--text2);margin-top:8px;font-family:var(--mono)">Enter sale price to see profit</div>`:''}`;
+  $('sellForm').style.display='block';
+  $('sellForm').scrollIntoView({behavior:'smooth',block:'nearest'});
+  // Wire up profit preview
+  if(phone.buyPrice){
+    $('fSalePrice').oninput=()=>{
+      const sp=parseFloat($('fSalePrice').value)||0;
+      const profit=sp-phone.buyPrice;
+      const el=$('profitPreview');
+      if(el&&sp>0){
+        el.style.color=profit>=0?'var(--success)':'var(--danger)';
+        el.textContent=`Profit: ${pkr(profit)} ${profit>=0?'▲':'▼'}`;
+      }else if(el){
+        el.style.color='var(--text2)';el.textContent='Enter sale price to see profit';
+      }
+    };
+  }
+  setTimeout(()=>$('fSalePrice')?.focus(),150);
+}
+function cancelForm(){
+  $('addForm').style.display='none';
+  $('sellForm').style.display='none';
+  $('batchForm').style.display='none';
+  hidePreview();
+  pendingIMEI='';
+  batchQueue=[];
+  renderBatchQueue();
+}
+function showPreview(title,html){$('previewTitle').textContent=title;$('previewContent').innerHTML=html;$('resultPreview').classList.add('show');}
+function hidePreview(){$('resultPreview').classList.remove('show');}
+
+async function submitAdd(){
+  const imei2=$('fImei2').value.trim().replace(/\D/g,'');
+  const payload={
+    imei:pendingIMEI,
+    imei2:imei2||'',
+    cat:$('fCat').value,
+    brand:$('fBrand').value.trim(),
+    model:$('fModel').value.trim(),
+    color:$('fColor').value.trim(),
+    storage:$('fStorage').value,
+    buyPrice:$('fBuyPrice').value,
+    notes:$('fNotes').value.trim(),
+    shop:activeShop==='HQ'?null:activeShop
+  };
+  const d=await api('POST','/api/stock/add',payload);
+  if(d.error){showToast(d.error,'error');return;}
+  const imeiInfo=imei2?` (2 IMEIs)`:'';
+  showToast(`✅ ${payload.brand||'Phone'} ${payload.model||''}${imeiInfo} added!`,'success');
+  cancelForm();
+  ['fBrand','fModel','fColor','fBuyPrice','fNotes','fImei1','fImei2'].forEach(id=>{if($(id))$(id).value='';});
+  $('fStorage').value=''; $('fCat').value='IPHONE';
+  loadSidebarStats();
+  setTimeout(()=>$('imeiInput')?.focus(),100);
+}
+
+async function submitSell(){
+  const d=await api('POST','/api/stock/sell',{
+    imei:pendingIMEI,salePrice:$('fSalePrice').value,
+    buyerName:$('fBuyerName').value.trim(),notes:$('fSaleNotes').value.trim(),
+    shop:activeShop==='HQ'?null:activeShop
+  });
+  if(d.error){showToast(d.error,'error');return;}
+  const profit=d.sale?.profit;
+  showToast(`💰 Sale recorded!${profit!=null?' Profit: '+pkr(profit):''}`, 'success');
+  cancelForm();
+  ['fSalePrice','fBuyerName','fSaleNotes'].forEach(id=>{if($(id))$(id).value='';});
+  loadSidebarStats();
+  setTimeout(()=>$('imeiInput')?.focus(),100);
+}
+
+// ── BARCODE SCANNER ──────────────────────────────────────────────
+let camMode = 'imei1';
+let lastScanResult = '';
+let torchTrack = null;
+let scanActive = false;
+let scanLoopId = 0;
+let detectorInstance = null;
+let detectorCanvas = null;
+let detectorCtx = null;
+
+const camLabels = {
+  imei1:'Scanning for IMEI 1…', imei2:'Scanning for IMEI 2…',
+  batch1:'Scanning for batch IMEI 1…', batch:'Scanning for batch IMEI 2…',
+  free:'Scan any barcode',
+};
+
+async function openCamera(mode='imei1'){
+  if(camStream){
+    camMode=mode;
+    $('camLabel').textContent=camLabels[mode]||'Scanning…';
+    clearScanResult();
+    return;
+  }
+  camMode=mode;
+  lastScanResult='';
+  $('camLabel').textContent=camLabels[mode]||'Scanning…';
+  $('camUseImei1').style.display='';
+  $('camUseImei2').style.display='';
+  try{
+    const constraints={video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}};
+    camStream=await navigator.mediaDevices.getUserMedia(constraints);
+    torchTrack=camStream.getVideoTracks()[0];
+    $('torchBtn').style.opacity=torchTrack?.getCapabilities?.()?.torch?'1':'0.3';
+    $('camVideo').srcObject=camStream;
+    $('camModal').style.display='flex';
+    clearScanResult();
+    if(!detectorInstance&&'BarcodeDetector' in window){
+      let formats;
+      try{formats=await BarcodeDetector.getSupportedFormats();}
+      catch(e){formats=['code_128','code_39','ean_13','ean_8','itf','upc_a','upc_e','qr_code','data_matrix','aztec'];}
+      detectorInstance=new BarcodeDetector({formats});
+      detectorCanvas=document.createElement('canvas');
+      detectorCtx=detectorCanvas.getContext('2d');
+    }
+    scanActive=true;
+    startScanning();
+  }catch(e){
+    showToast('Camera not available — HTTPS required on phone','error');
+  }
+}
+
+async function openCameraForImei2(){openCamera('imei2');}
+
+function closeCamera(){
+  scanActive=false;
+  scanLoopId++;
+  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;torchTrack=null;}
+  $('camModal').style.display='none';
+  lastScanResult='';
+  $('camResultBox').style.display='none';
+  $('camActions').style.display='none';
+  $('camHint').style.display='block';
+  $('scanLine').style.animationPlayState='running';
+}
+
+function clearScanResult(){
+  lastScanResult='';
+  $('camResultBox').style.display='none';
+  $('camActions').style.display='none';
+  $('camHint').style.display='block';
+  $('scanLine').style.animationPlayState='running';
+  if(camStream){scanActive=true;startScanning();}
+}
+
+function flashField(el){
+  if(!el)return;
+  el.style.borderColor='var(--success)';
+  el.style.boxShadow='0 0 0 3px rgba(108,255,184,.2)';
+  setTimeout(()=>{el.style.borderColor='';el.style.boxShadow='';},800);
+}
+
+function onBarcodeDetected(value,format){
+  const digits=value.replace(/\D/g,'');
+  if(camMode!=='free'&&(digits.length<14||digits.length>16))return;
+  const result=digits.length>=14?digits:value;
+  if(result===lastScanResult)return;
+  lastScanResult=result;
+  if(camMode==='batch1'){
+    closeCamera();
+    const f=$('bImei1');if(f){f.value=result;flashField(f);}$('bImei2')?.focus();
+    showToast('IMEI 1 scanned ✓');return;
+  }
+  if(camMode==='batch'){
+    closeCamera();
+    const f=$('bImei2');if(f){f.value=result;flashField(f);f.focus();}
+    showToast('IMEI 2 scanned ✓');return;
+  }
+  scanActive=false;
+  $('scanLine').style.animationPlayState='paused';
+  $('camResult').textContent=result;
+  $('camFormat').textContent=`${format||'unknown'} · ${digits.length} digits`;
+  $('camResultBox').style.display='block';
+  $('camActions').style.display='flex';
+  $('camHint').style.display='none';
+}
+
+function useScanResult(action){
+  if(!lastScanResult)return;
+  const val=lastScanResult;
+  const inBatch=$('batchForm').style.display!=='none';
+  if(action==='imei1'){
+    closeCamera();
+    if(inBatch){
+      const f=$('bImei1');if(f){f.value=val;flashField(f);}$('bImei2')?.focus();
+      showToast('IMEI 1 set ✓');
+    }else{
+      $('imeiInput').value=val;flashField($('imeiInput'));handleImeiSubmit();
+    }
+  }else if(action==='imei2'){
+    closeCamera();
+    const field=inBatch?$('bImei2'):$('fImei2');
+    if(field){field.value=val;flashField(field);field.focus();showToast('IMEI 2 set ✓');}
+  }else if(action==='copy'){
+    navigator.clipboard.writeText(val).then(()=>showToast('Copied: '+val)).catch(()=>showToast('Value: '+val));
+    clearScanResult();
+  }
+}
+
+async function toggleTorch(){
+  if(!torchTrack)return;
+  try{
+    const current=torchTrack.getSettings().torch;
+    await torchTrack.applyConstraints({advanced:[{torch:!current}]});
+    $('torchBtn').style.color=!current?'var(--warn)':'';
+  }catch(e){showToast('Torch not available','warn');}
+}
+
+async function startScanning(){
+  if(!detectorInstance){
+    $('camHint').innerHTML='<span style="color:var(--warn)">⚠ BarcodeDetector not supported. Use Chrome on Android or Edge on desktop. iPhone: use a hardware scanner.</span>';
+    return;
+  }
+  const vid=$('camVideo');
+  const myLoopId=++scanLoopId;
+  const scan=async()=>{
+    if(!scanActive||!camStream||scanLoopId!==myLoopId)return;
+    if(vid.readyState>=2&&vid.videoWidth>0&&vid.clientWidth>0){
+      const vw=vid.videoWidth,vh=vid.videoHeight;
+      const dw=vid.clientWidth,dh=vid.clientHeight;
+      const scale=Math.max(dw/vw,dh/vh);
+      const visW=dw/scale,visH=dh/scale;
+      const offX=(vw-visW)/2,offY=(vh-visH)/2;
+      const bx=offX+visW*0.10,by=offY+visH*0.31;
+      const bw=visW*0.80,bh=visH*0.38;
+      detectorCanvas.width=Math.round(bw);
+      detectorCanvas.height=Math.round(bh);
+      detectorCtx.drawImage(vid,bx,by,bw,bh,0,0,detectorCanvas.width,detectorCanvas.height);
+      try{
+        const codes=await detectorInstance.detect(detectorCanvas);
+        if(codes.length>0){onBarcodeDetected(codes[0].rawValue,codes[0].format);return;}
+      }catch(e){}
+    }
+    if(scanActive&&scanLoopId===myLoopId)setTimeout(()=>requestAnimationFrame(scan),66);
+  };
+  if(vid.readyState>=3)requestAnimationFrame(scan);
+  else vid.addEventListener('playing',()=>requestAnimationFrame(scan),{once:true});
+}
+// ── IMEI STOCK LIST ──
+let groupedView = true; // default: grouped by model
+async function loadIMEIData(){
+  const sh=activeShop==='HQ'?null:activeShop;
+  [allIMEIStock,allIMEISales]=await Promise.all([
+    api('GET',sh?`/api/stock?shop=${sh}`:'/api/stock'),
+    api('GET',sh?`/api/sales?shop=${sh}`:'/api/sales')
+  ]);
+  allIMEIStock=[...allIMEIStock].reverse();renderIMEIStock();
+}
+function setIMEIFilter(f,el){imeiFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderIMEIStock();}
+function toggleGrouped(){groupedView=!groupedView;$('groupBtn').textContent=groupedView?'☰ Ungrouped':'❏ Grouped';renderIMEIStock();}
+
+function renderIMEIStock(){
+  const q=$('imeiSearch').value.toLowerCase();
+  let items=allIMEIStock.filter(p=>{
+    if(imeiFilter!=='all'&&p.status!==imeiFilter)return false;
+    if(q)return(p.brand+p.model+p.imei+(p.imei2||'')+p.color+p.storage).toLowerCase().includes(q);
+    return true;
+  });
+  $('imeiCount').textContent=`${items.length} phone${items.length!==1?'s':''}`;
+  const list=$('imeiList');
+  if(!items.length){list.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>No phones found</h3></div>`;return;}
+
+  if(!groupedView){
+    list.innerHTML=items.map(p=>phoneCardHTML(p,true)).join('');
+    return;
+  }
+
+  // Group by brand+model+color+storage only (NOT status)
+  const groups={};
+  items.forEach(p=>{
+    const key=`${(p.brand||'').toLowerCase()}|${(p.model||'').toLowerCase()}|${(p.color||'').toLowerCase()}|${(p.storage||'').toLowerCase()}`;
+    if(!groups[key]) groups[key]={phones:[],brand:p.brand,model:p.model,color:p.color,storage:p.storage,buyPrice:p.buyPrice};
+    groups[key].phones.push(p);
+  });
+
+  list.innerHTML=Object.entries(groups).map(([key,g], idx)=>{
+    const count=g.phones.length;
+    const inStockCount=g.phones.filter(p=>p.status==='in_stock').length;
+    const soldCount=g.phones.filter(p=>p.status==='sold').length;
+    const uid = `g${idx}`;
+    // Always show group header — never silently hide phones
+    return `
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;transition:background .15s;"
+          onclick="toggleGroup('grp-${uid}')" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background=''">
+          <div class="phone-icon">📱</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:.9rem;color:var(--white);">${g.brand||'Unknown'} ${g.model||''}</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">
+              <span style="font-family:var(--mono);font-size:.7rem;font-weight:700;background:rgba(108,143,255,.15);color:var(--a1);border:1px solid rgba(108,143,255,.3);padding:2px 9px;border-radius:20px;">${count} unit${count!==1?'s':''}</span>
+              ${inStockCount?`<span class="badge badge-green">${inStockCount} in stock</span>`:''}
+              ${soldCount?`<span class="badge badge-red">${soldCount} sold</span>`:''}
+              ${g.color?`<span class="badge badge-gray">${g.color}</span>`:''}
+              ${g.storage?`<span class="badge badge-purple">${g.storage}</span>`:''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            ${g.buyPrice?`<div style="font-family:var(--mono);font-size:.82rem;color:var(--a5)">${pkr(g.buyPrice)}</div><div style="font-size:.6rem;color:var(--text2)">ea.</div>`:''}
+          </div>
+          <div style="color:var(--text2);font-size:.75rem;margin-left:4px;" id="grp-arr-${uid}">${count===1?'':'▶'}</div>
+        </div>
+        <div id="grp-${uid}" style="display:${count===1?'block':'none'};border-top:1px solid var(--border);">
+          ${g.phones.map(p=>phoneCardHTML(p,false)).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleGroup(id){
+  const el=$(id); if(!el)return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  const uid=id.replace('grp-','');
+  const arr=$('grp-arr-'+uid);
+  if(arr) arr.textContent=open?'▶':'▼';
+}
+
+function phoneCardHTML(p, standalone=true){
+  const imei2line=p.imei2?`<div class="phone-imei2">IMEI 2: ${p.imei2}</div>`:'';
+  const profitTag=p.salePrice&&p.buyPrice?`<span class="badge ${p.salePrice-p.buyPrice>=0?'badge-green':'badge-red'}">${p.salePrice-p.buyPrice>=0?'+':''}${pkr(p.salePrice-p.buyPrice)}</span>`:'';
+  const border=standalone?'border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;':'border-top:1px solid var(--border2);border-radius:0;margin-bottom:0;';
+  return `<div class="phone-card" id="card-${p.id}" style="background:var(--s1);${border}">
+    <div class="phone-icon">📱</div>
+    <div class="phone-info">
+      <div class="phone-name">${p.brand||'Unknown'} ${p.model||''}</div>
+      <div class="phone-imei">IMEI 1: ${p.imei}</div>
+      ${imei2line}
+      <div class="phone-meta">
+        <span class="badge ${p.status==='in_stock'?'badge-green':'badge-red'}">${p.status==='in_stock'?'In Stock':'Sold'}</span>
+        ${p.cat&&CATS[p.cat]?`<span class="badge badge-blue">${CATS[p.cat].label}</span>`:''}
+        ${p.color?`<span class="badge badge-gray">${p.color}</span>`:''}
+        ${p.storage?`<span class="badge badge-purple">${p.storage}</span>`:''}
+        ${p.imei2?`<span class="badge badge-blue">2 IMEIs</span>`:''}
+        ${profitTag}
+        ${p.addedAt?`<span class="badge badge-gray">${fmtDate(p.addedAt)}</span>`:''}
+      </div>
+    </div>
+    <div class="phone-price">
+      ${p.buyPrice?`<div style="color:var(--text2);font-size:.62rem">Cost</div><div>${pkr(p.buyPrice)}</div>`:''}
+      ${p.salePrice?`<div style="color:var(--text2);font-size:.62rem;margin-top:3px">Sold</div><div style="color:var(--success)">${pkr(p.salePrice)}</div>`:''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+      ${!IS_PHONE?`<button class="btn bo" onclick="openEditPhone('${p.id}')" style="font-size:.62rem;padding:.22rem .5rem;">✏️ Edit</button>`:''}
+      ${p.status==='in_stock'?`<button class="del-btn" onclick="deletePhone('${p.id}')" title="Remove">🗑</button>`:''}
+    </div>
+  </div>`;
+}
+
+function openEditPhone(id){
+  const p=allIMEIStock.find(x=>x.id===id);
+  if(!p){showToast('Phone not found','error');return;}
+  // Use DOM to build modal so values with quotes/apostrophes are safe
+  const m=document.createElement('div');
+  m.innerHTML=`<h3>✏️ Edit Phone</h3>
+    <div class="fc">
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:.72rem;color:var(--text2);">
+        IMEI 1: <span style="color:var(--white)">${p.imei}</span>${p.imei2?`<br>IMEI 2: <span style="color:var(--white)">${p.imei2}</span>`:''}
+      </div>
+      <div class="f2">
+        <div class="fi"><label>Category</label>
+          <select id="ep-cat">
+            <option value="IPHONE">iPhone</option>
+            <option value="SAMSUNG">Samsung</option>
+            <option value="GOOGLE">Google Pixel</option>
+            <option value="OTHER">Other</option>
+            <option value="BOX">Box / Sealed</option>
+            <option value="EXTRA">Extra / Misc</option>
+          </select>
+        </div>
+        <div class="fi"><label>Brand</label><input type="text" id="ep-brand"></div>
+      </div>
+      <div class="f2">
+        <div class="fi"><label>Model</label><input type="text" id="ep-model"></div>
+        <div class="fi"><label>Storage</label>
+          <select id="ep-storage">
+            <option value="">—</option>
+            ${['64GB','128GB','256GB','512GB','1TB'].map(s=>`<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="f2">
+        <div class="fi"><label>Buy Price (PKR)</label><input type="number" id="ep-price" placeholder="Cost price"></div>
+        <div class="fi"><label>IMEI 2</label><input type="text" id="ep-imei2" placeholder="Second IMEI" inputmode="numeric"></div>
+      </div>
+      <div class="fi"><label>Notes</label><input type="text" id="ep-notes" placeholder="Condition, accessories…"></div>
+    </div>
+    <div class="mf">
+      <button class="btn bo" onclick="closeModal()">Cancel</button>
+      <button class="btn bg" onclick="saveEditPhone('${p.id}')">💾 Save Changes</button>
+    </div>`;
+  // Set values safely via JS (handles any special chars)
+  $('modal').innerHTML=''; $('modal').appendChild(m);
+  $('modal').style.maxWidth='520px';
+  $('modal-bg').classList.add('open');
+  document.getElementById('ep-brand').value=p.brand||'';
+  document.getElementById('ep-model').value=p.model||'';
+  document.getElementById('ep-cat').value=p.cat||guessCat(p.brand,p.model,null);
+  document.getElementById('ep-color').value=p.color||'';
+  document.getElementById('ep-storage').value=p.storage||'';
+  document.getElementById('ep-price').value=p.buyPrice||'';
+  document.getElementById('ep-imei2').value=p.imei2||'';
+  document.getElementById('ep-notes').value=p.notes||'';
+  setTimeout(()=>document.getElementById('ep-brand')?.focus(),80);
+}
+
+async function saveEditPhone(id){
+  const payload={
+    brand:document.getElementById('ep-brand').value.trim(),
+    model:document.getElementById('ep-model').value.trim(),
+    color:document.getElementById('ep-color').value.trim(),
+    storage:document.getElementById('ep-storage').value,
+    buyPrice:document.getElementById('ep-price').value,
+    imei2:document.getElementById('ep-imei2').value.trim().replace(/\D/g,''),
+    notes:document.getElementById('ep-notes').value.trim(),
+  };
+  const d=await api('PUT',`/api/stock/${id}`,payload);
+  if(d.error){showToast(d.error,'error');return;}
+  closeModal();
+  showToast('✅ Phone updated');
+  await loadIMEIData();
+}
+
+async function deletePhone(id){
+  if(!confirm('Remove this phone from stock?'))return;
+  await api('DELETE',`/api/stock/${id}`);
+  await loadIMEIData();loadSidebarStats();
+  showToast('Phone removed','warn');
+}
+function exportIMEICSV(){
+  const h='IMEI 1,IMEI 2,Brand,Model,Color,Storage,Buy Price,Sale Price,Profit,Status,Shop,Added,Sold\n';
+  const rows=allIMEIStock.map(p=>[p.imei,p.imei2||'',p.brand,p.model,p.color,p.storage,p.buyPrice||'',p.salePrice||'',(p.salePrice&&p.buyPrice?p.salePrice-p.buyPrice:''),p.status,p.shop||'',fmtDate(p.addedAt),p.soldAt?fmtDate(p.soldAt):''].join(','));
+  dlCSV(h+rows.join('\n'),`IMEI_Stock_${today()}.csv`);
+}
+
+// ── DAILY SHEET ──
+function makeEmptyDay(shop,date){const cats={};Object.keys(CATS).forEach(k=>cats[k]={rows:[]});return{shop,date,cats,expenses:[],purchases:[],transfers:[],carryForward:0};}
+
+// Map brand name → CATS key
+function guessCat(brand,model,cat){
+  if(cat && CATS[cat]) return cat;
+  const b=(brand||'').toLowerCase(), m=(model||'').toLowerCase();
+  if(b.includes('apple')||b.includes('iphone')||m.includes('iphone')) return 'IPHONE';
+  if(b.includes('samsung')||m.includes('samsung')||m.includes('galaxy')) return 'SAMSUNG';
+  if(b.includes('google')||m.includes('pixel')) return 'GOOGLE';
+  return 'OTHER';
+}
+
+function autoSelectCat(brandVal, selectId){
+  const sel=$(selectId); if(!sel) return;
+  const cat = guessCat(brandVal,'',null);
+  if(cat) sel.value = cat;
+}
+
+async function loadDay(){
+  const shop=activeShop==='HQ'?'456':activeShop;
+  const date=$('work-date').value||today();
+  dayState=makeEmptyDay(shop,date);
+
+  // 1. Try to load a previously saved day
+  const saved=await api('GET',`/api/days/${shop}/${date}`);
+  if(saved && saved.cats){
+    dayState={...dayState,...saved};
+    Object.keys(CATS).forEach(k=>{if(!dayState.cats[k])dayState.cats[k]={rows:[]};});
+  } else {
+    // 2. No saved day — build from IMEI stock for this shop
+    const stockUrl = shop ? `/api/stock?shop=${shop}` : '/api/stock';
+    const salesUrl = shop ? `/api/sales?shop=${shop}` : '/api/sales';
+    const [stockItems, salesItems] = await Promise.all([
+      api('GET', stockUrl),
+      api('GET', salesUrl)
+    ]);
+
+    // Group IMEI stock by category → model, computing OP, sold today, IN
+    // OP = phones in stock at start of day (in_stock + sold today)
+    // OUT = phones sold (status=sold AND soldAt is today)
+    const todayStr = date;
+    const grouped = {}; // key: cat|model|color|storage
+
+    stockItems.forEach(p=>{
+      const cat = guessCat(p.brand, p.model, p.cat);
+      const name = [p.brand, p.model].filter(Boolean).join(' ') || 'Unknown';
+      const key = `${cat}|${name}|${p.storage||''}`;
+      if(!grouped[key]) grouped[key]={cat, name, storage:p.storage||'', costPerUnit:p.buyPrice||0, op:0, inQty:0, out:0, soldFor:0, imeis:[]};
+      const g = grouped[key];
+      const soldToday = p.status==='sold' && p.soldAt && p.soldAt.slice(0,10)===todayStr;
+      g.op++; // count every phone (in stock counts as OP)
+      g.imeis.push(p.imei);
+      if(soldToday){
+        g.out++;
+        g.soldFor += p.salePrice||0;
+      }
+    });
+
+    // Put into dayState cats
+    Object.values(grouped).forEach(g=>{
+      const ck = g.cat;
+      if(!dayState.cats[ck]) dayState.cats[ck]={rows:[]};
+      dayState.cats[ck].rows.push({
+        name: g.name + (g.storage?` ${g.storage}`:''),
+        op: g.op - g.out, // opening = current stock (not counting today's sales as OP)
+        inQty: 0,
+        out: g.out,
+        soldFor: g.soldFor,
+        costPerUnit: g.costPerUnit,
+        boughtFor: 0,
+      });
+    });
+  }
+
+  renderStock();renderExpenses();renderPurchases();renderTransfers();
+  $('cf-carry').value=dayState.carryForward||'';recalc();
+}
+
+function renderStock(){
+  const wrap=$('stock-wrap');let html='';
+  // Safe function for input value attributes — escapes quotes but not other HTML
+  const val=(s)=>String(s||'').replace(/"/g,'&quot;');
+  Object.entries(CATS).forEach(([ck,cv])=>{
+    const rows=dayState.cats[ck]?.rows||[];const isExtra=cv.isExtra;
+    html+=`<div class="cb ${cv.cls}"><div class="ch"><div class="cl">${cv.label}</div><div class="cts" id="cts-${ck}"></div></div>`;
+    if(isExtra){
+      html+=`<table class="t"><thead><tr><th class="l">DESCRIPTION</th><th>BOUGHT FOR</th><th>SOLD FOR</th><th>P/L</th><th></th></tr></thead><tbody>`;
+      if(!rows.length)html+=`<tr><td colspan="5" style="color:var(--text3);font-size:.65rem;padding:.5rem">No items</td></tr>`;
+      rows.forEach((r,i)=>{const pl=(r.soldFor||0)-(r.boughtFor||0);html+=`<tr>
+        <td class="l"><input type="text" value="${val(r.name)}" oninput="onRC('${ck}',${i},'name',this.value)"></td>
+        <td><input type="number" value="${r.boughtFor||0}" min="0" oninput="onRC('${ck}',${i},'boughtFor',+this.value)"></td>
+        <td><input type="number" value="${r.soldFor||0}" min="0" oninput="onRC('${ck}',${i},'soldFor',+this.value)"></td>
+        <td class="${pl>0?'ng':pl<0?'nr':'nz'}">${pl||'-'}</td>
+        <td><button class="bx" onclick="removeRow('${ck}',${i})">✕</button></td></tr>`;});
+      html+=`<tr><td><b>TOTAL</b></td><td>${rows.reduce((s,r)=>s+(r.boughtFor||0),0)}</td><td>${rows.reduce((s,r)=>s+(r.soldFor||0),0)}</td><td class="ng">${rows.reduce((s,r)=>s+(r.soldFor||0)-(r.boughtFor||0),0)}</td><td></td></tr>`;
+      html+=`</tbody></table>`;
+    }else{
+      html+=`<table class="t"><thead><tr><th class="l">DESCRIPTION</th><th>OP</th><th>IN</th><th>OUT</th><th>BAL</th><th>COST/UNIT</th><th>COST(SOLD)</th><th>SOLD FOR</th><th>SALE AMT</th><th>P/L</th><th></th></tr></thead><tbody>`;
+      if(!rows.length)html+=`<tr><td colspan="11" style="color:var(--text3);font-size:.65rem;padding:.5rem">No items — click + ADD ROW</td></tr>`;
+      let tOP=0,tIN=0,tOUT=0,tBAL=0,tTC=0,tSA=0,tPL=0;
+      rows.forEach((r,i)=>{
+        const op=r.op||0,inQ=r.inQty||0,out=r.out||0,bal=op+inQ-out;
+        const tc=(r.costPerUnit||0)*out,sa=r.soldFor||0,pl=sa-tc;
+        tOP+=op;tIN+=inQ;tOUT+=out;tBAL+=bal;tTC+=tc;tSA+=sa;tPL+=pl;
+        html+=`<tr class="${out>0?'sold':''}">
+          <td class="l"><input type="text" value="${val(r.name)}" oninput="onRC('${ck}',${i},'name',this.value)"></td>
+          <td class="op-cell">${op}</td>
+          <td><input type="number" value="${inQ}" min="0" oninput="onRC('${ck}',${i},'inQty',+this.value)"></td>
+          <td><input type="number" value="${out}" min="0" oninput="onRC('${ck}',${i},'out',+this.value)"></td>
+          <td class="${bal===0?'nz':''}" id="d-${ck}-${i}-b">${bal}</td>
+          <td><input type="number" value="${r.costPerUnit||0}" min="0" oninput="onRC('${ck}',${i},'costPerUnit',+this.value)"></td>
+          <td class="ngd" id="d-${ck}-${i}-tc">${tc?tc.toLocaleString():'-'}</td>
+          <td><input type="number" value="${sa||''}" min="0" placeholder="0" oninput="onRC('${ck}',${i},'soldFor',+this.value)"></td>
+          <td class="${sa?'nb':'nz'}" id="d-${ck}-${i}-sa">${sa?sa.toLocaleString():'0'}</td>
+          <td class="${pl>0?'ng':pl<0?'nr':'nz'}" id="d-${ck}-${i}-pl">${pl?pl.toLocaleString():'-'}</td>
+          <td><button class="bx" onclick="removeRow('${ck}',${i})">✕</button></td></tr>`;
+      });
+      html+=`<tr><td><b>TOTAL</b></td><td>${tOP}</td><td>${tIN}</td><td>${tOUT}</td><td>${tBAL}</td><td>—</td><td>${tTC.toLocaleString()}</td><td>—</td><td>${tSA.toLocaleString()}</td><td class="${tPL>0?'ng':'nr'}">${tPL.toLocaleString()}</td><td></td></tr>`;
+      html+=`</tbody></table>`;
+    }
+    html+=`<button class="add-row" onclick="addRow('${ck}')">+ ADD ROW</button></div>`;
+  });
+  wrap.innerHTML=html;updateCatTotals();
+}
+
+function onRC(cat,i,field,val){
+  if(!dayState.cats[cat]?.rows[i])return;
+  dayState.cats[cat].rows[i][field]=val;
+  if(!CATS[cat].isExtra){
+    const r=dayState.cats[cat].rows[i];
+    const op=r.op||0,inQ=r.inQty||0,out=r.out||0,bal=op+inQ-out;
+    const tc=(r.costPerUnit||0)*out,sa=r.soldFor||0,pl=sa-tc;
+    const bEl=$(`d-${cat}-${i}-b`);if(bEl){bEl.textContent=bal;bEl.className=bal===0?'nz':'';}
+    const tcEl=$(`d-${cat}-${i}-tc`);if(tcEl)tcEl.textContent=tc?tc.toLocaleString():'-';
+    const saEl=$(`d-${cat}-${i}-sa`);if(saEl){saEl.textContent=sa?sa.toLocaleString():'0';saEl.className=sa?'nb':'nz';}
+    const plEl=$(`d-${cat}-${i}-pl`);if(plEl){plEl.textContent=pl?pl.toLocaleString():'-';plEl.className=pl>0?'ng':pl<0?'nr':'nz';}
+  }
+  updateCatTotals();recalc();
+}
+function updateCatTotals(){
+  Object.entries(CATS).forEach(([ck,cv])=>{
+    const el=$(`cts-${ck}`);if(!el)return;
+    const rows=dayState.cats[ck]?.rows||[];
+    if(cv.isExtra){const pl=rows.reduce((s,r)=>s+(r.soldFor||0)-(r.boughtFor||0),0);el.innerHTML=`<span>P/L: <b class="${pl>=0?'ng':'nr'}">${pl.toLocaleString()}</b></span>`;}
+    else{const bal=rows.reduce((s,r)=>s+(r.op||0)+(r.inQty||0)-(r.out||0),0);const sold=rows.reduce((s,r)=>s+(r.out||0),0);const rev=rows.reduce((s,r)=>s+(r.soldFor||0),0);const pl=rows.reduce((s,r)=>s+(r.soldFor||0)-(r.costPerUnit||0)*(r.out||0),0);el.innerHTML=`<span>Bal:<b>${bal}</b></span><span>Sold:<b>${sold}</b></span><span>Rev:<b>${rev.toLocaleString()}</b></span><span>P/L:<b class="${pl>=0?'ng':'nr'}">${pl.toLocaleString()}</b></span>`;}
+  });
+}
+function addRow(cat){if(!dayState.cats[cat])dayState.cats[cat]={rows:[]};dayState.cats[cat].rows.push({name:'',op:0,costPerUnit:0,inQty:0,out:0,soldFor:0,boughtFor:0});renderStock();}
+function removeRow(cat,i){dayState.cats[cat].rows.splice(i,1);renderStock();}
+
+function renderExpenses(){const list=$('exp-list');list.innerHTML='';(dayState.expenses||[]).forEach((e,i)=>{const div=document.createElement('div');div.className='ec';div.innerHTML=`<input class="ed" value="${esc(e.desc||'')}" placeholder="Description" oninput="dayState.expenses[${i}].desc=this.value;recalc()">:<input class="ea" type="number" value="${e.amt||0}" min="0" oninput="dayState.expenses[${i}].amt=+this.value;recalc()"><button class="bx" onclick="delExp(${i})">✕</button>`;list.appendChild(div);});}
+function addExp(){dayState.expenses.push({desc:'',amt:0});renderExpenses();recalc();}
+function delExp(i){dayState.expenses.splice(i,1);renderExpenses();recalc();}
+function renderPurchases(){const list=$('purchase-list');list.innerHTML='';(dayState.purchases||[]).forEach((p,i)=>{const div=document.createElement('div');div.className='ec';div.innerHTML=`<input class="ed" value="${esc(p.desc||'')}" placeholder="Item" oninput="dayState.purchases[${i}].desc=this.value;recalc()">:<input class="ea" type="number" value="${p.amt||0}" min="0" oninput="dayState.purchases[${i}].amt=+this.value;recalc()"><button class="bx" onclick="delPurchase(${i})">✕</button>`;list.appendChild(div);});}
+function addPurchase(){dayState.purchases.push({desc:'',amt:0});renderPurchases();recalc();}
+function delPurchase(i){dayState.purchases.splice(i,1);renderPurchases();recalc();}
+function renderTransfers(){const list=$('transfer-list');list.innerHTML='';(dayState.transfers||[]).forEach((t,i)=>{const div=document.createElement('div');div.className='ec';div.innerHTML=`<input class="ed" value="${esc(t.desc||'')}" placeholder="Transfer…" oninput="dayState.transfers[${i}].desc=this.value;recalc()">:<input class="ea" type="number" value="${t.amt||0}" min="0" oninput="dayState.transfers[${i}].amt=+this.value;recalc()"><button class="bx" onclick="delTransfer(${i})">✕</button>`;list.appendChild(div);});}
+function addTransfer(){dayState.transfers.push({desc:'',amt:0});renderTransfers();recalc();}
+function delTransfer(i){dayState.transfers.splice(i,1);renderTransfers();recalc();}
+
+function recalc(){
+  const tSales=Object.entries(CATS).reduce((s,[ck])=>s+(dayState.cats[ck]?.rows||[]).reduce((a,r)=>a+(r.soldFor||0),0),0);
+  const tCost=Object.entries(CATS).reduce((s,[ck,cv])=>{if(cv.isExtra)return s+(dayState.cats[ck]?.rows||[]).reduce((a,r)=>a+(r.boughtFor||0),0);return s+(dayState.cats[ck]?.rows||[]).reduce((a,r)=>a+(r.costPerUnit||0)*(r.out||0),0);},0);
+  const tExp=(dayState.expenses||[]).reduce((s,e)=>s+(e.amt||0),0);
+  const tPur=(dayState.purchases||[]).reduce((s,p)=>s+(p.amt||0),0);
+  const tTr=(dayState.transfers||[]).reduce((s,t)=>s+(t.amt||0),0);
+  const carry=parseFloat($('cf-carry')?.value)||0;
+  dayState.carryForward=carry;
+  const sub=tSales-tExp-tPur-tTr;const coh=sub+carry;const pl=tSales-tCost-tExp;
+  $('cf-sa').textContent=pkr(tSales);$('cf-ex').textContent=pkr(tExp);
+  $('cf-pu').textContent=pkr(tPur);$('cf-tr').textContent=pkr(tTr);
+  $('cf-sub').textContent=pkr(sub);$('cf-fc').textContent=pkr(coh);
+  const inStock=Object.entries(CATS).reduce((s,[ck,cv])=>{if(cv.isExtra)return s;return s+(dayState.cats[ck]?.rows||[]).reduce((a,r)=>a+(r.op||0)+(r.inQty||0)-(r.out||0),0);},0);
+  const stVal=Object.entries(CATS).reduce((s,[ck,cv])=>{if(cv.isExtra)return s;return s+(dayState.cats[ck]?.rows||[]).reduce((a,r)=>a+((r.op||0)+(r.inQty||0)-(r.out||0))*(r.costPerUnit||0),0);},0);
+  const sold=Object.entries(CATS).reduce((s,[ck,cv])=>{if(cv.isExtra)return s;return s+(dayState.cats[ck]?.rows||[]).reduce((a,r)=>a+(r.out||0),0);},0);
+  $('scards').innerHTML=`
+    <div class="sc g"><div class="sc-lbl">Stock Value</div><div class="sc-val g">${pkr(stVal)}</div><div class="sc-sub">${inStock} units</div></div>
+    <div class="sc gr"><div class="sc-lbl">Total Sales</div><div class="sc-val gr">${pkr(tSales)}</div><div class="sc-sub">${sold} sold today</div></div>
+    <div class="sc gr"><div class="sc-lbl">Net P/L</div><div class="sc-val ${pl>=0?'gr':'rd'}">${pkr(pl)}</div><div class="sc-sub">after expenses</div></div>
+    <div class="sc rd"><div class="sc-lbl">Expenses</div><div class="sc-val rd">${pkr(tExp)}</div><div class="sc-sub">${(dayState.expenses||[]).length} items</div></div>
+    <div class="sc bl"><div class="sc-lbl">Purchased</div><div class="sc-val bl">${pkr(tPur)}</div><div class="sc-sub">cash paid</div></div>
+    <div class="sc g"><div class="sc-lbl">💰 Cash on Hand</div><div class="sc-val g">${pkr(coh)}</div><div class="sc-sub">after transfers</div></div>`;
+}
+
+async function saveDay(){
+  const shop=activeShop==='HQ'?'456':activeShop;const date=$('work-date').value||today();
+  await api('PUT',`/api/days/${shop}/${date}`,dayState);
+  const master={shop,cats:{}};
+  Object.keys(CATS).forEach(k=>{master.cats[k]={rows:(dayState.cats[k]?.rows||[]).map(r=>({name:r.name,op:(r.op||0)+(r.inQty||0)-(r.out||0),costPerUnit:r.costPerUnit||0,boughtFor:0}))};});
+  await api('PUT',`/api/shopstock/${shop}`,master);
+  showToast(`✅ Day saved — ${shop} / ${date}`,'success');
+}
+function exportDayCSV(){
+  let csv=`${dayState.shop} — ${dayState.date}\nDESCRIPTION,OP,IN,OUT,BAL,COST,SOLD FOR,P/L\n`;
+  Object.entries(CATS).forEach(([ck,cv])=>{const rows=dayState.cats[ck]?.rows||[];if(!rows.length)return;csv+=`\n${cv.label}\n`;rows.forEach(r=>{const op=r.op||0,inQ=r.inQty||0,out=r.out||0,bal=op+inQ-out,tc=(r.costPerUnit||0)*out,sa=r.soldFor||0;csv+=`${r.name},${op},${inQ},${out},${bal},${r.costPerUnit||0},${sa},${sa-tc}\n`;});});
+  dlCSV(csv,`${dayState.shop}_${dayState.date}.csv`);
+}
+
+function openNewDayModal(){showModal(`<h3>Start New Day</h3>
+  <div class="fc">
+    <div class="f2">
+      <div class="fi"><label>Shop</label><select id="nd-shop">${SHOPS.map(s=>`<option value="${s}" ${s===activeShop?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="fi"><label>Date</label><input type="date" id="nd-date" value="${today()}"></div>
+    </div>
+    <div class="fi"><label>Carry-forward Cash (PKR)</label><input type="number" id="nd-carry" placeholder="0" min="0"></div>
+  </div>
+  <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bg" onclick="startNewDay()">Start Day</button></div>`);}
+
+async function startNewDay(){
+  const shop=$('nd-shop').value,date=$('nd-date').value,carry=parseFloat($('nd-carry').value)||0;
+  if(!date){showToast('Select a date','error');return;}
+  activeShop=shop;dayState=makeEmptyDay(shop,date);dayState.carryForward=carry;
+  switchShop(shop);$('work-date').value=date;nav('stock');await loadDay();
+  $('cf-carry').value=carry||'';recalc();closeModal();showToast(`New day: Shop ${shop} — ${date}`);
+}
+
+// ── EXPENSES ──
+async function renderShopExpenses(){
+  const shop=$('exp-shop-filter').value,month=$('exp-month-filter').value;
+  const params=[];if(shop!=='ALL')params.push(`shop=${shop}`);if(month)params.push(`month=${month}`);
+  allShopExp=await api('GET',`/api/shopexpenses${params.length?'?'+params.join('&'):''}`);
+  const body=$('exp-body');
+  if(!allShopExp.length){body.innerHTML=`<div class="empty"><div class="empty-icon">💸</div><h3>No expenses found</h3></div>`;return;}
+  const totals={};allShopExp.forEach(e=>totals[e.shop]=(totals[e.shop]||0)+(e.amount||0));
+  let html=`<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem;">${Object.entries(totals).map(([s,amt])=>`<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:.45rem .8rem;min-width:120px;"><div style="font-size:.62rem;font-weight:700;color:${SHOP_COLOR[s]||'var(--text2)'};margin-bottom:2px">Shop ${s}</div><div style="font-family:var(--mono);font-size:.9rem;color:var(--danger)">${pkr(amt)}</div></div>`).join('')}</div>`;
+  const byShop={};allShopExp.forEach(e=>{if(!byShop[e.shop])byShop[e.shop]=[];byShop[e.shop].push(e);});
+  Object.entries(byShop).forEach(([s,rows])=>{
+    const tot=rows.reduce((a,e)=>a+(e.amount||0),0);const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'108,143,255';
+    html+=`<div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:.65rem;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;padding:.45rem .85rem;background:rgba(${r},.06);border-bottom:1px solid var(--border);">
+        <span style="font-size:.82rem;font-weight:700;color:${c}">Shop ${s}</span>
+        <span style="font-family:var(--mono);font-size:.72rem;color:var(--danger)">${pkr(tot)}</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:.65rem;">
+        <thead><tr style="background:rgba(0,0,0,.15)"><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600;letter-spacing:.06em">DATE</th><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">CAT</th><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">DESCRIPTION</th><th style="text-align:right;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">AMOUNT</th><th style="width:24px"></th></tr></thead>
+        <tbody>${rows.map(e=>`<tr style="border-top:1px solid rgba(255,255,255,.04)">
+          <td style="padding:.3rem .7rem;color:var(--text2);font-family:var(--mono)">${e.date||''}</td>
+          <td style="padding:.3rem .7rem"><span style="background:rgba(255,108,143,.08);border:1px solid rgba(255,108,143,.2);color:var(--danger);border-radius:5px;padding:.06rem .38rem;font-size:.57rem;font-weight:600">${e.category||''}</span></td>
+          <td style="padding:.3rem .7rem;color:var(--white)">${esc(e.description||'')}</td>
+          <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--danger)">${pkr(e.amount)}</td>
+          <td style="padding:.3rem .4rem"><button class="bx" onclick="deleteShopExp('${e._key}')">✕</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+  });
+  body.innerHTML=html;
+}
+async function deleteShopExp(key){await api('DELETE',`/api/shopexpenses/${key}`);renderShopExpenses();showToast('Expense deleted','warn');}
+function openAddExpenseModal(){showModal(`<h3>+ Add Shop Expense</h3>
+  <div class="fc">
+    <div class="f2">
+      <div class="fi"><label>Shop</label><select id="se-shop">${SHOPS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div>
+      <div class="fi"><label>Date</label><input type="date" id="se-date" value="${today()}"></div>
+    </div>
+    <div class="f2">
+      <div class="fi"><label>Category</label><select id="se-cat">${EXP_CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="fi"><label>Amount (PKR)</label><input type="number" id="se-amt" placeholder="e.g. 25000" min="0"></div>
+    </div>
+    <div class="fi"><label>Description</label><input type="text" id="se-desc" placeholder="e.g. Ahmed salary March"></div>
+  </div>
+  <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveShopExp()">Save</button></div>`);
+  setTimeout(()=>$('se-amt')?.focus(),100);}
+async function saveShopExp(){
+  const shop=$('se-shop').value,date=$('se-date').value,cat=$('se-cat').value,amt=parseFloat($('se-amt').value)||0,desc=$('se-desc').value.trim();
+  if(!shop||!date||!amt){showToast('Fill shop, date and amount','error');return;}
+  await api('POST','/api/shopexpenses',{shop,date,month:ym(date),category:cat,amount:amt,description:desc});
+  closeModal();renderShopExpenses();showToast(`✓ ${pkr(amt)} expense saved`);
+}
+
+// ── HISTORY ──
+async function loadAllDays(){
+  const sh=$('hist-shop').value;
+  allDays=await api('GET',sh==='ALL'?'/api/days':`/api/days?shop=${sh}`);
+  renderHistory();
+}
+function renderHistory(){
+  const body=$('hist-body');
+  if(!allDays.length){body.innerHTML=`<div class="empty"><div class="empty-icon">📅</div><h3>No history yet</h3><p>Save daily sheets to see them here</p></div>`;return;}
+  body.innerHTML=allDays.map(d=>{
+    const tSales=Object.entries(d.cats||{}).reduce((s,[,cv])=>(cv.rows||[]).reduce((a,r)=>a+(r.soldFor||0),s),0);
+    const sold=Object.entries(d.cats||{}).reduce((s,[ck,cv])=>CATS[ck]?.isExtra?s:(cv.rows||[]).reduce((a,r)=>a+(r.out||0),s),0);
+    const c=SHOP_COLOR[d.shop]||'var(--a5)';const r=SHOP_RGBA[d.shop]||'108,143,255';
+    return `<div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:.5rem;cursor:pointer;transition:border-color .2s" onclick="this.querySelector('.hist-body').style.display=this.querySelector('.hist-body').style.display==='none'?'block':'none'">
+      <div style="padding:.5rem .85rem;display:flex;align-items:center;gap:.6rem">
+        <span style="font-size:.82rem;font-weight:700;color:${c}">Shop ${d.shop}</span>
+        <span style="font-family:var(--mono);font-size:.68rem;color:var(--text2)">${d.date}</span>
+        <span style="margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--success)">${pkr(tSales)}</span>
+        <span style="font-size:.62rem;color:var(--text2)">${sold} sold</span>
+      </div>
+      <div class="hist-body" style="display:none;padding:0 .85rem .6rem;font-size:.65rem;color:var(--text2)">
+        ${Object.entries(d.cats||{}).map(([ck,cv])=>{const rows=(cv.rows||[]).filter(r=>r.name||(r.op||r.inQty||r.out));if(!rows.length)return'';return `<div style="margin-bottom:5px"><div style="color:var(--text2);font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">${CATS[ck]?.label||ck}</div>${rows.map(r=>`<div style="display:flex;gap:.6rem;padding:1px 0"><span style="flex:1;color:var(--white)">${r.name||'—'}</span><span>OP:${r.op||0} IN:${r.inQty||0} OUT:${r.out||0}</span>${r.soldFor?`<span style="color:var(--success)">${pkr(r.soldFor)}</span>`:''}</div>`).join('')}`;}).join('')}
+        ${(d.expenses||[]).length?`<div style="margin-top:5px;color:var(--danger)">Expenses: ${pkr((d.expenses||[]).reduce((s,e)=>s+(e.amt||0),0))}</div>`:''}
+        <div style="margin-top:8px"><button class="btn bo" style="font-size:.6rem;padding:.2rem .5rem" onclick="event.stopPropagation();loadHistDay('${d.shop}','${d.date}')">📋 Open Day</button></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function loadHistDay(shop,date){activeShop=shop;switchShop(shop);$('work-date').value=date;nav('stock');}
+
+// ── HQ OVERVIEW ──
+async function renderHQ(){
+  const date=$('hq-date').value||today();const days=await api('GET',`/api/days?month=${ym(date)}`);
+  const body=$('hq-body');
+  if(!days.length){body.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><h3>No data for this month</h3><p>Save daily sheets for each shop</p></div>`;return;}
+  const byShop={};days.forEach(d=>{if(!byShop[d.shop])byShop[d.shop]={days:0,sales:0,pl:0,sold:0,expenses:0};const sh=byShop[d.shop];sh.days++;Object.entries(d.cats||{}).forEach(([ck,cv])=>{const rows=cv.rows||[];if(CATS[ck]?.isExtra){sh.sales+=rows.reduce((a,r)=>a+(r.soldFor||0),0);sh.pl+=rows.reduce((a,r)=>a+(r.soldFor||0)-(r.boughtFor||0),0);}else{sh.sales+=rows.reduce((a,r)=>a+(r.soldFor||0),0);const tc=rows.reduce((a,r)=>a+(r.costPerUnit||0)*(r.out||0),0);sh.pl+=rows.reduce((a,r)=>a+(r.soldFor||0),0)-tc;sh.sold+=rows.reduce((a,r)=>a+(r.out||0),0);}});sh.expenses+=(d.expenses||[]).reduce((a,e)=>a+(e.amt||0),0);});
+  const tSales=Object.values(byShop).reduce((s,v)=>s+v.sales,0);const tPL=Object.values(byShop).reduce((s,v)=>s+v.pl,0);
+  body.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.65rem;padding:.9rem .9rem 0;">
+    ${Object.entries(byShop).map(([sh,v])=>{const c=SHOP_COLOR[sh]||'var(--a5)';const r=SHOP_RGBA[sh]||'108,143,255';return `<div class="shop-card"><div class="shop-card-hd" style="border-left:3px solid ${c}"><div class="shop-card-name" style="color:${c}">Shop ${sh}</div><div style="font-size:.6rem;color:var(--text2)">${v.days} day(s)</div></div><div class="shop-card-body"><div class="shop-stat"><span>Sales</span><span style="color:var(--success);font-family:var(--mono)">${pkr(v.sales)}</span></div><div class="shop-stat"><span>Gross P/L</span><span style="color:${v.pl>=0?'var(--success)':'var(--danger)'};font-family:var(--mono)">${pkr(v.pl)}</span></div><div class="shop-stat"><span>Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(v.expenses)}</span></div><div class="shop-stat"><span>Net P/L</span><span style="color:${(v.pl-v.expenses)>=0?'var(--success)':'var(--danger)'};font-family:var(--mono);font-weight:600">${pkr(v.pl-v.expenses)}</span></div><div class="shop-stat"><span>Units Sold</span><span style="color:var(--a1)">${v.sold}</span></div></div></div>`;}).join('')}
+  </div>
+  <div style="padding:.5rem .9rem;border-top:1px solid var(--border);margin-top:.65rem;display:flex;gap:1.5rem;flex-wrap:wrap;background:var(--s1);">
+    <div class="cfi"><div class="cfl">Combined Sales</div><div class="cfv p" style="font-size:.9rem">${pkr(tSales)}</div></div>
+    <div class="cfi"><div class="cfl">Combined P/L</div><div class="cfv ${tPL>=0?'p':'n'}" style="font-size:.9rem">${pkr(tPL)}</div></div>
+  </div>`;
+}
+
+// ── WAREHOUSE ──
+async function loadWarehouse(){hqStock=await api('GET','/api/hqstock');renderWarehouse();}
+function renderWarehouse(){
+  const q=($('wh-search')?.value||'').toLowerCase();const items=(hqStock.items||[]).filter(it=>!q||(it.name+it.cat).toLowerCase().includes(q));
+  const body=$('wh-body');
+  if(!items.length){body.innerHTML=`<div class="empty"><div class="empty-icon">📦</div><h3>Warehouse empty</h3><p>Click + Receive Stock to add items</p></div>`;return;}
+  const byCat={};items.forEach(it=>{if(!byCat[it.cat])byCat[it.cat]=[];byCat[it.cat].push(it);});
+  body.innerHTML=`<div style="padding:.9rem">${Object.entries(byCat).map(([cat,rows])=>{const c=CATS[cat];return `<div class="cb ${c?c.cls:'cot'}" style="margin-bottom:.65rem"><div class="ch"><div class="cl">${c?c.label:cat}</div><div class="cts"><span>Items:<b>${rows.length}</b></span><span>Units:<b>${rows.reduce((s,r)=>s+r.qty,0)}</b></span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.45rem">${rows.map(it=>`<div class="wh-card"><div class="wh-cat">${it.cat}</div><div class="wh-name">${esc(it.name)}</div><div class="wh-qty">${it.qty}</div><div class="wh-meta">${it.costPerUnit?pkr(it.costPerUnit)+' ea':''}</div></div>`).join('')}</div></div>`;}).join('')}</div>`;
+}
+
+let rcItems=[];
+function openReceiveModal(){
+  rcItems=[];
+  showModal(`<h3>+ Receive Stock into Warehouse</h3>
+    <div class="fc">
+      <div class="f2"><div class="fi"><label>Supplier</label><input type="text" id="rc-supplier" placeholder="Supplier name"></div><div class="fi"><label>Date</label><input type="date" id="rc-date" value="${today()}"></div></div>
+      <div class="fi"><label>Reference</label><input type="text" id="rc-ref" placeholder="Invoice #, notes…"></div>
+      <div id="rc-items"></div>
+      <button class="btn bo" onclick="addRCItem()" style="font-size:.62rem">+ Add Item</button>
+    </div>
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveReceive()">Save</button></div>`);
+  addRCItem();
+}
+function addRCItem(){rcItems.push({name:'',cat:'IPHONE',qty:1,costPerUnit:0});renderRCItems();}
+function renderRCItems(){
+  const el=$('rc-items');if(!el)return;
+  el.innerHTML=rcItems.map((it,i)=>`<div style="display:grid;grid-template-columns:2fr 1fr 70px 85px 22px;gap:5px;margin-bottom:5px;align-items:center">
+    <input placeholder="Item name" value="${esc(it.name)}" oninput="rcItems[${i}].name=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <select onchange="rcItems[${i}].cat=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.2rem;outline:none">${Object.keys(CATS).map(k=>`<option value="${k}" ${k===it.cat?'selected':''}>${k}</option>`).join('')}</select>
+    <input type="number" placeholder="Qty" value="${it.qty}" min="1" oninput="rcItems[${i}].qty=+this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:center">
+    <input type="number" placeholder="Cost/u" value="${it.costPerUnit||''}" min="0" oninput="rcItems[${i}].costPerUnit=+this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:right">
+    <button class="bx" onclick="rcItems.splice(${i},1);renderRCItems()">✕</button>
+  </div>`).join('');
+}
+async function saveReceive(){
+  const supplier=$('rc-supplier').value.trim(),date=$('rc-date').value,ref=$('rc-ref').value.trim();
+  const items=rcItems.filter(it=>it.name);if(!items.length){showToast('Add at least one item','error');return;}
+  if(!hqStock)hqStock={items:[]};if(!hqStock.items)hqStock.items=[];
+  items.forEach(it=>{const ex=hqStock.items.find(x=>x.name===it.name&&x.cat===it.cat);if(ex){ex.qty+=it.qty;ex.costPerUnit=it.costPerUnit||ex.costPerUnit;}else hqStock.items.push({...it,addedAt:new Date().toISOString()});});
+  await api('PUT','/api/hqstock',hqStock);await api('POST','/api/shipments',{date,supplier,ref,items});
+  closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`✅ ${items.length} item type(s) received`);
+}
+
+function openDispatchModal(){
+  const items=(hqStock.items||[]).filter(it=>it.qty>0);
+  if(!items.length){showToast('Warehouse is empty','warn');return;}
+  showModal(`<h3>↗ Dispatch to Shop</h3>
+    <div class="fc">
+      <div class="f2"><div class="fi"><label>To Shop</label><select id="ds-shop">${SHOPS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div><div class="fi"><label>Date</label><input type="date" id="ds-date" value="${today()}"></div></div>
+      <div class="fi"><label>Note</label><input type="text" id="ds-note" placeholder="Notes…"></div>
+      <div style="font-size:.62rem;color:var(--text2);margin:.3rem 0;font-weight:600">Select items to dispatch:</div>
+      <div style="max-height:230px;overflow-y:auto">${items.map((it,i)=>`<div style="display:flex;align-items:center;gap:.5rem;padding:.24rem 0;border-bottom:1px solid var(--border2)"><input type="checkbox" id="dsi-${i}" style="width:14px;height:14px"><label for="dsi-${i}" style="flex:1;color:var(--white);font-size:.7rem">${esc(it.name)} <span style="color:var(--text2)">(${it.qty} avail)</span></label><input type="number" id="dsq-${i}" value="1" min="1" max="${it.qty}" style="width:50px;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.65rem;padding:.18rem .3rem;text-align:center;outline:none"></div>`).join('')}</div>
+    </div>
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bb" onclick="saveDispatch(${JSON.stringify(items).replace(/"/g,'&quot;')})">Dispatch</button></div>`);
+}
+async function saveDispatch(items){
+  const toShop=$('ds-shop').value,date=$('ds-date').value,note=$('ds-note').value.trim();
+  const dispatched=[];
+  items.forEach((it,i)=>{const chk=document.getElementById(`dsi-${i}`);const qty=parseInt(document.getElementById(`dsq-${i}`)?.value)||0;if(chk?.checked&&qty>0){dispatched.push({name:it.name,cat:it.cat,qty,costPerUnit:it.costPerUnit||0});const stock=hqStock.items.find(x=>x.name===it.name&&x.cat===it.cat);if(stock)stock.qty=Math.max(0,stock.qty-qty);}});
+  if(!dispatched.length){showToast('Select at least one item','error');return;}
+  await api('PUT','/api/hqstock',hqStock);await api('POST','/api/dispatches',{date,toShop,note,items:dispatched});
+  closeModal();loadWarehouse();loadShipments();showToast(`✅ ${dispatched.length} item type(s) dispatched to Shop ${toShop}`);
+}
+
+// ── SHIPMENTS ──
+async function loadShipments(){[allShipments,allDispatches]=await Promise.all([api('GET','/api/shipments'),api('GET','/api/dispatches')]);renderShipments();}
+function renderShipments(){
+  const shopF=$('ship-shop-filter').value,monthF=$('ship-month-filter').value;
+  let all=[...allShipments.map(s=>({...s,source:'inbound'})),...allDispatches.map(d=>({...d,source:'dispatch'}))].sort((a,b)=>b.date.localeCompare(a.date));
+  if(monthF)all=all.filter(s=>s.date.startsWith(monthF));
+  if(shopF!=='ALL'){if(shopF==='HQ')all=all.filter(s=>s.source==='inbound');else all=all.filter(s=>s.source==='dispatch'&&s.toShop===shopF);}
+  const body=$('ship-body');
+  if(!all.length){body.innerHTML=`<div class="empty"><div class="empty-icon">🚚</div><h3>No shipments found</h3></div>`;return;}
+  const catC={IPHONE:'var(--a1)',SAMSUNG:'var(--a2)',GOOGLE:'var(--a4)',OTHER:'var(--a5)',BOX:'var(--a6)',EXTRA:'var(--a3)'};
+  body.innerHTML=`<div style="padding:.9rem">${all.map(sh=>{const isD=sh.source==='dispatch';const c=isD?(SHOP_COLOR[sh.toShop]||'var(--a5)'):'var(--a4)';const r=isD?(SHOP_RGBA[sh.toShop]||'108,143,255'):'108,255,224';const tot=(sh.items||[]).reduce((s,i)=>s+i.qty,0);return `<div class="ship-card"><div class="ship-hd" style="background:rgba(${r},.05);border-bottom:1px solid rgba(${r},.12)"><span style="font-size:.82rem;font-weight:700;color:${c}">${isD?`→ Shop ${sh.toShop}`:'⬇ Inbound'}</span><span style="font-family:var(--mono);font-size:.63rem;color:var(--text2)">${sh.date}</span>${sh.supplier?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.supplier)}</span>`:''}${sh.note||sh.ref?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.note||sh.ref)}</span>`:''}<span style="margin-left:auto;font-size:.63rem;color:var(--a5);font-family:var(--mono)">${tot} units</span></div><div class="ship-items">${(sh.items||[]).map(it=>`<div style="display:flex;gap:.5rem;align-items:center;padding:.2rem 0;border-bottom:1px solid var(--border2);font-size:.63rem"><span style="flex:1;color:var(--white)">${esc(it.name)}</span><span style="padding:.03rem .28rem;background:var(--s3);color:${catC[it.cat]||'var(--text2)'};border-radius:4px;font-size:.52rem;font-weight:600">${it.cat||''}</span><span style="color:var(--text2)">×${it.qty}</span>${it.costPerUnit?`<span style="color:var(--a5);font-family:var(--mono)">${pkr(it.costPerUnit)}</span>`:''}</div>`).join('')}</div></div>`;}).join('')}</div>`;
+}
+
+// ── MONTHLY P&L ──
+async function renderMonthly(){
+  const month=$('monthly-month').value,shopF=$('monthly-shop').value;
+  if(!month){$('monthly-body').innerHTML=`<div class="empty"><div class="empty-icon">📅</div><h3>Select a month</h3></div>`;return;}
+  const [days,expenses]=await Promise.all([api('GET',`/api/days?month=${month}`),api('GET',`/api/shopexpenses?month=${month}`)]);
+  const shops=shopF==='ALL'?SHOPS:[shopF];let html='';
+  shops.forEach(sh=>{
+    const shD=days.filter(d=>d.shop===sh),shE=expenses.filter(e=>e.shop===sh);
+    if(!shD.length&&!shE.length)return;
+    let tSales=0,tCost=0,gPL=0,expT=0,sold=0;
+    shD.forEach(d=>{Object.entries(d.cats||{}).forEach(([ck,cv])=>{const rows=cv.rows||[];if(CATS[ck]?.isExtra){tSales+=rows.reduce((a,r)=>a+(r.soldFor||0),0);gPL+=rows.reduce((a,r)=>a+(r.soldFor||0)-(r.boughtFor||0),0);}else{tSales+=rows.reduce((a,r)=>a+(r.soldFor||0),0);const tc=rows.reduce((a,r)=>a+(r.costPerUnit||0)*(r.out||0),0);tCost+=tc;gPL+=rows.reduce((a,r)=>a+(r.soldFor||0),0)-tc;sold+=rows.reduce((a,r)=>a+(r.out||0),0);}});expT+=(d.expenses||[]).reduce((a,e)=>a+(e.amt||0),0);});
+    expT+=shE.reduce((a,e)=>a+(e.amount||0),0);
+    const netPL=gPL-expT;const c=SHOP_COLOR[sh]||'var(--a5)';const r=SHOP_RGBA[sh]||'108,143,255';
+    html+=`<div class="shop-card"><div class="shop-card-hd" style="border-left:3px solid ${c}"><div class="shop-card-name" style="color:${c}">Shop ${sh}</div><div style="font-size:.6rem;color:var(--text2)">${shD.length} days</div></div><div class="shop-card-body"><div class="shop-stat"><span>Total Sales</span><span style="color:var(--success);font-family:var(--mono)">${pkr(tSales)}</span></div><div class="shop-stat"><span>Cost of Sold</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(tCost)}</span></div><div class="shop-stat"><span>Gross P/L</span><span style="color:${gPL>=0?'var(--success)':'var(--danger)'};font-family:var(--mono)">${pkr(gPL)}</span></div><div class="shop-stat"><span>Total Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(expT)}</span></div><div class="shop-stat" style="border-top:1px solid var(--border);margin-top:3px;padding-top:4px"><span style="font-weight:700">Net P/L</span><span style="color:${netPL>=0?'var(--success)':'var(--danger)'};font-family:var(--mono);font-weight:700">${pkr(netPL)}</span></div><div class="shop-stat"><span>Units Sold</span><span style="color:var(--a1)">${sold}</span></div></div></div>`;
+  });
+  if(!html)html=`<div class="empty"><div class="empty-icon">📊</div><h3>No data for ${month}</h3></div>`;
+  $('monthly-body').innerHTML=html;
+}
+
+// ── BACKUP ──
+function doBackup(){window.open(BASE+'/api/backup','_blank');}
+async function doRestore(){
+  const file=$('restoreFile')?.files[0];if(!file){showToast('Select a backup file','error');return;}
+  if(!confirm('This will overwrite existing data. Continue?'))return;
+  try{const data=JSON.parse(await file.text());const r=await api('POST','/api/restore',data);if(r.success){showToast('✅ Restore complete — reloading…');setTimeout(()=>location.reload(),1200);}else showToast('Restore failed: '+(r.error||'unknown'),'error');}catch(e){showToast('Error reading file','error');}
+}
+
+// ── MODAL ──
+function showModal(html,wide=false){$('modal').innerHTML=html;$('modal').style.maxWidth=wide?'640px':'520px';$('modal-bg').classList.add('open');}
+function closeModal(){$('modal-bg').classList.remove('open');}
+$('modal-bg').addEventListener('click',e=>{if(e.target===$('modal-bg'))closeModal();});
+
+function dlCSV(content,filename){const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(content);a.download=filename;a.click();}
+
+// ── BOOT ──
+(async()=>{
+  applyPhoneMode();
+  $('work-date').value=today();$('hq-date').value=today();
+  $('monthly-month').value=ym(today());$('exp-month-filter').value=ym(today());$('ship-month-filter').value=ym(today());
+  await loadSidebarStats();await loadIMEIData();$('imeiInput')?.focus();
+})();
+</script></body></html>
