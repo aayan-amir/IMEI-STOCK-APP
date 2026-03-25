@@ -7,7 +7,10 @@ const https = require('https');
 const http = require('http');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 const HTTPS_PORT = 3443;
 const DB_FILE = path.join(__dirname, 'data', 'stock.json');
 
