@@ -1,158 +1,133 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const http = require('http');
+const mongoose = require('mongoose');
 
 const app = express();
-const PORT = process.env.PORT || 3000; // ✅ FIXED
-
-const DB_FILE = path.join(__dirname, 'data', 'stock.json');
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+app.use(express.static('public'));
 
-// ── DB Setup ─────────────────────────────────────────
-function initDB() {
-  return {
-    stock: [], sales: [],
-    shops: {}, days: {},
-    shopExpenses: [], dispatches: [],
-    inboundShipments: [],
-    hqStock: { items: [] },
-    g15debt: [],
-  };
-}
+// ── MongoDB Connection ─────────────────────────
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error(err));
 
-function loadDB() {
-  if (!fs.existsSync(DB_FILE)) {
-    const init = initDB();
-    fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
-    fs.writeFileSync(DB_FILE, JSON.stringify(init, null, 2));
-    return init;
-  }
-  try {
-    const raw = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    const def = initDB();
-    Object.keys(def).forEach(k => { if (raw[k] === undefined) raw[k] = def[k]; });
-    return raw;
-  } catch(e) { return initDB(); }
-}
+// ── Schemas ────────────────────────────────────
+const PhoneSchema = new mongoose.Schema({
+  imei: String,
+  imei2: String,
+  brand: String,
+  model: String,
+  color: String,
+  storage: String,
+  buyPrice: Number,
+  salePrice: Number,
+  status: { type: String, default: 'in_stock' },
+  shop: String,
+  addedAt: String,
+  soldAt: String
+});
 
-function saveDB(data) {
-  const tmp = DB_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
-  fs.renameSync(tmp, DB_FILE);
-}
+const SaleSchema = new mongoose.Schema({
+  imei: String,
+  brand: String,
+  model: String,
+  buyPrice: Number,
+  salePrice: Number,
+  profit: Number,
+  shop: String,
+  soldAt: String
+});
 
-// ── API ROUTES (UNCHANGED) ─────────────────────────
-// (keeping your logic same)
+const Phone = mongoose.model('Phone', PhoneSchema);
+const Sale = mongoose.model('Sale', SaleSchema);
 
-app.get('/api/stock', (req, res) => {
-  const db = loadDB();
-  let items = db.stock;
-  if (req.query.shop) items = items.filter(p => p.shop === req.query.shop);
+// ── ROUTES ─────────────────────────────────────
+
+// Get stock
+app.get('/api/stock', async (req, res) => {
+  const items = await Phone.find();
   res.json(items);
 });
 
-app.get('/api/sales', (req, res) => {
-  const db = loadDB();
-  let items = db.sales;
-  if (req.query.shop) items = items.filter(s => s.shop === req.query.shop);
-  res.json(items);
-});
+// Add stock
+app.post('/api/stock/add', async (req, res) => {
+  const { imei } = req.body;
 
-app.get('/api/stats', (req, res) => {
-  const db = loadDB();
-  const sh = req.query.shop;
-  let st = db.stock, sa = db.sales;
-  if (sh) { st = st.filter(p => p.shop === sh); sa = sa.filter(s => s.shop === sh); }
-  res.json({
-    inStock: st.filter(p => p.status === 'in_stock').length,
-    sold: st.filter(p => p.status === 'sold').length,
-    total: st.length,
-    totalRevenue: sa.reduce((s, x) => s + (x.salePrice || 0), 0),
-    salesCount: sa.length
-  });
-});
-
-app.post('/api/stock/add', (req, res) => {
-  const { imei, imei2, cat, brand, model, color, storage, buyPrice, notes, shop } = req.body;
   if (!imei) return res.status(400).json({ error: 'IMEI required' });
 
-  const db = loadDB();
+  const exists = await Phone.findOne({ imei });
+  if (exists) return res.status(409).json({ error: 'IMEI exists' });
 
-  const exists = db.stock.find(p =>
-    p.imei === imei ||
-    (imei2 && p.imei === imei2) ||
-    (p.imei2 && p.imei2 === imei)
-  );
-
-  if (exists) return res.status(409).json({ error: 'IMEI already exists', phone: exists });
-
-  const phone = {
-    id: Date.now().toString(),
-    imei,
-    imei2: imei2 || '',
-    cat: cat || '',
-    brand: brand || '',
-    model: model || '',
-    color: color || '',
-    storage: storage || '',
-    buyPrice: buyPrice ? parseFloat(buyPrice) : null,
-    notes: notes || '',
-    status: 'in_stock',
-    shop: shop || null,
+  const phone = new Phone({
+    ...req.body,
     addedAt: new Date().toISOString()
-  };
+  });
 
-  db.stock.push(phone);
-  saveDB(db);
-
+  await phone.save();
   res.json({ success: true, phone });
 });
 
-app.post('/api/stock/sell', (req, res) => {
-  const { imei, salePrice, buyerName, notes, shop } = req.body;
-  if (!imei) return res.status(400).json({ error: 'IMEI required' });
+// Sell phone
+app.post('/api/stock/sell', async (req, res) => {
+  const { imei, salePrice } = req.body;
 
-  const db = loadDB();
-  const phone = db.stock.find(p => p.imei === imei || p.imei2 === imei);
+  const phone = await Phone.findOne({ imei });
 
   if (!phone) return res.status(404).json({ error: 'Not found' });
   if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
 
   phone.status = 'sold';
+  phone.salePrice = parseFloat(salePrice);
   phone.soldAt = new Date().toISOString();
-  phone.salePrice = salePrice ? parseFloat(salePrice) : null;
 
-  const sale = {
-    id: Date.now().toString(),
+  await phone.save();
+
+  const sale = new Sale({
     imei: phone.imei,
-    imei2: phone.imei2 || '',
     brand: phone.brand,
     model: phone.model,
-    color: phone.color,
-    storage: phone.storage,
     buyPrice: phone.buyPrice,
-    salePrice: salePrice ? parseFloat(salePrice) : null,
-    profit: (salePrice && phone.buyPrice) ? parseFloat(salePrice) - phone.buyPrice : null,
-    buyerName: buyerName || '',
-    notes: notes || '',
-    shop: shop || phone.shop || null,
+    salePrice: phone.salePrice,
+    profit: phone.salePrice - phone.buyPrice,
+    shop: phone.shop,
     soldAt: phone.soldAt
-  };
+  });
 
-  db.sales.push(sale);
-  saveDB(db);
+  await sale.save();
 
-  res.json({ success: true, phone, sale });
+  res.json({ success: true });
 });
 
-// ── SERVER START (FIXED) ─────────────────────────
+// Get sales
+app.get('/api/sales', async (req, res) => {
+  const sales = await Sale.find();
+  res.json(sales);
+});
 
+// Stats
+app.get('/api/stats', async (req, res) => {
+  const stock = await Phone.find();
+  const sales = await Sale.find();
+
+  res.json({
+    inStock: stock.filter(p => p.status === 'in_stock').length,
+    sold: stock.filter(p => p.status === 'sold').length,
+    total: stock.length,
+    totalRevenue: sales.reduce((s, x) => s + (x.salePrice || 0), 0),
+    salesCount: sales.length
+  });
+});
+
+// Delete phone
+app.delete('/api/stock/:id', async (req, res) => {
+  await Phone.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+// ── START SERVER ───────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
