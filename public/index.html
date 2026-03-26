@@ -536,6 +536,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
       <div class="sb-lbl">Shop</div>
       <div class="ni on" id="ni-scan"      onclick="nav('scan')">      <div class="nd" style="background:var(--a1)"></div>IMEI Scan</div>
       <div class="ni"    id="ni-imeistock" onclick="nav('imeistock')"> <div class="nd" style="background:var(--a2)"></div>IMEI Stock</div>
+      <div class="ni"    id="ni-saleslog"  onclick="nav('saleslog')">  <div class="nd" style="background:var(--success)"></div>Sales Log</div>
       <div class="ni"    id="ni-stock"     onclick="nav('stock')">     <div class="nd" style="background:var(--a5)"></div>Daily Sheet</div>
       <div class="ni"    id="ni-expenses"  onclick="nav('expenses')">  <div class="nd" style="background:var(--danger)"></div>Expenses</div>
       <div class="ni"    id="ni-history"   onclick="nav('history')">   <div class="nd" style="background:var(--text2)"></div>History</div>
@@ -751,6 +752,26 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         </div>
         <div class="section-title"><span id="imeiCount">0 phones</span></div>
         <div id="imeiList"></div>
+      </div>
+    </div>
+
+    <!-- ══ SALES LOG ══ -->
+    <div class="pg" id="pg-saleslog">
+      <div class="tb">
+        <div class="tb-title">Sales Log</div>
+        <div class="tbsep"></div>
+        <select id="sl-shop" onchange="loadSalesLog()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="ALL">All Shops</option><option value="456">Shop 456</option><option value="192">Shop 192</option><option value="G15">Shop G15</option>
+        </select>
+        <input type="date" id="sl-from" onchange="renderSalesLog()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+        <span style="color:var(--text2);font-size:.7rem;flex-shrink:0">→</span>
+        <input type="date" id="sl-to" onchange="renderSalesLog()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+        <div class="tbsep"></div>
+        <button class="btn bo" onclick="loadSalesLog()" style="font-size:.62rem">↻ Refresh</button>
+        <button class="btn bo" onclick="exportSalesLogCSV()" style="font-size:.62rem">↓ CSV</button>
+      </div>
+      <div class="hq-body" id="sl-body">
+        <div class="empty"><div class="empty-icon">📋</div><h3>No sales yet</h3><p>Sales will appear here after they are recorded</p></div>
       </div>
     </div>
 
@@ -999,7 +1020,7 @@ const IS_PHONE = ROLE === 'phone';
 function applyPhoneMode(){
   if(!IS_PHONE) return;
   // Hide pages phones shouldn't access
-  ['ni-stock','ni-expenses','ni-history','ni-hq','ni-warehouse','ni-shipments','ni-monthly','ni-backup']
+  ['ni-stock','ni-expenses','ni-history','ni-hq','ni-warehouse','ni-shipments','ni-monthly','ni-backup','ni-saleslog']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   // Hide HQ section label and divider
   // Hide Head Office section and its preceding divider
@@ -1034,7 +1055,7 @@ function showToast(msg,type='success'){const t=$('toast');t.textContent=msg;t.cl
 async function api(method,url,body){
   const opts={method,headers:{'Content-Type':'application/json'}};
   if(body)opts.body=JSON.stringify(body);
-  const r=await fetch(BASE+url,opts);return r.json();
+  try{const r=await fetch(BASE+url,opts);try{return await r.json();}catch(e){return{};}}catch(e){return{};}
 }
 
 // Clock
@@ -1044,7 +1065,7 @@ setInterval(tickClock,30000);tickClock();
 // Nav
 function nav(page){
   // Block desktop-only pages on phone
-  const desktopOnly=['stock','expenses','history','hq','warehouse','shipments','monthly','backup'];
+  const desktopOnly=['stock','expenses','history','hq','warehouse','shipments','monthly','backup','saleslog'];
   if(IS_PHONE && desktopOnly.includes(page)){ showToast('Not available on phone mode','warn'); return; }
   activePage=page;
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
@@ -1054,6 +1075,7 @@ function nav(page){
   ({
     scan:()=>$('imeiInput')?.focus(),
     imeistock:loadIMEIData,
+    saleslog:()=>{$('sl-to').value=today();loadSalesLog();},
     stock:()=>{$('work-date').value=$('work-date').value||today();loadDay();},
     expenses:()=>{$('exp-month-filter').value=ym(today());renderShopExpenses();},
     history:loadAllDays,
@@ -1336,6 +1358,8 @@ async function submitSell(){
   cancelForm();
   ['fSalePrice','fBuyerName','fSaleNotes'].forEach(id=>{if($(id))$(id).value='';});
   loadSidebarStats();
+  if(activePage==='stock') loadDay();
+  if(activePage==='saleslog') loadSalesLog();
   setTimeout(()=>$('imeiInput')?.focus(),100);
 }
 
@@ -1663,17 +1687,18 @@ function openEditPhone(id){
       </div>
       <div class="f2">
         <div class="fi"><label>Model</label><input type="text" id="ep-model"></div>
+        <div class="fi"><label>Color</label><input type="text" id="ep-color" placeholder="Phantom Black…"></div>
+      </div>
+      <div class="f2">
         <div class="fi"><label>Storage</label>
           <select id="ep-storage">
             <option value="">—</option>
             ${['64GB','128GB','256GB','512GB','1TB'].map(s=>`<option value="${s}">${s}</option>`).join('')}
           </select>
         </div>
-      </div>
-      <div class="f2">
         <div class="fi"><label>Buy Price (PKR)</label><input type="number" id="ep-price" placeholder="Cost price"></div>
-        <div class="fi"><label>IMEI 2</label><input type="text" id="ep-imei2" placeholder="Second IMEI" inputmode="numeric"></div>
       </div>
+      <div class="fi"><label>IMEI 2</label><input type="text" id="ep-imei2" placeholder="Second IMEI" inputmode="numeric"></div>
       <div class="fi"><label>Notes</label><input type="text" id="ep-notes" placeholder="Condition, accessories…"></div>
     </div>
     <div class="mf">
@@ -1716,12 +1741,121 @@ async function deletePhone(id){
   if(!confirm('Remove this phone from stock?'))return;
   await api('DELETE',`/api/stock/${id}`);
   await loadIMEIData();loadSidebarStats();
+  if(activePage==='stock') loadDay();
   showToast('Phone removed','warn');
 }
 function exportIMEICSV(){
   const h='IMEI 1,IMEI 2,Brand,Model,Color,Storage,Buy Price,Sale Price,Profit,Status,Shop,Added,Sold\n';
   const rows=allIMEIStock.map(p=>[p.imei,p.imei2||'',p.brand,p.model,p.color,p.storage,p.buyPrice||'',p.salePrice||'',(p.salePrice&&p.buyPrice?p.salePrice-p.buyPrice:''),p.status,p.shop||'',fmtDate(p.addedAt),p.soldAt?fmtDate(p.soldAt):''].join(','));
   dlCSV(h+rows.join('\n'),`IMEI_Stock_${today()}.csv`);
+}
+
+// ── SALES LOG ──
+let allSalesData=[];
+
+async function loadSalesLog(){
+  const shop=$('sl-shop').value;
+  const url=shop==='ALL'?'/api/sales':`/api/sales?shop=${shop}`;
+  const data=await api('GET',url);
+  allSalesData=Array.isArray(data)?data:[];
+  renderSalesLog();
+}
+
+function renderSalesLog(){
+  const from=$('sl-from')?.value,to=$('sl-to')?.value;
+  const body=$('sl-body');
+  let sales=[...allSalesData];
+  if(from) sales=sales.filter(s=>s.soldAt&&s.soldAt.slice(0,10)>=from);
+  if(to)   sales=sales.filter(s=>s.soldAt&&s.soldAt.slice(0,10)<=to);
+  if(!sales.length){body.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><h3>No sales found</h3><p>Try adjusting the date filters</p></div>`;return;}
+  sales.sort((a,b)=>(b.soldAt||'').localeCompare(a.soldAt||''));
+  const byDate={};
+  sales.forEach(s=>{const d=s.soldAt?s.soldAt.slice(0,10):'Unknown';if(!byDate[d])byDate[d]=[];byDate[d].push(s);});
+  const tRev=sales.reduce((s,x)=>s+(x.salePrice||0),0);
+  const tPL=sales.reduce((s,x)=>s+(x.profit||0),0);
+  let html=`<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin:.7rem .7rem .4rem;padding:.55rem .8rem;background:var(--s2);border:1px solid var(--border);border-radius:10px;">
+    <div style="flex:1;min-width:110px;"><div style="font-size:.55rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Total Revenue</div><div style="font-family:var(--mono);font-size:.95rem;color:var(--success)">${pkr(tRev)}</div></div>
+    <div style="flex:1;min-width:110px;"><div style="font-size:.55rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Net Profit</div><div style="font-family:var(--mono);font-size:.95rem;color:${tPL>=0?'var(--success)':'var(--danger)'}">${pkr(tPL)}</div></div>
+    <div style="flex:1;min-width:90px;"><div style="font-size:.55rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Units Sold</div><div style="font-family:var(--mono);font-size:.95rem;color:var(--a1)">${sales.length}</div></div>
+  </div><div style="padding:0 .7rem .7rem">`;
+  Object.entries(byDate).forEach(([date,daySales])=>{
+    const uid=date.replace(/-/g,'');
+    const dayRev=daySales.reduce((s,x)=>s+(x.salePrice||0),0);
+    const dayPL=daySales.reduce((s,x)=>s+(x.profit||0),0);
+    html+=`<div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:.5rem;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:.6rem;padding:.5rem .85rem;cursor:pointer;transition:background .15s;"
+        onclick="toggleDateGroup('${uid}')" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background=''">
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:.82rem;color:var(--white);font-family:var(--mono)">${date}</div>
+          <div style="font-size:.62rem;color:var(--text2);margin-top:1px">${daySales.length} sale${daySales.length!==1?'s':''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--mono);font-size:.8rem;color:var(--success)">${pkr(dayRev)}</div>
+          <div style="font-size:.6rem;color:${dayPL>=0?'var(--a4)':'var(--danger)'};margin-top:1px">P/L: ${pkr(dayPL)}</div>
+        </div>
+        <div id="slg-arr-${uid}" style="color:var(--text2);font-size:.75rem;margin-left:4px;">▶</div>
+      </div>
+      <div id="slg-${uid}" style="display:none;border-top:1px solid var(--border);">
+        <table style="width:100%;border-collapse:collapse;font-size:.65rem;">
+          <thead><tr style="background:rgba(0,0,0,.2)">
+            <th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600;letter-spacing:.06em">PHONE</th>
+            <th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">IMEI</th>
+            <th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">SHOP</th>
+            <th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">BUYER</th>
+            <th style="text-align:right;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">COST</th>
+            <th style="text-align:right;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">SOLD FOR</th>
+            <th style="text-align:right;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">PROFIT</th>
+            <th style="width:28px"></th>
+          </tr></thead>
+          <tbody>${daySales.map(s=>`<tr style="border-top:1px solid rgba(255,255,255,.04)">
+            <td style="padding:.3rem .7rem;color:var(--white);font-weight:600">${esc(s.brand||'')} ${esc(s.model||'')}</td>
+            <td style="padding:.3rem .7rem;font-family:var(--mono);font-size:.62rem;color:var(--text2)">${s.imei||''}</td>
+            <td style="padding:.3rem .7rem"><span style="background:rgba(${SHOP_RGBA[s.shop]||'108,143,255'},.15);color:${SHOP_COLOR[s.shop]||'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[s.shop]||'108,143,255'},.3);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:600">${s.shop||'—'}</span></td>
+            <td style="padding:.3rem .7rem;color:var(--text2)">${esc(s.buyerName||'—')}</td>
+            <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--text2)">${s.buyPrice?pkr(s.buyPrice):'—'}</td>
+            <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--success)">${pkr(s.salePrice)}</td>
+            <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:${(s.profit||0)>=0?'var(--a4)':'var(--danger)'}">${s.profit!=null?pkr(s.profit):'—'}</td>
+            <td style="padding:.3rem .4rem;text-align:center"><button class="bx" onclick="deleteSale('${s._id||s.id}')" title="Delete sale">🗑</button></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+  body.innerHTML=html;
+}
+
+function toggleDateGroup(uid){
+  const el=$('slg-'+uid);if(!el)return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  const arr=$('slg-arr-'+uid);if(arr)arr.textContent=open?'▶':'▼';
+}
+
+async function deleteSale(id){
+  if(!confirm('Delete this sale? The phone will be returned to stock.'))return;
+  const d=await api('DELETE',`/api/sales/${id}`);
+  if(d.error){showToast(d.error,'error');return;}
+  showToast('Sale deleted — phone returned to stock','warn');
+  await loadSalesLog();
+  loadSidebarStats();
+  loadIMEIData();
+  if(activePage==='stock') loadDay();
+}
+
+function exportSalesLogCSV(){
+  const from=$('sl-from')?.value,to=$('sl-to')?.value;
+  let sales=[...allSalesData];
+  if(from) sales=sales.filter(s=>s.soldAt&&s.soldAt.slice(0,10)>=from);
+  if(to)   sales=sales.filter(s=>s.soldAt&&s.soldAt.slice(0,10)<=to);
+  sales.sort((a,b)=>(b.soldAt||'').localeCompare(a.soldAt||''));
+  const h='Date,Shop,Brand,Model,IMEI,Buyer,Cost,Sold For,Profit,Notes\n';
+  const rows=sales.map(s=>[
+    s.soldAt?s.soldAt.slice(0,10):'',s.shop||'',s.brand||'',s.model||'',
+    s.imei||'',s.buyerName||'',s.buyPrice||'',s.salePrice||'',
+    s.profit!=null?s.profit:'',s.notes||''
+  ].join(','));
+  dlCSV(h+rows.join('\n'),`Sales_Log_${today()}.csv`);
 }
 
 // ── DAILY SHEET ──

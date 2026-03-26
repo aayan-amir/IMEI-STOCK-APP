@@ -68,6 +68,53 @@ const SaleSchema = new mongoose.Schema({
 const Phone = mongoose.model('Phone', PhoneSchema);
 const Sale = mongoose.model('Sale', SaleSchema);
 
+const DaySchema = new mongoose.Schema({
+  shop: String,
+  date: String,
+  cats: mongoose.Schema.Types.Mixed,
+  expenses: Array,
+  purchases: Array,
+  transfers: Array,
+  carryForward: Number,
+});
+const Day = mongoose.model('Day', DaySchema);
+
+const ShopExpenseSchema = new mongoose.Schema({
+  shop: String,
+  date: String,
+  month: String,
+  category: String,
+  description: String,
+  amount: Number,
+  addedAt: String,
+});
+const ShopExpense = mongoose.model('ShopExpense', ShopExpenseSchema);
+
+const HQStockSchema = new mongoose.Schema({
+  key: { type: String, default: 'hq' },
+  items: { type: Array, default: [] },
+  updatedAt: String,
+});
+const HQStockModel = mongoose.model('HQStock', HQStockSchema);
+
+const ShipmentSchema = new mongoose.Schema({
+  date: String,
+  supplier: String,
+  ref: String,
+  items: Array,
+  addedAt: String,
+});
+const Shipment = mongoose.model('Shipment', ShipmentSchema);
+
+const DispatchSchema = new mongoose.Schema({
+  date: String,
+  toShop: String,
+  note: String,
+  items: Array,
+  addedAt: String,
+});
+const Dispatch = mongoose.model('Dispatch', DispatchSchema);
+
 // ── ROUTES ─────────────────────────────────────
 
 // Lookup single phone by IMEI (used by scan/sell flow)
@@ -210,6 +257,242 @@ app.put('/api/stock/:id', async (req, res) => {
 app.delete('/api/stock/:id', async (req, res) => {
   await Phone.findByIdAndDelete(req.params.id);
   res.json({ success: true });
+});
+
+// ── DAILY SHEET ────────────────────────────────
+
+// Get all daily sheets (?shop= and/or ?month= filters)
+app.get('/api/days', async (req, res) => {
+  try {
+    const { shop, month } = req.query;
+    const query = {};
+    if (shop) query.shop = shop;
+    if (month) query.date = { $regex: `^${month}` };
+    const days = await Day.find(query).sort({ date: -1 });
+    res.json(days);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get specific daily sheet
+app.get('/api/days/:shop/:date', async (req, res) => {
+  try {
+    const day = await Day.findOne({ shop: req.params.shop, date: req.params.date });
+    res.json(day || {});
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Save/update daily sheet
+app.put('/api/days/:shop/:date', async (req, res) => {
+  try {
+    const { shop, date } = req.params;
+    const update = { ...req.body, shop, date };
+    const day = await Day.findOneAndUpdate(
+      { shop, date },
+      update,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.json({ success: true, day });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── SHOP EXPENSES ───────────────────────────────
+
+app.get('/api/shopexpenses', async (req, res) => {
+  try {
+    const { shop, month } = req.query;
+    const query = {};
+    if (shop) query.shop = shop;
+    if (month) query.month = month;
+    const expenses = await ShopExpense.find(query).sort({ date: -1 });
+    res.json(expenses.map(e => ({ ...e.toObject(), _key: e.id })));
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/shopexpenses', async (req, res) => {
+  try {
+    const expense = new ShopExpense({ ...req.body, addedAt: new Date().toISOString() });
+    await expense.save();
+    res.json({ success: true, expense: { ...expense.toObject(), _key: expense.id } });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/shopexpenses/:id', async (req, res) => {
+  try {
+    await ShopExpense.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── HQ STOCK ────────────────────────────────────
+
+app.get('/api/hqstock', async (req, res) => {
+  try {
+    const stock = await HQStockModel.findOne({ key: 'hq' });
+    res.json(stock || { items: [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/hqstock', async (req, res) => {
+  try {
+    const update = { ...req.body, key: 'hq', updatedAt: new Date().toISOString() };
+    const stock = await HQStockModel.findOneAndUpdate(
+      { key: 'hq' },
+      update,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.json({ success: true, stock });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── SHIPMENTS & DISPATCHES ──────────────────────
+
+app.post('/api/shipments', async (req, res) => {
+  try {
+    const shipment = new Shipment({ ...req.body, addedAt: new Date().toISOString() });
+    await shipment.save();
+    res.json({ success: true, shipment });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/shipments', async (req, res) => {
+  try {
+    const shipments = await Shipment.find().sort({ date: -1 });
+    res.json(shipments);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/dispatches', async (req, res) => {
+  try {
+    const dispatch = new Dispatch({ ...req.body, addedAt: new Date().toISOString() });
+    await dispatch.save();
+    res.json({ success: true, dispatch });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/dispatches', async (req, res) => {
+  try {
+    const dispatches = await Dispatch.find().sort({ date: -1 });
+    res.json(dispatches);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── DELETE SALE ─────────────────────────────────
+// Deletes a sale record and reverts the phone back to in_stock
+app.delete('/api/sales/:id', async (req, res) => {
+  try {
+    const sale = await Sale.findById(req.params.id);
+    if (!sale) return res.status(404).json({ error: 'Sale not found' });
+
+    // Revert the phone to in_stock
+    await Phone.findOneAndUpdate(
+      { imei: sale.imei },
+      { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
+    );
+
+    await Sale.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete sale error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── BACKUP & RESTORE ────────────────────────────
+
+app.get('/api/backup', async (req, res) => {
+  try {
+    const [phones, sales, days, expenses, hqstock, shipments, dispatches] = await Promise.all([
+      Phone.find({}),
+      Sale.find({}),
+      Day.find({}),
+      ShopExpense.find({}),
+      HQStockModel.findOne({ key: 'hq' }),
+      Shipment.find({}),
+      Dispatch.find({}),
+    ]);
+    res.json({
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      phones, sales, days, expenses,
+      hqstock: hqstock || { items: [] },
+      shipments, dispatches,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/restore', express.json({ limit: '50mb' }), async (req, res) => {
+  try {
+    const { phones, sales, days, expenses, hqstock, shipments, dispatches } = req.body;
+    if (phones?.length) {
+      await Phone.bulkWrite(phones.map(p => ({
+        updateOne: { filter: { imei: p.imei }, update: { $set: p }, upsert: true }
+      })));
+    }
+    if (sales?.length) {
+      // Use _id as the primary key for upsert if present, otherwise fall back to imei+soldAt
+      await Sale.bulkWrite(sales.map(s => ({
+        updateOne: {
+          filter: s._id ? { _id: s._id } : { imei: s.imei, soldAt: s.soldAt },
+          update: { $set: s },
+          upsert: true
+        }
+      })));
+    }
+    if (days?.length) {
+      await Day.bulkWrite(days.map(d => ({
+        updateOne: { filter: { shop: d.shop, date: d.date }, update: { $set: d }, upsert: true }
+      })));
+    }
+    if (expenses?.length) {
+      await ShopExpense.insertMany(expenses, { ordered: false })
+        .catch(err => console.error('Restore: some expenses skipped:', err.message));
+    }
+    if (hqstock) {
+      await HQStockModel.findOneAndUpdate(
+        { key: 'hq' },
+        { ...hqstock, key: 'hq' },
+        { upsert: true }
+      );
+    }
+    if (shipments?.length) {
+      await Shipment.insertMany(shipments, { ordered: false })
+        .catch(err => console.error('Restore: some shipments skipped:', err.message));
+    }
+    if (dispatches?.length) {
+      await Dispatch.insertMany(dispatches, { ordered: false })
+        .catch(err => console.error('Restore: some dispatches skipped:', err.message));
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Restore error:', err);
+    res.status(500).json({ error: 'Restore failed: ' + err.message });
+  }
 });
 
 // ── START SERVER ───────────────────────────────
