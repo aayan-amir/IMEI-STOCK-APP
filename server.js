@@ -5,6 +5,24 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const trustProxy = process.env.TRUST_PROXY;
+
+if (trustProxy !== undefined) {
+  if (trustProxy === 'true') app.set('trust proxy', true);
+  else if (trustProxy === 'false') app.set('trust proxy', false);
+  else {
+    const parsed = Number(trustProxy);
+    if (Number.isInteger(parsed) && parsed >= 0) {
+      app.set('trust proxy', parsed);
+    } else {
+      console.warn(`Invalid TRUST_PROXY value "${trustProxy}", defaulting to trust proxy = 1`);
+      app.set('trust proxy', 1);
+    }
+  }
+} else if (process.env.NODE_ENV === 'production') {
+  // Most hosted deployments (e.g., Render/Heroku) run behind one reverse proxy.
+  app.set('trust proxy', 1);
+}
 
 app.use(cors());
 app.use(express.json());
