@@ -1741,6 +1741,7 @@ async function saveEditPhone(id){
 }
 
 async function deletePhone(id){
+  if(!id||id==='undefined'){showToast('Invalid phone id','error');return;}
   if(!confirm('Remove this phone from stock?'))return;
   await api('DELETE',`/api/stock/${id}`);
   await loadIMEIData();loadSidebarStats();

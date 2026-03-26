@@ -257,8 +257,16 @@ app.put('/api/stock/:id', async (req, res) => {
 
 // Delete phone
 app.delete('/api/stock/:id', async (req, res) => {
-  await Phone.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+    if (!id || id === 'undefined' || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid phone id' });
+    }
+    await Phone.findByIdAndDelete(id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // ── DAILY SHEET ────────────────────────────────
