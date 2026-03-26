@@ -1728,7 +1728,7 @@ async function saveEditPhone(id){
     model:document.getElementById('ep-model').value.trim(),
     color:document.getElementById('ep-color').value.trim(),
     storage:document.getElementById('ep-storage').value,
-    buyPrice:document.getElementById('ep-price').value,
+    buyPrice:document.getElementById('ep-price').value!==''?Number(document.getElementById('ep-price').value):undefined,
     imei2:document.getElementById('ep-imei2').value.trim().replace(/\D/g,''),
     notes:document.getElementById('ep-notes').value.trim(),
     cat:document.getElementById('ep-cat').value,
