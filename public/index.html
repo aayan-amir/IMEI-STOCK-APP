@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Mobile HQ</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@zxing/library@0.19.2/umd/index.min.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#0c0e14;
@@ -1347,6 +1348,7 @@ let scanLoopId = 0;
 let detectorInstance = null;
 let detectorCanvas = null;
 let detectorCtx = null;
+let zxingReader = null;
 
 const camLabels = {
   imei1:'Scanning for IMEI 1…', imei2:'Scanning for IMEI 2…',
@@ -1374,13 +1376,19 @@ async function openCamera(mode='imei1'){
     $('camVideo').srcObject=camStream;
     $('camModal').style.display='flex';
     clearScanResult();
-    if(!detectorInstance&&'BarcodeDetector' in window){
-      let formats;
-      try{formats=await BarcodeDetector.getSupportedFormats();}
-      catch(e){formats=['code_128','code_39','ean_13','ean_8','itf','upc_a','upc_e','qr_code','data_matrix','aztec'];}
-      detectorInstance=new BarcodeDetector({formats});
-      detectorCanvas=document.createElement('canvas');
-      detectorCtx=detectorCanvas.getContext('2d');
+    if(!detectorInstance&&!zxingReader){
+      if('BarcodeDetector' in window){
+        let formats;
+        try{formats=await BarcodeDetector.getSupportedFormats();}
+        catch(e){formats=['code_128','code_39','ean_13','ean_8','itf','upc_a','upc_e','qr_code','data_matrix','aztec'];}
+        detectorInstance=new BarcodeDetector({formats});
+        detectorCanvas=document.createElement('canvas');
+        detectorCtx=detectorCanvas.getContext('2d');
+      }else if(window.ZXing){
+        zxingReader=new ZXing.BrowserMultiFormatReader();
+        detectorCanvas=document.createElement('canvas');
+        detectorCtx=detectorCanvas.getContext('2d');
+      }
     }
     scanActive=true;
     startScanning();
@@ -1476,8 +1484,8 @@ async function toggleTorch(){
 }
 
 async function startScanning(){
-  if(!detectorInstance){
-    $('camHint').innerHTML='<span style="color:var(--warn)">⚠ BarcodeDetector not supported. Use Chrome on Android or Edge on desktop. iPhone: use a hardware scanner.</span>';
+  if(!detectorInstance&&!zxingReader){
+    $('camHint').innerHTML='<span style="color:var(--warn)">⚠ Native barcode scanning unavailable. Using software fallback. For best results use Chrome or Edge.</span>';
     return;
   }
   const vid=$('camVideo');
@@ -1496,8 +1504,13 @@ async function startScanning(){
       detectorCanvas.height=Math.round(bh);
       detectorCtx.drawImage(vid,bx,by,bw,bh,0,0,detectorCanvas.width,detectorCanvas.height);
       try{
-        const codes=await detectorInstance.detect(detectorCanvas);
-        if(codes.length>0){onBarcodeDetected(codes[0].rawValue,codes[0].format);return;}
+        if(detectorInstance){
+          const codes=await detectorInstance.detect(detectorCanvas);
+          if(codes.length>0){onBarcodeDetected(codes[0].rawValue,codes[0].format);return;}
+        }else{
+          const result=zxingReader.decodeFromCanvas(detectorCanvas);
+          if(result){onBarcodeDetected(result.getText(),result.getBarcodeFormat().toString());return;}
+        }
       }catch(e){}
     }
     if(scanActive&&scanLoopId===myLoopId)setTimeout(()=>requestAnimationFrame(scan),66);

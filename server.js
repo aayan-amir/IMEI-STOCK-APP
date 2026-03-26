@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,6 +9,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// Rate limiting — 300 requests per minute per IP
+app.use('/api/', rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true, legacyHeaders: false }));
 
 // ── MongoDB Connection ─────────────────────────
 mongoose.connect(process.env.MONGO_URI)
@@ -48,9 +52,22 @@ const Sale = mongoose.model('Sale', SaleSchema);
 
 // ── ROUTES ─────────────────────────────────────
 
+// Lookup single phone by IMEI (used by scan/sell flow)
+app.get('/api/lookup/:imei', async (req, res) => {
+  try {
+    const phone = await Phone.findOne({ imei: req.params.imei });
+    if (!phone) return res.json({});
+    res.json(phone);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get stock
 app.get('/api/stock', async (req, res) => {
-  const items = await Phone.find();
+  const shop = req.query.shop;
+  const query = shop ? { shop } : {};
+  const items = await Phone.find(query);
   res.json(items);
 });
 
@@ -88,7 +105,7 @@ app.post('/api/stock/sell', async (req, res) => {
     if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
 
     const sp = Number(salePrice);
-    if (Number.isNaN(sp)) return res.status(400).json({ error: 'Invalid salePrice' });
+    if (Number.isNaN(sp) || sp <= 0) return res.status(400).json({ error: 'Sale price must be greater than zero' });
 
     const bp = Number(phone.buyPrice) || 0;
     const profit = sp - bp;
@@ -113,7 +130,16 @@ app.post('/api/stock/sell', async (req, res) => {
       soldAt: phone.soldAt
     });
 
-    await sale.save();
+    try {
+      await sale.save();
+    } catch (saleErr) {
+      // Revert phone to in_stock so data stays consistent
+      phone.status = 'in_stock';
+      phone.salePrice = undefined;
+      phone.soldAt = undefined;
+      await phone.save().catch(revertErr => console.error('Failed to revert phone after sale error:', revertErr));
+      throw saleErr;
+    }
 
     // Return the saved sale so frontend can consume it immediately
     res.json({ success: true, sale });
@@ -125,14 +151,18 @@ app.post('/api/stock/sell', async (req, res) => {
 
 // Get sales
 app.get('/api/sales', async (req, res) => {
-  const sales = await Sale.find();
+  const shop = req.query.shop;
+  const query = shop ? { shop } : {};
+  const sales = await Sale.find(query);
   res.json(sales);
 });
 
 // Stats
 app.get('/api/stats', async (req, res) => {
-  const stock = await Phone.find();
-  const sales = await Sale.find();
+  const shop = req.query.shop;
+  const query = shop ? { shop } : {};
+  const stock = await Phone.find(query);
+  const sales = await Sale.find(query);
 
   res.json({
     inStock: stock.filter(p => p.status === 'in_stock').length,
@@ -141,6 +171,21 @@ app.get('/api/stats', async (req, res) => {
     totalRevenue: sales.reduce((s, x) => s + (x.salePrice || 0), 0),
     salesCount: sales.length
   });
+});
+
+// Edit phone
+app.put('/api/stock/:id', async (req, res) => {
+  try {
+    const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body;
+    const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
+    // Remove undefined fields so they are not overwritten
+    Object.keys(allowed).forEach(k => allowed[k] === undefined && delete allowed[k]);
+    const phone = await Phone.findByIdAndUpdate(req.params.id, allowed, { new: true });
+    if (!phone) return res.status(404).json({ error: 'Not found' });
+    res.json({ success: true, phone });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Delete phone
