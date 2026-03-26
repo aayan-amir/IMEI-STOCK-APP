@@ -52,7 +52,7 @@ const PhoneSchema = new mongoose.Schema({
   notes: String,
   addedAt: String,
   soldAt: String
-});
+}, { toJSON: { virtuals: true } });
 
 const SaleSchema = new mongoose.Schema({
   imei: String,
