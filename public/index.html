@@ -1433,6 +1433,14 @@ function onBarcodeDetected(value,format){
   const result=digits.length>=14?digits:value;
   if(result===lastScanResult)return;
   lastScanResult=result;
+  if(camMode==='imei1'&&scanMode==='sell'){
+    closeCamera();
+    $('imeiInput').value=result;
+    flashField($('imeiInput'));
+    handleImeiSubmit();
+    showToast('IMEI scanned ✓');
+    return;
+  }
   if(camMode==='batch1'){
     closeCamera();
     const f=$('bImei1');if(f){f.value=result;flashField(f);}$('bImei2')?.focus();
