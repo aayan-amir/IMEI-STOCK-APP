@@ -402,6 +402,32 @@ app.get('/api/dispatches', async (req, res) => {
   }
 });
 
+// ── BULK DELETE SALES ────────────────────────────
+// Deletes all sales (optionally filtered by ?shop=) and reverts phones to in_stock
+app.delete('/api/sales', async (req, res) => {
+  try {
+    const { shop } = req.query;
+    const query = shop ? { shop } : {};
+    const sales = await Sale.find(query);
+    if (sales.length === 0) return res.json({ success: true, deleted: 0 });
+
+    // Revert all associated phones to in_stock in one bulk write
+    const imeis = [...new Set(sales.map(s => s.imei).filter(Boolean))];
+    if (imeis.length) {
+      await Phone.updateMany(
+        { imei: { $in: imeis } },
+        { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
+      );
+    }
+
+    const result = await Sale.deleteMany(query);
+    res.json({ success: true, deleted: result.deletedCount });
+  } catch (err) {
+    console.error('Bulk delete sales error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ── DELETE SALE ─────────────────────────────────
 // Deletes a sale record and reverts the phone back to in_stock
 app.delete('/api/sales/:id', async (req, res) => {

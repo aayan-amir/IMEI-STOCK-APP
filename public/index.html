@@ -769,6 +769,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <button class="btn bo" onclick="loadSalesLog()" style="font-size:.62rem">↻ Refresh</button>
         <button class="btn bo" onclick="exportSalesLogCSV()" style="font-size:.62rem">↓ CSV</button>
+        <button class="btn br" onclick="clearAllSales()" style="font-size:.62rem">🗑 Clear All</button>
       </div>
       <div class="hq-body" id="sl-body">
         <div class="empty"><div class="empty-icon">📋</div><h3>No sales yet</h3><p>Sales will appear here after they are recorded</p></div>
@@ -895,6 +896,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         </select>
         <input type="month" id="ship-month-filter" onchange="renderShipments()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
         <div class="tbsep"></div>
+        <button class="btn bb" onclick="openDispatchFromShipments()">↗ Dispatch</button>
         <button class="btn bb" onclick="openReceiveModal()">+ Log Shipment</button>
       </div>
       <div class="hq-body" id="ship-body"></div>
@@ -1859,6 +1861,20 @@ function exportSalesLogCSV(){
   dlCSV(h+rows.join('\n'),`Sales_Log_${today()}.csv`);
 }
 
+async function clearAllSales(){
+  const shop=$('sl-shop').value;
+  const scope=shop==='ALL'?'ALL sales':'all sales for Shop '+shop;
+  if(!confirm(`Permanently delete ${scope} from the database? All phones will be returned to stock. This cannot be undone.`))return;
+  const url=shop==='ALL'?'/api/sales':`/api/sales?shop=${shop}`;
+  const d=await api('DELETE',url);
+  if(d.error){showToast(d.error,'error');return;}
+  showToast(`🗑 ${d.deleted||0} sale(s) cleared — phones returned to stock`,'warn');
+  allSalesData=[];
+  renderSalesLog();
+  loadSidebarStats();
+  loadIMEIData();
+}
+
 // ── DAILY SHEET ──
 function makeEmptyDay(shop,date){const cats={};Object.keys(CATS).forEach(k=>cats[k]={rows:[]});return{shop,date,cats,expenses:[],purchases:[],transfers:[],carryForward:0};}
 
@@ -2233,6 +2249,16 @@ async function saveDispatch(items){
   if(!dispatched.length){showToast('Select at least one item','error');return;}
   await api('PUT','/api/hqstock',hqStock);await api('POST','/api/dispatches',{date,toShop,note,items:dispatched});
   closeModal();loadWarehouse();loadShipments();showToast(`✅ ${dispatched.length} item type(s) dispatched to Shop ${toShop}`);
+}
+
+async function openDispatchFromShipments(){
+  // Ensure warehouse data is fresh before opening dispatch modal
+  if(!hqStock||!hqStock.items){
+    const fetched=await api('GET','/api/hqstock');
+    if(fetched.error){showToast('Failed to load warehouse data','error');return;}
+    hqStock=fetched;
+  }
+  openDispatchModal();
 }
 
 // ── SHIPMENTS ──
