@@ -8,35 +8,35 @@
 <script src="https://unpkg.com/@zxing/library@0.19.2/umd/index.min.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
 <style>
 :root{
-  --bg:#0c0e14;
-  --s1:#111318;
-  --s2:#181b22;
-  --s3:#1e2129;
-  --border:#252830;
-  --border2:#1a1d24;
-  --text:#c8cdd8;
-  --text2:#5a6070;
-  --text3:#2e3240;
-  --white:#eceef4;
+  --bg:#0e0e11;
+  --s1:#161619;
+  --s2:#1e1e24;
+  --s3:#252529;
+  --border:#2e2e38;
+  --border2:#27272f;
+  --text:#b0b3c4;
+  --text2:#545770;
+  --text3:#333548;
+  --white:#e8e9f2;
   --mono:'JetBrains Mono',monospace;
   --sans:'Syne',sans-serif;
   --radius:10px;
-  /* accent palette — cool blue-purple theme */
-  --a1:#6c8fff;   /* primary blue */
-  --a2:#9b6cff;   /* purple */
-  --a3:#ff6c8f;   /* pink/red */
-  --a4:#6cffe0;   /* teal */
-  --a5:#ffb86c;   /* amber */
-  --a6:#6cffb8;   /* mint green */
+  /* accent palette — professional indigo theme */
+  --a1:#6366f1;   /* indigo */
+  --a2:#a855f7;   /* violet */
+  --a3:#f43f5e;   /* rose */
+  --a4:#14b8a6;   /* teal */
+  --a5:#f59e0b;   /* amber */
+  --a6:#10b981;   /* emerald */
   /* shop colors */
-  --c456:#6c8fff;
-  --c192:#9b6cff;
-  --cg15:#ff6c8f;
-  --chq:#6cffe0;
+  --c456:#6366f1;
+  --c192:#a855f7;
+  --cg15:#f43f5e;
+  --chq:#14b8a6;
   /* status */
-  --success:#6cffb8;
-  --danger:#ff6c8f;
-  --warn:#ffb86c;
+  --success:#10b981;
+  --danger:#f43f5e;
+  --warn:#f59e0b;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
@@ -67,10 +67,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   color:var(--text2);
 }
 .stab:hover{color:var(--white);background:var(--s2);}
-.stab[data-s="HQ"].on{background:rgba(108,255,224,.1);border-color:rgba(108,255,224,.3);color:var(--chq);}
-.stab[data-s="456"].on{background:rgba(108,143,255,.1);border-color:rgba(108,143,255,.3);color:var(--c456);}
-.stab[data-s="192"].on{background:rgba(155,108,255,.1);border-color:rgba(155,108,255,.3);color:var(--c192);}
-.stab[data-s="G15"].on{background:rgba(255,108,143,.1);border-color:rgba(255,108,143,.3);color:var(--cg15);}
+.stab[data-s="HQ"].on{background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3);color:var(--chq);}
+.stab[data-s="456"].on{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:var(--c456);}
+.stab[data-s="192"].on{background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.3);color:var(--c192);}
+.stab[data-s="G15"].on{background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.3);color:var(--cg15);}
 .tr{margin-left:auto;display:flex;align-items:center;gap:.8rem;flex-shrink:0;}
 #clk{font-family:var(--mono);font-size:.62rem;color:var(--text2);white-space:nowrap;}
 .conn-pill{
@@ -80,7 +80,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   background:var(--s2);border:1px solid var(--border);
   color:var(--text2);transition:all .3s;
 }
-.conn-pill.online{border-color:rgba(108,255,184,.3);color:var(--success);}
+.conn-pill.online{border-color:rgba(16,185,129,.3);color:var(--success);}
 .conn-pill .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
 
 /* ── LAYOUT ── */
@@ -105,7 +105,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   transition:all .15s;white-space:nowrap;overflow:hidden;
 }
 .ni:hover{color:var(--white);background:rgba(255,255,255,.03);}
-.ni.on{border-left-color:var(--a1);background:rgba(108,143,255,.06);color:var(--a1);}
+.ni.on{border-left-color:var(--a1);background:rgba(99,102,241,.06);color:var(--a1);}
 .nd{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .sdiv{border:none;border-top:1px solid var(--border2);margin:.3rem .9rem;}
 .sb-stats{
@@ -151,16 +151,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   cursor:pointer;transition:all .15s;white-space:nowrap;
 }
 .btn:active{transform:scale(.97);}
-.bg{ background:var(--a1);border-color:var(--a1);color:#05070f;font-weight:700; }
+.bg{ background:var(--a1);border-color:var(--a1);color:#0e0e11;font-weight:700; }
 .bg:hover{ filter:brightness(1.12); }
 .bo{ background:transparent;border-color:var(--border);color:var(--text2); }
 .bo:hover{ border-color:var(--text2);color:var(--white);background:var(--s2); }
-.br{ background:transparent;border-color:rgba(255,108,143,.4);color:var(--danger); }
-.br:hover{ background:rgba(255,108,143,.12); }
-.bv{ background:transparent;border-color:rgba(108,255,184,.4);color:var(--success); }
-.bv:hover{ background:rgba(108,255,184,.1); }
-.bb{ background:transparent;border-color:rgba(108,143,255,.4);color:var(--a1); }
-.bb:hover{ background:rgba(108,143,255,.1); }
+.br{ background:transparent;border-color:rgba(244,63,94,.4);color:var(--danger); }
+.br:hover{ background:rgba(244,63,94,.12); }
+.bv{ background:transparent;border-color:rgba(16,185,129,.4);color:var(--success); }
+.bv:hover{ background:rgba(16,185,129,.1); }
+.bb{ background:transparent;border-color:rgba(99,102,241,.4);color:var(--a1); }
+.bb:hover{ background:rgba(99,102,241,.1); }
 .bx{
   background:transparent;border:none;color:var(--text2);
   font-family:var(--mono);font-size:.6rem;padding:.1rem .3rem;
@@ -186,12 +186,12 @@ input[type=date]:focus{border-color:var(--a1);}
 .cl{font-family:var(--sans);font-size:.82rem;font-weight:700;letter-spacing:-.01em;}
 .cts{margin-left:auto;display:flex;gap:.8rem;font-size:.6rem;color:rgba(255,255,255,.45);}
 .cts b{color:rgba(255,255,255,.8);}
-.cpx .ch{background:rgba(108,255,224,.07);border-left:3px solid var(--a4);}.cpx .cl{color:var(--a4);}
-.cip .ch{background:rgba(108,143,255,.07);border-left:3px solid var(--a1);}.cip .cl{color:var(--a1);}
-.csm .ch{background:rgba(155,108,255,.07);border-left:3px solid var(--a2);}.csm .cl{color:var(--a2);}
-.cot .ch{background:rgba(255,184,108,.07);border-left:3px solid var(--a5);}.cot .cl{color:var(--a5);}
-.cbx .ch{background:rgba(108,255,184,.07);border-left:3px solid var(--a6);}.cbx .cl{color:var(--a6);}
-.cex .ch{background:rgba(255,108,143,.07);border-left:3px solid var(--a3);}.cex .cl{color:var(--a3);}
+.cpx .ch{background:rgba(20,184,166,.07);border-left:3px solid var(--a4);}.cpx .cl{color:var(--a4);}
+.cip .ch{background:rgba(99,102,241,.07);border-left:3px solid var(--a1);}.cip .cl{color:var(--a1);}
+.csm .ch{background:rgba(168,85,247,.07);border-left:3px solid var(--a2);}.csm .cl{color:var(--a2);}
+.cot .ch{background:rgba(245,158,11,.07);border-left:3px solid var(--a5);}.cot .cl{color:var(--a5);}
+.cbx .ch{background:rgba(16,185,129,.07);border-left:3px solid var(--a6);}.cbx .cl{color:var(--a6);}
+.cex .ch{background:rgba(244,63,94,.07);border-left:3px solid var(--a3);}.cex .cl{color:var(--a3);}
 table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
 .t th{
   background:var(--s2);padding:.24rem .38rem;text-align:center;
@@ -210,7 +210,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   width:100%;outline:none;padding:0;min-width:42px;
 }
 .t input[type=text]{text-align:left;}
-.t input:focus{background:rgba(108,143,255,.08);border-radius:3px;}
+.t input:focus{background:rgba(99,102,241,.08);border-radius:3px;}
 .t td.op-cell{color:var(--text2);font-family:var(--mono);}
 .ng{color:var(--success);}.nr{color:var(--danger);}.nb{color:var(--a1);}.ngd{color:var(--a5);}.nz{color:var(--text3);}
 .add-row{
@@ -269,7 +269,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
 }
 .carry-w input:focus{border-color:var(--a1);}
 .cash-pill{
-  background:rgba(255,184,108,.07);border:1px solid rgba(255,184,108,.2);
+  background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);
   border-radius:7px;padding:.3rem .55rem;
 }
 
@@ -283,7 +283,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   font-family:var(--mono);font-size:.95rem;color:var(--white);
   outline:none;transition:border-color .2s;letter-spacing:.04em;
 }
-.imei-field:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(108,143,255,.1);}
+.imei-field:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(99,102,241,.1);}
 .imei-field::placeholder{color:var(--text2);font-size:.78rem;letter-spacing:0;}
 .mode-toggle{
   display:grid;grid-template-columns:1fr 1fr;gap:3px;
@@ -295,7 +295,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   font-family:var(--sans);font-size:.78rem;font-weight:700;
   cursor:pointer;transition:all .2s;background:transparent;color:var(--text2);
 }
-.mode-btn.active{background:var(--a1);color:#05070f;}
+.mode-btn.active{background:var(--a1);color:#0e0e11;}
 .mode-btn.active.sell{background:var(--danger);color:#fff;}
 
 /* ── PHONE CARDS ── */
@@ -322,17 +322,17 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   font-weight:600;text-transform:uppercase;letter-spacing:.3px;
   font-family:var(--mono);
 }
-.badge-green{background:rgba(108,255,184,.1);color:var(--success);border:1px solid rgba(108,255,184,.25);}
-.badge-red{background:rgba(255,108,143,.1);color:var(--danger);border:1px solid rgba(255,108,143,.25);}
-.badge-blue{background:rgba(108,143,255,.1);color:var(--a1);border:1px solid rgba(108,143,255,.25);}
-.badge-purple{background:rgba(155,108,255,.1);color:var(--a2);border:1px solid rgba(155,108,255,.25);}
+.badge-green{background:rgba(16,185,129,.1);color:var(--success);border:1px solid rgba(16,185,129,.25);}
+.badge-red{background:rgba(244,63,94,.1);color:var(--danger);border:1px solid rgba(244,63,94,.25);}
+.badge-blue{background:rgba(99,102,241,.1);color:var(--a1);border:1px solid rgba(99,102,241,.25);}
+.badge-purple{background:rgba(168,85,247,.1);color:var(--a2);border:1px solid rgba(168,85,247,.25);}
 .badge-gray{background:var(--s2);color:var(--text2);border:1px solid var(--border);}
 .phone-price{font-family:var(--mono);font-size:.8rem;color:var(--a5);text-align:right;flex-shrink:0;}
 .del-btn{
   background:none;border:none;color:var(--text2);cursor:pointer;
   padding:5px;border-radius:6px;transition:all .15s;font-size:.9rem;
 }
-.del-btn:hover{color:var(--danger);background:rgba(255,108,143,.1);}
+.del-btn:hover{color:var(--danger);background:rgba(244,63,94,.1);}
 
 /* ── RESULT PREVIEW ── */
 .result-preview{
@@ -359,7 +359,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
   color:var(--white);outline:none;transition:border-color .2s;width:100%;
 }
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{
-  border-color:var(--a1);box-shadow:0 0 0 3px rgba(108,143,255,.08);
+  border-color:var(--a1);box-shadow:0 0 0 3px rgba(99,102,241,.08);
 }
 .form-group select option{background:var(--s2);}
 .form-group textarea{resize:vertical;min-height:55px;}
@@ -400,7 +400,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
   cursor:pointer;border:1px solid var(--border);background:var(--s2);color:var(--text2);
   transition:all .15s;font-family:var(--mono);
 }
-.filter-chip.active{background:var(--a1);color:#05070f;border-color:var(--a1);}
+.filter-chip.active{background:var(--a1);color:#0e0e11;border-color:var(--a1);}
 .filter-chip.sell-chip.active{background:var(--danger);border-color:var(--danger);color:#fff;}
 .section-title{
   font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
@@ -441,7 +441,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 .fi input:focus,.fi select:focus{border-color:var(--a1);}
 .mf{display:flex;justify-content:flex-end;gap:.5rem;margin-top:18px;}
 .info{
-  background:rgba(108,143,255,.06);border:1px solid rgba(108,143,255,.18);
+  background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.18);
   border-radius:7px;padding:.55rem .75rem;font-size:.68rem;color:var(--text2);line-height:1.6;
 }
 
@@ -473,9 +473,9 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
   box-shadow:0 8px 32px rgba(0,0,0,.5);
 }
 #toast.show{transform:translateX(-50%) translateY(0);}
-#toast.success{border-color:rgba(108,255,184,.4);color:var(--success);}
-#toast.error{border-color:rgba(255,108,143,.4);color:var(--danger);}
-#toast.warn{border-color:rgba(255,184,108,.4);color:var(--warn);}
+#toast.success{border-color:rgba(16,185,129,.4);color:var(--success);}
+#toast.error{border-color:rgba(244,63,94,.4);color:var(--danger);}
+#toast.warn{border-color:rgba(245,158,11,.4);color:var(--warn);}
 
 /* ── MONTHLY/HQ ── */
 .monthly-scroll{flex:1;overflow-y:auto;padding:.9rem;}
@@ -569,7 +569,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
     <div class="pg on" id="pg-scan">
       <div class="tb">
         <div class="tb-title">IMEI Scan</div>
-        <div class="tb-badge" id="scan-shop-badge" style="background:rgba(108,143,255,.1);border:1px solid rgba(108,143,255,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
+        <div class="tb-badge" id="scan-shop-badge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
         <div class="tbsep"></div>
         <button class="btn bb" onclick="openCamera()" style="font-size:.7rem;">📷 Scan Barcode</button>
       </div>
@@ -737,7 +737,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
     <div class="pg" id="pg-imeistock">
       <div class="tb">
         <div class="tb-title">IMEI Stock</div>
-        <div class="tb-badge" id="imei-shop-badge" style="background:rgba(108,143,255,.1);border:1px solid rgba(108,143,255,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
+        <div class="tb-badge" id="imei-shop-badge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
         <div class="tbsep"></div>
         <button class="btn bo" style="font-size:.65rem" onclick="loadIMEIData()">↻ Refresh</button>
         <button class="btn bo" style="font-size:.65rem" onclick="exportIMEICSV()">↓ CSV</button>
@@ -779,7 +779,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
     <div class="pg" id="pg-stock">
       <div class="tb">
         <div class="tb-title">Daily Sheet</div>
-        <div class="tb-badge" id="stock-badge" style="background:rgba(108,143,255,.1);border:1px solid rgba(108,143,255,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
+        <div class="tb-badge" id="stock-badge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
         <div class="tbsep"></div>
         <input type="date" id="work-date" onchange="loadDay()">
         <div class="tbsep"></div>
@@ -874,7 +874,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
     <div class="pg" id="pg-warehouse">
       <div class="tb">
         <div class="tb-title">HQ Warehouse</div>
-        <div class="tb-badge" style="background:rgba(108,255,224,.07);border:1px solid rgba(108,255,224,.25);color:var(--chq);border-radius:20px;padding:2px 10px;">Central Stock</div>
+        <div class="tb-badge" style="background:rgba(20,184,166,.07);border:1px solid rgba(20,184,166,.25);color:var(--chq);border-radius:20px;padding:2px 10px;">Central Stock</div>
         <div class="tbsep"></div>
         <button class="btn bv" onclick="openReceiveModal()">+ Receive Stock</button>
         <button class="btn bb" onclick="openDispatchModal()">↗ Dispatch</button>
@@ -943,7 +943,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
     <video id="camVideo" autoplay playsinline muted style="width:100%;border-radius:14px;border:2px solid var(--a1);display:block;max-height:55vw;object-fit:cover;"></video>
     <!-- Viewfinder overlay -->
     <div style="position:absolute;inset:0;pointer-events:none;border-radius:12px;overflow:hidden;">
-      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:38%;border:2px solid rgba(108,143,255,.7);border-radius:6px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:38%;border:2px solid rgba(99,102,241,.7);border-radius:6px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);"></div>
       <div id="scanLine" style="position:absolute;top:50%;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,var(--a1),transparent);transform:translateY(-200%);animation:scanAnim 2s ease-in-out infinite;"></div>
     </div>
   </div>
@@ -991,7 +991,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 const BASE=window.location.origin;
 const SHOPS=['456','192','G15'];
 const SHOP_COLOR={'456':'var(--c456)','192':'var(--c192)','G15':'var(--cg15)','HQ':'var(--chq)'};
-const SHOP_RGBA={'456':'108,143,255','192':'155,108,255','G15':'255,108,143','HQ':'108,255,224'};
+const SHOP_RGBA={'456':'99,102,241','192':'168,85,247','G15':'244,63,94','HQ':'20,184,166'};
 const CATS={
   GOOGLE:{label:'Google Pixel',cls:'cpx'},
   IPHONE:{label:'iPhone',cls:'cip'},
@@ -1035,7 +1035,7 @@ function applyPhoneMode(){
   });
   // Add phone mode banner
   const banner = document.createElement('div');
-  banner.style.cssText='background:rgba(108,143,255,.08);border-bottom:1px solid rgba(108,143,255,.2);padding:5px 12px;font-size:.65rem;color:var(--a1);font-weight:600;text-align:center;flex-shrink:0;';
+  banner.style.cssText='background:rgba(99,102,241,.08);border-bottom:1px solid rgba(99,102,241,.2);padding:5px 12px;font-size:.65rem;color:var(--a1);font-weight:600;text-align:center;flex-shrink:0;';
   banner.textContent='📱 Phone Mode — Scan & Add only';
   document.getElementById('main').prepend(banner);
 }
@@ -1090,7 +1090,7 @@ function nav(page){
 function switchShop(s){
   activeShop=s;
   document.querySelectorAll('.stab').forEach(t=>t.classList.toggle('on',t.dataset.s===s));
-  const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'108,143,255';
+  const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'99,102,241';
   const label=s==='HQ'?'Head Office':'Shop '+s;
   ['scan-shop-badge','imei-shop-badge','stock-badge'].forEach(id=>{
     const el=$(id);if(!el)return;
@@ -1171,7 +1171,7 @@ function renderBatchQueue(){
       <div style="flex:1;min-width:0;">
         <div style="color:var(--white);">IMEI 1: ${e.imei1}</div>
         <div style="display:flex;gap:4px;margin-top:2px">
-          ${e.imei2?`<span style="font-size:.58rem;background:rgba(108,143,255,.15);color:var(--a1);border:1px solid rgba(108,143,255,.3);padding:1px 5px;border-radius:10px;">2 IMEIs</span>`:`<span style="font-size:.58rem;background:var(--s3);color:var(--text2);border:1px solid var(--border);padding:1px 5px;border-radius:10px;">1 IMEI</span>`}
+          ${e.imei2?`<span style="font-size:.58rem;background:rgba(99,102,241,.15);color:var(--a1);border:1px solid rgba(99,102,241,.3);padding:1px 5px;border-radius:10px;">2 IMEIs</span>`:`<span style="font-size:.58rem;background:var(--s3);color:var(--text2);border:1px solid var(--border);padding:1px 5px;border-radius:10px;">1 IMEI</span>`}
         </div>
       </div>
       <button class="bx" onclick="removeBatchEntry(${i})">✕</button>
@@ -1447,7 +1447,7 @@ function clearScanResult(){
 function flashField(el){
   if(!el)return;
   el.style.borderColor='var(--success)';
-  el.style.boxShadow='0 0 0 3px rgba(108,255,184,.2)';
+  el.style.boxShadow='0 0 0 3px rgba(16,185,129,.2)';
   setTimeout(()=>{el.style.borderColor='';el.style.boxShadow='';},800);
 }
 
@@ -1603,7 +1603,7 @@ function renderIMEIStock(){
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:.9rem;color:var(--white);">${g.brand||'Unknown'} ${g.model||''}</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">
-              <span style="font-family:var(--mono);font-size:.7rem;font-weight:700;background:rgba(108,143,255,.15);color:var(--a1);border:1px solid rgba(108,143,255,.3);padding:2px 9px;border-radius:20px;">${count} unit${count!==1?'s':''}</span>
+              <span style="font-family:var(--mono);font-size:.7rem;font-weight:700;background:rgba(99,102,241,.15);color:var(--a1);border:1px solid rgba(99,102,241,.3);padding:2px 9px;border-radius:20px;">${count} unit${count!==1?'s':''}</span>
               ${inStockCount?`<span class="badge badge-green">${inStockCount} in stock</span>`:''}
               ${soldCount?`<span class="badge badge-red">${soldCount} sold</span>`:''}
               ${g.color?`<span class="badge badge-gray">${g.color}</span>`:''}
@@ -1729,6 +1729,7 @@ async function saveEditPhone(id){
     buyPrice:document.getElementById('ep-price').value,
     imei2:document.getElementById('ep-imei2').value.trim().replace(/\D/g,''),
     notes:document.getElementById('ep-notes').value.trim(),
+    cat:document.getElementById('ep-cat').value,
   };
   const d=await api('PUT',`/api/stock/${id}`,payload);
   if(d.error){showToast(d.error,'error');return;}
@@ -1810,7 +1811,7 @@ function renderSalesLog(){
           <tbody>${daySales.map(s=>`<tr style="border-top:1px solid rgba(255,255,255,.04)">
             <td style="padding:.3rem .7rem;color:var(--white);font-weight:600">${esc(s.brand||'')} ${esc(s.model||'')}</td>
             <td style="padding:.3rem .7rem;font-family:var(--mono);font-size:.62rem;color:var(--text2)">${s.imei||''}</td>
-            <td style="padding:.3rem .7rem"><span style="background:rgba(${SHOP_RGBA[s.shop]||'108,143,255'},.15);color:${SHOP_COLOR[s.shop]||'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[s.shop]||'108,143,255'},.3);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:600">${s.shop||'—'}</span></td>
+            <td style="padding:.3rem .7rem"><span style="background:rgba(${SHOP_RGBA[s.shop]||'99,102,241'},.15);color:${SHOP_COLOR[s.shop]||'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[s.shop]||'99,102,241'},.3);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:600">${s.shop||'—'}</span></td>
             <td style="padding:.3rem .7rem;color:var(--text2)">${esc(s.buyerName||'—')}</td>
             <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--text2)">${s.buyPrice?pkr(s.buyPrice):'—'}</td>
             <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--success)">${pkr(s.salePrice)}</td>
@@ -2046,9 +2047,6 @@ function recalc(){
 async function saveDay(){
   const shop=activeShop==='HQ'?'456':activeShop;const date=$('work-date').value||today();
   await api('PUT',`/api/days/${shop}/${date}`,dayState);
-  const master={shop,cats:{}};
-  Object.keys(CATS).forEach(k=>{master.cats[k]={rows:(dayState.cats[k]?.rows||[]).map(r=>({name:r.name,op:(r.op||0)+(r.inQty||0)-(r.out||0),costPerUnit:r.costPerUnit||0,boughtFor:0}))};});
-  await api('PUT',`/api/shopstock/${shop}`,master);
   showToast(`✅ Day saved — ${shop} / ${date}`,'success');
 }
 function exportDayCSV(){
@@ -2086,7 +2084,7 @@ async function renderShopExpenses(){
   let html=`<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem;">${Object.entries(totals).map(([s,amt])=>`<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:.45rem .8rem;min-width:120px;"><div style="font-size:.62rem;font-weight:700;color:${SHOP_COLOR[s]||'var(--text2)'};margin-bottom:2px">Shop ${s}</div><div style="font-family:var(--mono);font-size:.9rem;color:var(--danger)">${pkr(amt)}</div></div>`).join('')}</div>`;
   const byShop={};allShopExp.forEach(e=>{if(!byShop[e.shop])byShop[e.shop]=[];byShop[e.shop].push(e);});
   Object.entries(byShop).forEach(([s,rows])=>{
-    const tot=rows.reduce((a,e)=>a+(e.amount||0),0);const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'108,143,255';
+    const tot=rows.reduce((a,e)=>a+(e.amount||0),0);const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'99,102,241';
     html+=`<div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:.65rem;overflow:hidden;">
       <div style="display:flex;justify-content:space-between;padding:.45rem .85rem;background:rgba(${r},.06);border-bottom:1px solid var(--border);">
         <span style="font-size:.82rem;font-weight:700;color:${c}">Shop ${s}</span>
@@ -2096,7 +2094,7 @@ async function renderShopExpenses(){
         <thead><tr style="background:rgba(0,0,0,.15)"><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600;letter-spacing:.06em">DATE</th><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">CAT</th><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">DESCRIPTION</th><th style="text-align:right;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">AMOUNT</th><th style="width:24px"></th></tr></thead>
         <tbody>${rows.map(e=>`<tr style="border-top:1px solid rgba(255,255,255,.04)">
           <td style="padding:.3rem .7rem;color:var(--text2);font-family:var(--mono)">${e.date||''}</td>
-          <td style="padding:.3rem .7rem"><span style="background:rgba(255,108,143,.08);border:1px solid rgba(255,108,143,.2);color:var(--danger);border-radius:5px;padding:.06rem .38rem;font-size:.57rem;font-weight:600">${e.category||''}</span></td>
+          <td style="padding:.3rem .7rem"><span style="background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);color:var(--danger);border-radius:5px;padding:.06rem .38rem;font-size:.57rem;font-weight:600">${e.category||''}</span></td>
           <td style="padding:.3rem .7rem;color:var(--white)">${esc(e.description||'')}</td>
           <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--danger)">${pkr(e.amount)}</td>
           <td style="padding:.3rem .4rem"><button class="bx" onclick="deleteShopExp('${e._key}')">✕</button></td>
@@ -2139,7 +2137,7 @@ function renderHistory(){
   body.innerHTML=allDays.map(d=>{
     const tSales=Object.entries(d.cats||{}).reduce((s,[,cv])=>(cv.rows||[]).reduce((a,r)=>a+(r.soldFor||0),s),0);
     const sold=Object.entries(d.cats||{}).reduce((s,[ck,cv])=>CATS[ck]?.isExtra?s:(cv.rows||[]).reduce((a,r)=>a+(r.out||0),s),0);
-    const c=SHOP_COLOR[d.shop]||'var(--a5)';const r=SHOP_RGBA[d.shop]||'108,143,255';
+    const c=SHOP_COLOR[d.shop]||'var(--a5)';const r=SHOP_RGBA[d.shop]||'99,102,241';
     return `<div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:.5rem;cursor:pointer;transition:border-color .2s" onclick="this.querySelector('.hist-body').style.display=this.querySelector('.hist-body').style.display==='none'?'block':'none'">
       <div style="padding:.5rem .85rem;display:flex;align-items:center;gap:.6rem">
         <span style="font-size:.82rem;font-weight:700;color:${c}">Shop ${d.shop}</span>
@@ -2165,7 +2163,7 @@ async function renderHQ(){
   const byShop={};days.forEach(d=>{if(!byShop[d.shop])byShop[d.shop]={days:0,sales:0,pl:0,sold:0,expenses:0};const sh=byShop[d.shop];sh.days++;Object.entries(d.cats||{}).forEach(([ck,cv])=>{const rows=cv.rows||[];if(CATS[ck]?.isExtra){sh.sales+=rows.reduce((a,r)=>a+(r.soldFor||0),0);sh.pl+=rows.reduce((a,r)=>a+(r.soldFor||0)-(r.boughtFor||0),0);}else{sh.sales+=rows.reduce((a,r)=>a+(r.soldFor||0),0);const tc=rows.reduce((a,r)=>a+(r.costPerUnit||0)*(r.out||0),0);sh.pl+=rows.reduce((a,r)=>a+(r.soldFor||0),0)-tc;sh.sold+=rows.reduce((a,r)=>a+(r.out||0),0);}});sh.expenses+=(d.expenses||[]).reduce((a,e)=>a+(e.amt||0),0);});
   const tSales=Object.values(byShop).reduce((s,v)=>s+v.sales,0);const tPL=Object.values(byShop).reduce((s,v)=>s+v.pl,0);
   body.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.65rem;padding:.9rem .9rem 0;">
-    ${Object.entries(byShop).map(([sh,v])=>{const c=SHOP_COLOR[sh]||'var(--a5)';const r=SHOP_RGBA[sh]||'108,143,255';return `<div class="shop-card"><div class="shop-card-hd" style="border-left:3px solid ${c}"><div class="shop-card-name" style="color:${c}">Shop ${sh}</div><div style="font-size:.6rem;color:var(--text2)">${v.days} day(s)</div></div><div class="shop-card-body"><div class="shop-stat"><span>Sales</span><span style="color:var(--success);font-family:var(--mono)">${pkr(v.sales)}</span></div><div class="shop-stat"><span>Gross P/L</span><span style="color:${v.pl>=0?'var(--success)':'var(--danger)'};font-family:var(--mono)">${pkr(v.pl)}</span></div><div class="shop-stat"><span>Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(v.expenses)}</span></div><div class="shop-stat"><span>Net P/L</span><span style="color:${(v.pl-v.expenses)>=0?'var(--success)':'var(--danger)'};font-family:var(--mono);font-weight:600">${pkr(v.pl-v.expenses)}</span></div><div class="shop-stat"><span>Units Sold</span><span style="color:var(--a1)">${v.sold}</span></div></div></div>`;}).join('')}
+    ${Object.entries(byShop).map(([sh,v])=>{const c=SHOP_COLOR[sh]||'var(--a5)';const r=SHOP_RGBA[sh]||'99,102,241';return `<div class="shop-card"><div class="shop-card-hd" style="border-left:3px solid ${c}"><div class="shop-card-name" style="color:${c}">Shop ${sh}</div><div style="font-size:.6rem;color:var(--text2)">${v.days} day(s)</div></div><div class="shop-card-body"><div class="shop-stat"><span>Sales</span><span style="color:var(--success);font-family:var(--mono)">${pkr(v.sales)}</span></div><div class="shop-stat"><span>Gross P/L</span><span style="color:${v.pl>=0?'var(--success)':'var(--danger)'};font-family:var(--mono)">${pkr(v.pl)}</span></div><div class="shop-stat"><span>Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(v.expenses)}</span></div><div class="shop-stat"><span>Net P/L</span><span style="color:${(v.pl-v.expenses)>=0?'var(--success)':'var(--danger)'};font-family:var(--mono);font-weight:600">${pkr(v.pl-v.expenses)}</span></div><div class="shop-stat"><span>Units Sold</span><span style="color:var(--a1)">${v.sold}</span></div></div></div>`;}).join('')}
   </div>
   <div style="padding:.5rem .9rem;border-top:1px solid var(--border);margin-top:.65rem;display:flex;gap:1.5rem;flex-wrap:wrap;background:var(--s1);">
     <div class="cfi"><div class="cfl">Combined Sales</div><div class="cfv p" style="font-size:.9rem">${pkr(tSales)}</div></div>
@@ -2247,7 +2245,7 @@ function renderShipments(){
   const body=$('ship-body');
   if(!all.length){body.innerHTML=`<div class="empty"><div class="empty-icon">🚚</div><h3>No shipments found</h3></div>`;return;}
   const catC={IPHONE:'var(--a1)',SAMSUNG:'var(--a2)',GOOGLE:'var(--a4)',OTHER:'var(--a5)',BOX:'var(--a6)',EXTRA:'var(--a3)'};
-  body.innerHTML=`<div style="padding:.9rem">${all.map(sh=>{const isD=sh.source==='dispatch';const c=isD?(SHOP_COLOR[sh.toShop]||'var(--a5)'):'var(--a4)';const r=isD?(SHOP_RGBA[sh.toShop]||'108,143,255'):'108,255,224';const tot=(sh.items||[]).reduce((s,i)=>s+i.qty,0);return `<div class="ship-card"><div class="ship-hd" style="background:rgba(${r},.05);border-bottom:1px solid rgba(${r},.12)"><span style="font-size:.82rem;font-weight:700;color:${c}">${isD?`→ Shop ${sh.toShop}`:'⬇ Inbound'}</span><span style="font-family:var(--mono);font-size:.63rem;color:var(--text2)">${sh.date}</span>${sh.supplier?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.supplier)}</span>`:''}${sh.note||sh.ref?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.note||sh.ref)}</span>`:''}<span style="margin-left:auto;font-size:.63rem;color:var(--a5);font-family:var(--mono)">${tot} units</span></div><div class="ship-items">${(sh.items||[]).map(it=>`<div style="display:flex;gap:.5rem;align-items:center;padding:.2rem 0;border-bottom:1px solid var(--border2);font-size:.63rem"><span style="flex:1;color:var(--white)">${esc(it.name)}</span><span style="padding:.03rem .28rem;background:var(--s3);color:${catC[it.cat]||'var(--text2)'};border-radius:4px;font-size:.52rem;font-weight:600">${it.cat||''}</span><span style="color:var(--text2)">×${it.qty}</span>${it.costPerUnit?`<span style="color:var(--a5);font-family:var(--mono)">${pkr(it.costPerUnit)}</span>`:''}</div>`).join('')}</div></div>`;}).join('')}</div>`;
+  body.innerHTML=`<div style="padding:.9rem">${all.map(sh=>{const isD=sh.source==='dispatch';const c=isD?(SHOP_COLOR[sh.toShop]||'var(--a5)'):'var(--a4)';const r=isD?(SHOP_RGBA[sh.toShop]||'99,102,241'):'20,184,166';const tot=(sh.items||[]).reduce((s,i)=>s+i.qty,0);return `<div class="ship-card"><div class="ship-hd" style="background:rgba(${r},.05);border-bottom:1px solid rgba(${r},.12)"><span style="font-size:.82rem;font-weight:700;color:${c}">${isD?`→ Shop ${sh.toShop}`:'⬇ Inbound'}</span><span style="font-family:var(--mono);font-size:.63rem;color:var(--text2)">${sh.date}</span>${sh.supplier?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.supplier)}</span>`:''}${sh.note||sh.ref?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.note||sh.ref)}</span>`:''}<span style="margin-left:auto;font-size:.63rem;color:var(--a5);font-family:var(--mono)">${tot} units</span></div><div class="ship-items">${(sh.items||[]).map(it=>`<div style="display:flex;gap:.5rem;align-items:center;padding:.2rem 0;border-bottom:1px solid var(--border2);font-size:.63rem"><span style="flex:1;color:var(--white)">${esc(it.name)}</span><span style="padding:.03rem .28rem;background:var(--s3);color:${catC[it.cat]||'var(--text2)'};border-radius:4px;font-size:.52rem;font-weight:600">${it.cat||''}</span><span style="color:var(--text2)">×${it.qty}</span>${it.costPerUnit?`<span style="color:var(--a5);font-family:var(--mono)">${pkr(it.costPerUnit)}</span>`:''}</div>`).join('')}</div></div>`;}).join('')}</div>`;
 }
 
 // ── MONTHLY P&L ──
@@ -2262,7 +2260,7 @@ async function renderMonthly(){
     let tSales=0,tCost=0,gPL=0,expT=0,sold=0;
     shD.forEach(d=>{Object.entries(d.cats||{}).forEach(([ck,cv])=>{const rows=cv.rows||[];if(CATS[ck]?.isExtra){tSales+=rows.reduce((a,r)=>a+(r.soldFor||0),0);gPL+=rows.reduce((a,r)=>a+(r.soldFor||0)-(r.boughtFor||0),0);}else{tSales+=rows.reduce((a,r)=>a+(r.soldFor||0),0);const tc=rows.reduce((a,r)=>a+(r.costPerUnit||0)*(r.out||0),0);tCost+=tc;gPL+=rows.reduce((a,r)=>a+(r.soldFor||0),0)-tc;sold+=rows.reduce((a,r)=>a+(r.out||0),0);}});expT+=(d.expenses||[]).reduce((a,e)=>a+(e.amt||0),0);});
     expT+=shE.reduce((a,e)=>a+(e.amount||0),0);
-    const netPL=gPL-expT;const c=SHOP_COLOR[sh]||'var(--a5)';const r=SHOP_RGBA[sh]||'108,143,255';
+    const netPL=gPL-expT;const c=SHOP_COLOR[sh]||'var(--a5)';const r=SHOP_RGBA[sh]||'99,102,241';
     html+=`<div class="shop-card"><div class="shop-card-hd" style="border-left:3px solid ${c}"><div class="shop-card-name" style="color:${c}">Shop ${sh}</div><div style="font-size:.6rem;color:var(--text2)">${shD.length} days</div></div><div class="shop-card-body"><div class="shop-stat"><span>Total Sales</span><span style="color:var(--success);font-family:var(--mono)">${pkr(tSales)}</span></div><div class="shop-stat"><span>Cost of Sold</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(tCost)}</span></div><div class="shop-stat"><span>Gross P/L</span><span style="color:${gPL>=0?'var(--success)':'var(--danger)'};font-family:var(--mono)">${pkr(gPL)}</span></div><div class="shop-stat"><span>Total Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(expT)}</span></div><div class="shop-stat" style="border-top:1px solid var(--border);margin-top:3px;padding-top:4px"><span style="font-weight:700">Net P/L</span><span style="color:${netPL>=0?'var(--success)':'var(--danger)'};font-family:var(--mono);font-weight:700">${pkr(netPL)}</span></div><div class="shop-stat"><span>Units Sold</span><span style="color:var(--a1)">${sold}</span></div></div></div>`;
   });
   if(!html)html=`<div class="empty"><div class="empty-icon">📊</div><h3>No data for ${month}</h3></div>`;

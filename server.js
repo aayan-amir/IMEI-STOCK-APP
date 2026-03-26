@@ -48,6 +48,8 @@ const PhoneSchema = new mongoose.Schema({
   salePrice: Number,
   status: { type: String, default: 'in_stock' },
   shop: String,
+  cat: String,
+  notes: String,
   addedAt: String,
   soldAt: String
 });
