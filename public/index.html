@@ -8,35 +8,32 @@
 <script src="https://unpkg.com/@zxing/library@0.19.2/umd/index.min.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
 <style>
 :root{
-  --bg:#0e0e11;
-  --s1:#161619;
-  --s2:#1e1e24;
-  --s3:#252529;
-  --border:#2e2e38;
-  --border2:#27272f;
-  --text:#b0b3c4;
-  --text2:#545770;
-  --text3:#333548;
-  --white:#e8e9f2;
+  --bg:#f0f3f8;
+  --s1:#ffffff;
+  --s2:#f7f9fc;
+  --s3:#edf0f5;
+  --border:#dde2ea;
+  --border2:#e8ecf2;
+  --text:#2d3748;
+  --text2:#718096;
+  --text3:#a0aec0;
+  --white:#1a202c;
   --mono:'JetBrains Mono',monospace;
   --sans:'Syne',sans-serif;
   --radius:10px;
-  /* accent palette — professional indigo theme */
-  --a1:#6366f1;   /* indigo */
-  --a2:#a855f7;   /* violet */
-  --a3:#f43f5e;   /* rose */
-  --a4:#14b8a6;   /* teal */
-  --a5:#f59e0b;   /* amber */
-  --a6:#10b981;   /* emerald */
-  /* shop colors */
-  --c456:#6366f1;
-  --c192:#a855f7;
-  --cg15:#f43f5e;
-  --chq:#14b8a6;
-  /* status */
-  --success:#10b981;
-  --danger:#f43f5e;
-  --warn:#f59e0b;
+  --a1:#4f46e5;
+  --a2:#7c3aed;
+  --a3:#e11d48;
+  --a4:#0d9488;
+  --a5:#d97706;
+  --a6:#059669;
+  --c456:#4f46e5;
+  --c192:#7c3aed;
+  --cg15:#e11d48;
+  --chq:#0d9488;
+  --success:#059669;
+  --danger:#e11d48;
+  --warn:#d97706;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
@@ -46,6 +43,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 #topbar{
   height:52px;background:var(--s1);
   border-bottom:1px solid var(--border);
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
   display:flex;align-items:center;padding:0 1.2rem;gap:.8rem;
   flex-shrink:0;z-index:100;overflow-x:auto;
 }
@@ -56,7 +54,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 }
 .logo-dot{
   width:8px;height:8px;border-radius:50%;
-  background:var(--a1);box-shadow:0 0 10px var(--a1);
+  background:var(--a1);box-shadow:none;
 }
 .tsep{width:1px;height:20px;background:var(--border);flex-shrink:0;}
 .shop-tabs{display:flex;gap:3px;flex-shrink:0;}
@@ -90,6 +88,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 #sb{
   width:180px;min-width:180px;background:var(--s1);
   border-right:1px solid var(--border);
+  box-shadow:1px 0 3px rgba(0,0,0,.06);
   display:flex;flex-direction:column;overflow:hidden;
 }
 .sb-sec{padding:.5rem 0 .3rem;}
@@ -104,7 +103,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   border-left:2px solid transparent;
   transition:all .15s;white-space:nowrap;overflow:hidden;
 }
-.ni:hover{color:var(--white);background:rgba(255,255,255,.03);}
+.ni:hover{color:var(--white);background:rgba(0,0,0,.025);}
 .ni.on{border-left-color:var(--a1);background:rgba(99,102,241,.06);color:var(--a1);}
 .nd{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .sdiv{border:none;border-top:1px solid var(--border2);margin:.3rem .9rem;}
@@ -151,7 +150,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   cursor:pointer;transition:all .15s;white-space:nowrap;
 }
 .btn:active{transform:scale(.97);}
-.bg{ background:var(--a1);border-color:var(--a1);color:#0e0e11;font-weight:700; }
+.bg{ background:var(--a1);border-color:var(--a1);color:#fff;font-weight:700; }
 .bg:hover{ filter:brightness(1.12); }
 .bo{ background:transparent;border-color:var(--border);color:var(--text2); }
 .bo:hover{ border-color:var(--text2);color:var(--white);background:var(--s2); }
@@ -184,8 +183,8 @@ input[type=date]:focus{border-color:var(--a1);}
   border-radius:8px 8px 0 0;position:sticky;top:0;z-index:10;
 }
 .cl{font-family:var(--sans);font-size:.82rem;font-weight:700;letter-spacing:-.01em;}
-.cts{margin-left:auto;display:flex;gap:.8rem;font-size:.6rem;color:rgba(255,255,255,.45);}
-.cts b{color:rgba(255,255,255,.8);}
+.cts{margin-left:auto;display:flex;gap:.8rem;font-size:.6rem;color:rgba(0,0,0,.35);}
+.cts b{color:rgba(0,0,0,.65);}
 .cpx .ch{background:rgba(20,184,166,.07);border-left:3px solid var(--a4);}.cpx .cl{color:var(--a4);}
 .cip .ch{background:rgba(99,102,241,.07);border-left:3px solid var(--a1);}.cip .cl{color:var(--a1);}
 .csm .ch{background:rgba(168,85,247,.07);border-left:3px solid var(--a2);}.csm .cl{color:var(--a2);}
@@ -202,7 +201,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
 .t th.l{text-align:left;min-width:155px;}
 .t td{padding:.2rem .38rem;border:1px solid var(--border2);text-align:center;vertical-align:middle;white-space:nowrap;}
 .t td.l{text-align:left;}
-.t tbody tr:hover{background:rgba(255,255,255,.018);}
+.t tbody tr:hover{background:rgba(0,0,0,.025);}
 .t tfoot tr td{background:var(--s3);color:var(--a5);font-weight:600;font-size:.6rem;font-family:var(--mono);}
 .t input[type=number],.t input[type=text]{
   background:transparent;border:none;color:var(--white);
@@ -295,7 +294,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   font-family:var(--sans);font-size:.78rem;font-weight:700;
   cursor:pointer;transition:all .2s;background:transparent;color:var(--text2);
 }
-.mode-btn.active{background:var(--a1);color:#0e0e11;}
+.mode-btn.active{background:var(--a1);color:#fff;}
 .mode-btn.active.sell{background:var(--danger);color:#fff;}
 
 /* ── PHONE CARDS ── */
@@ -400,7 +399,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
   cursor:pointer;border:1px solid var(--border);background:var(--s2);color:var(--text2);
   transition:all .15s;font-family:var(--mono);
 }
-.filter-chip.active{background:var(--a1);color:#0e0e11;border-color:var(--a1);}
+.filter-chip.active{background:var(--a1);color:#fff;border-color:var(--a1);}
 .filter-chip.sell-chip.active{background:var(--danger);border-color:var(--danger);color:#fff;}
 .section-title{
   font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
@@ -1333,7 +1332,7 @@ async function submitAdd(){
     model:$('fModel').value.trim(),
     color:$('fColor').value.trim(),
     storage:$('fStorage').value,
-    buyPrice:$('fBuyPrice').value,
+    buyPrice:$('fBuyPrice').value!==''?Number($('fBuyPrice').value):undefined,
     notes:$('fNotes').value.trim(),
     shop:activeShop==='HQ'?null:activeShop
   };
@@ -1558,11 +1557,13 @@ async function startScanning(){
 let groupedView = true; // default: grouped by model
 async function loadIMEIData(){
   const sh=activeShop==='HQ'?null:activeShop;
-  [allIMEIStock,allIMEISales]=await Promise.all([
+  let [stock,sales]=await Promise.all([
     api('GET',sh?`/api/stock?shop=${sh}`:'/api/stock'),
     api('GET',sh?`/api/sales?shop=${sh}`:'/api/sales')
   ]);
-  allIMEIStock=[...allIMEIStock].reverse();renderIMEIStock();
+  allIMEIStock=Array.isArray(stock)?[...stock].reverse():[];
+  allIMEISales=Array.isArray(sales)?sales:[];
+  renderIMEIStock();
 }
 function setIMEIFilter(f,el){imeiFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderIMEIStock();}
 function toggleGrouped(){groupedView=!groupedView;$('groupBtn').textContent=groupedView?'☰ Ungrouped':'❏ Grouped';renderIMEIStock();}
@@ -1728,7 +1729,7 @@ async function saveEditPhone(id){
     model:document.getElementById('ep-model').value.trim(),
     color:document.getElementById('ep-color').value.trim(),
     storage:document.getElementById('ep-storage').value,
-    buyPrice:document.getElementById('ep-price').value,
+    buyPrice:document.getElementById('ep-price').value!==''?Number(document.getElementById('ep-price').value):undefined,
     imei2:document.getElementById('ep-imei2').value.trim().replace(/\D/g,''),
     notes:document.getElementById('ep-notes').value.trim(),
     cat:document.getElementById('ep-cat').value,
@@ -1741,11 +1742,21 @@ async function saveEditPhone(id){
 }
 
 async function deletePhone(id){
+  if(!id||id==='undefined'){showToast('Invalid phone id','error');return;}
   if(!confirm('Remove this phone from stock?'))return;
-  await api('DELETE',`/api/stock/${id}`);
-  await loadIMEIData();loadSidebarStats();
-  if(activePage==='stock') loadDay();
+  // Optimistically hide the card immediately for instant feedback
+  const card=document.getElementById('card-'+id);
+  if(card) card.style.display='none';
+  const d=await api('DELETE',`/api/stock/${id}`);
+  if(d && d.error){
+    // Revert the card visibility on failure
+    if(card) card.style.display='';
+    showToast(d.error,'error');return;
+  }
   showToast('Phone removed','warn');
+  await loadIMEIData();
+  loadSidebarStats();
+  if(activePage==='stock') loadDay();
 }
 function exportIMEICSV(){
   const h='IMEI 1,IMEI 2,Brand,Model,Color,Storage,Buy Price,Sale Price,Profit,Status,Shop,Added,Sold\n';
@@ -1800,7 +1811,7 @@ function renderSalesLog(){
       </div>
       <div id="slg-${uid}" style="display:none;border-top:1px solid var(--border);">
         <table style="width:100%;border-collapse:collapse;font-size:.65rem;">
-          <thead><tr style="background:rgba(0,0,0,.2)">
+          <thead><tr style="background:var(--s3)">
             <th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600;letter-spacing:.06em">PHONE</th>
             <th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">IMEI</th>
             <th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">SHOP</th>
@@ -1810,7 +1821,7 @@ function renderSalesLog(){
             <th style="text-align:right;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">PROFIT</th>
             <th style="width:28px"></th>
           </tr></thead>
-          <tbody>${daySales.map(s=>`<tr style="border-top:1px solid rgba(255,255,255,.04)">
+          <tbody>${daySales.map(s=>`<tr style="border-top:1px solid var(--border2)">
             <td style="padding:.3rem .7rem;color:var(--white);font-weight:600">${esc(s.brand||'')} ${esc(s.model||'')}</td>
             <td style="padding:.3rem .7rem;font-family:var(--mono);font-size:.62rem;color:var(--text2)">${s.imei||''}</td>
             <td style="padding:.3rem .7rem"><span style="background:rgba(${SHOP_RGBA[s.shop]||'99,102,241'},.15);color:${SHOP_COLOR[s.shop]||'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[s.shop]||'99,102,241'},.3);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:600">${s.shop||'—'}</span></td>
@@ -2107,8 +2118,8 @@ async function renderShopExpenses(){
         <span style="font-family:var(--mono);font-size:.72rem;color:var(--danger)">${pkr(tot)}</span>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:.65rem;">
-        <thead><tr style="background:rgba(0,0,0,.15)"><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600;letter-spacing:.06em">DATE</th><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">CAT</th><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">DESCRIPTION</th><th style="text-align:right;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">AMOUNT</th><th style="width:24px"></th></tr></thead>
-        <tbody>${rows.map(e=>`<tr style="border-top:1px solid rgba(255,255,255,.04)">
+        <thead><tr style="background:var(--s3)"><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600;letter-spacing:.06em">DATE</th><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">CAT</th><th style="text-align:left;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">DESCRIPTION</th><th style="text-align:right;padding:.3rem .7rem;color:var(--text3);font-size:.57rem;font-weight:600">AMOUNT</th><th style="width:24px"></th></tr></thead>
+        <tbody>${rows.map(e=>`<tr style="border-top:1px solid var(--border2)">
           <td style="padding:.3rem .7rem;color:var(--text2);font-family:var(--mono)">${e.date||''}</td>
           <td style="padding:.3rem .7rem"><span style="background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);color:var(--danger);border-radius:5px;padding:.06rem .38rem;font-size:.57rem;font-weight:600">${e.category||''}</span></td>
           <td style="padding:.3rem .7rem;color:var(--white)">${esc(e.description||'')}</td>
