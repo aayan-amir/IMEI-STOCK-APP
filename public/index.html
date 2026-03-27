@@ -1519,14 +1519,15 @@ async function openCamera(mode='imei1'){
   $('camHint').style.display='block';
   $('scanLine').style.animationPlayState='running';
   try{
-    // Use ideal (not exact) facingMode so iOS falls back gracefully; keep resolution modest for iOS performance
-    const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
-    camStream=await navigator.mediaDevices.getUserMedia(constraints);
+    // getBestCameraStream picks the main rear camera (not ultra-wide/telephoto) and
+    // applies continuous autofocus — important for close-up IMEI barcode scanning.
+    camStream=await getBestCameraStream();
     torchTrack=camStream.getVideoTracks()[0];
     const caps=torchTrack?.getCapabilities?.();
     $('torchBtn').style.opacity=caps?.torch?'1':'0.3';
     $('focusBtn').style.opacity=(caps?.focusMode?.length)?'1':'0.3';
     const vid=$('camVideo');
+    vid.srcObject=null;           // clear first — required on some iOS 17/18 devices
     vid.srcObject=camStream;
     await vid.play().catch(()=>{});  // explicit play() required on iOS Safari
     $('camModal').style.display='flex';
@@ -1554,6 +1555,64 @@ async function openCamera(mode='imei1'){
 }
 
 async function openCameraForImei2(){openCamera('imei2');}
+
+// Returns a MediaStream using the best available rear camera for barcode scanning.
+// On phones with multiple rear cameras (ultra-wide, main, telephoto) it prefers the
+// main 1× camera — the one most likely to autofocus on close-up IMEI labels.
+// Compatible with iOS 16 / 17 / 18 (iPhone 16+) and modern Android multi-camera setups.
+async function getBestCameraStream(){
+  // Step 1 — get an initial stream to trigger the permission prompt.
+  // facingMode ideal (not exact) gracefully falls back on iOS.
+  const base={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
+  let stream=await navigator.mediaDevices.getUserMedia(base);
+  try{
+    // Step 2 — camera labels are only populated AFTER permission is granted, so
+    // enumerate now and check whether a better rear camera exists.
+    const devices=await navigator.mediaDevices.enumerateDevices();
+    const cams=devices.filter(d=>d.kind==='videoinput');
+    if(cams.length>1){
+      const bestId=pickBestRearCamera(cams);
+      if(bestId){
+        const currentId=stream.getVideoTracks()[0]?.getSettings?.()?.deviceId;
+        if(bestId!==currentId){
+          // Switch to the better camera; fall back to original stream on any error.
+          const alt=await navigator.mediaDevices.getUserMedia({
+            video:{deviceId:{exact:bestId},width:{ideal:1280},height:{ideal:720}}
+          }).catch(()=>null);
+          if(alt){stream.getTracks().forEach(t=>t.stop());stream=alt;}
+        }
+      }
+    }
+    // Step 3 — enable continuous autofocus so close-up IMEI labels stay sharp.
+    const track=stream.getVideoTracks()[0];
+    const caps=track?.getCapabilities?.();
+    if(caps?.focusMode?.includes('continuous')){
+      await track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
+    }
+  }catch(e){}
+  return stream;
+}
+
+// Score rear cameras by label; higher = better for close-up IMEI barcode scanning.
+// Ultra-wide lenses (0.5×) and long-telephoto (5×+) are bad for this use-case.
+// Returns the deviceId of the highest-scoring rear camera, or null if undecided.
+function pickBestRearCamera(devices){
+  function score(label){
+    const l=(label||'').toLowerCase();
+    if(!l||l==='camera')return 5;                                        // unlabelled — moderate score
+    if(/(front|user|selfie|face)/i.test(l))return -1;                   // front-facing: skip
+    if(/ultra.?wide|ultrawide|wide.?angle|\b0\.5x\b/i.test(l))return 1; // ultra-wide: worst for close-up
+    if(/\b(4x|5x|6x)\b/i.test(l))return 2;                             // long telephoto: bad
+    if(/telephoto|\b2x\b|\b3x\b/i.test(l))return 3;                     // short telephoto: ok
+    if(/back|rear|environment|main/i.test(l))return 10;                 // main rear: best
+    return 5;
+  }
+  const ranked=devices
+    .map(d=>({id:d.deviceId,s:score(d.label)}))
+    .filter(d=>d.s>0)
+    .sort((a,b)=>b.s-a.s);
+  return ranked.length?ranked[0].id:null;
+}
 
 function closeCamera(){
   scanActive=false;
