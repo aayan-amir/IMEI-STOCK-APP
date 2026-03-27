@@ -1082,6 +1082,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn bo" onclick="closeCamera()" style="flex:1;">Close</button>
+      <button class="btn bo" onclick="triggerFocus()" id="focusBtn" style="font-size:.75rem;padding:.28rem .65rem;" title="Tap to focus">🎯</button>
       <button class="btn bo" onclick="toggleTorch()" id="torchBtn" style="font-size:.75rem;padding:.28rem .65rem;" title="Toggle flashlight">🔦</button>
     </div>
   </div>
@@ -1518,11 +1519,16 @@ async function openCamera(mode='imei1'){
   $('camHint').style.display='block';
   $('scanLine').style.animationPlayState='running';
   try{
-    const constraints={video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}};
+    // Use ideal (not exact) facingMode so iOS falls back gracefully; keep resolution modest for iOS performance
+    const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
     camStream=await navigator.mediaDevices.getUserMedia(constraints);
     torchTrack=camStream.getVideoTracks()[0];
-    $('torchBtn').style.opacity=torchTrack?.getCapabilities?.()?.torch?'1':'0.3';
-    $('camVideo').srcObject=camStream;
+    const caps=torchTrack?.getCapabilities?.();
+    $('torchBtn').style.opacity=caps?.torch?'1':'0.3';
+    $('focusBtn').style.opacity=(caps?.focusMode?.length)?'1':'0.3';
+    const vid=$('camVideo');
+    vid.srcObject=camStream;
+    await vid.play().catch(()=>{});  // explicit play() required on iOS Safari
     $('camModal').style.display='flex';
     // Initialise detector FIRST, then start the scan loop exactly once
     if(!detectorInstance&&!zxingReader){
@@ -1643,6 +1649,25 @@ async function toggleTorch(){
   }catch(e){showToast('Torch not available','warn');}
 }
 
+async function triggerFocus(){
+  if(!torchTrack)return;
+  try{
+    // Try single-shot focus first (triggers a one-time autofocus)
+    await torchTrack.applyConstraints({advanced:[{focusMode:'single-shot'}]});
+    showToast('Focusing…');
+    // Return to continuous after brief delay so it keeps tracking
+    setTimeout(async()=>{
+      try{await torchTrack.applyConstraints({advanced:[{focusMode:'continuous'}]});}catch(e){}
+    },800);
+  }catch(e){
+    // Fallback: toggle continuous autofocus to force a re-focus
+    try{
+      await torchTrack.applyConstraints({advanced:[{focusMode:'continuous'}]});
+      showToast('Focusing…');
+    }catch(e2){showToast('Focus not supported on this device','warn');}
+  }
+}
+
 async function startScanning(){
   if(!detectorInstance&&!zxingReader){
     $('camHint').innerHTML='<span style="color:var(--warn)">⚠ Native barcode scanning unavailable. Using software fallback. For best results use Chrome or Edge.</span>';
@@ -1679,8 +1704,15 @@ async function startScanning(){
     // Reschedule only if still active (onBarcodeDetected may have set scanActive=false)
     if(scanActive&&scanLoopId===myLoopId)setTimeout(()=>requestAnimationFrame(scan),66);
   };
-  if(vid.readyState>=2)requestAnimationFrame(scan);
-  else vid.addEventListener('canplay',()=>requestAnimationFrame(scan),{once:true});
+  if(vid.readyState>=2&&vid.videoWidth>0)requestAnimationFrame(scan);
+  else{
+    // 'playing' fires reliably on iOS Safari; 'canplay' may not
+    let fired=false;
+    const go=()=>{if(!fired){fired=true;requestAnimationFrame(scan);}};
+    vid.addEventListener('playing',go,{once:true});
+    vid.addEventListener('loadeddata',go,{once:true});
+    setTimeout(go,2000); // safety fallback in case neither event fires
+  }
 }
 // ── IMEI STOCK LIST ──
 let groupedView = true; // default: grouped by model
