@@ -510,9 +510,112 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
   .tb{gap:.3rem;}
   .tb-title{font-size:.88rem;}
 }
+
+/* ── AUTH OVERLAY ── */
+#auth-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  padding:1rem;
+}
+#auth-overlay.hidden{display:none;}
+.auth-box{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:2rem 2rem 1.8rem;
+  width:100%;max-width:390px;
+  box-shadow:0 10px 40px rgba(0,0,0,.12);
+}
+.auth-logo{
+  display:flex;align-items:center;gap:8px;
+  font-size:1.15rem;font-weight:800;color:var(--white);
+  margin-bottom:1.5rem;letter-spacing:-.02em;
+}
+.auth-logo-dot{width:10px;height:10px;border-radius:50%;background:var(--a1);}
+.auth-title{font-size:.9rem;font-weight:700;color:var(--white);margin-bottom:.3rem;}
+.auth-sub{font-size:.72rem;color:var(--text2);margin-bottom:1.3rem;line-height:1.55;}
+.auth-input{
+  width:100%;background:var(--s2);border:1px solid var(--border);
+  border-radius:9px;padding:.65rem .85rem;
+  font-family:var(--mono);font-size:1rem;color:var(--white);
+  outline:none;transition:border-color .15s;
+  margin-bottom:.7rem;-webkit-appearance:none;
+}
+.auth-input:focus{border-color:var(--a1);}
+.auth-err{
+  font-size:.68rem;color:var(--danger);
+  min-height:1.1em;margin-bottom:.55rem;display:none;
+}
+.auth-err.show{display:block;}
+.auth-btn{
+  width:100%;padding:.72rem;border-radius:9px;border:none;
+  background:var(--a1);color:#fff;
+  font-family:var(--sans);font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:filter .15s;margin-bottom:.9rem;
+  -webkit-appearance:none;
+}
+.auth-btn:hover{filter:brightness(1.12);}
+.auth-btn:active{filter:brightness(.95);}
+.auth-divider{
+  display:flex;align-items:center;gap:.6rem;
+  margin:.2rem 0 .9rem;font-size:.64rem;color:var(--text3);
+}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;border-top:1px solid var(--border);}
+.auth-shop-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:.55rem;
+}
+.auth-shop-btn{
+  padding:.75rem .4rem;border-radius:10px;
+  border:2px solid var(--border);background:var(--s2);
+  font-family:var(--sans);font-size:.8rem;font-weight:700;
+  color:var(--text2);cursor:pointer;transition:all .15s;
+  text-align:center;-webkit-appearance:none;
+}
+.auth-shop-btn:hover,.auth-shop-btn:active{border-color:var(--a1);color:var(--a1);background:rgba(99,102,241,.06);}
+.auth-shop-btn[data-s="456"]:hover,.auth-shop-btn[data-s="456"]:active{border-color:var(--c456);color:var(--c456);}
+.auth-shop-btn[data-s="192"]:hover,.auth-shop-btn[data-s="192"]:active{border-color:var(--c192);color:var(--c192);}
+.auth-shop-btn[data-s="G15"]:hover,.auth-shop-btn[data-s="G15"]:active{border-color:var(--cg15);color:var(--cg15);}
+@media(max-width:400px){
+  .auth-box{padding:1.5rem 1.2rem 1.4rem;}
+  .auth-input{font-size:.95rem;}
+}
 </style>
 </head>
 <body>
+
+<!-- ── AUTH OVERLAY ── -->
+<div id="auth-overlay">
+  <!-- Step 1: gate password -->
+  <div id="auth-gate" class="auth-box">
+    <div class="auth-logo"><div class="auth-logo-dot"></div>Mobile HQ</div>
+    <div class="auth-title">Site Access</div>
+    <div class="auth-sub">Enter the site password to continue.</div>
+    <input type="password" class="auth-input" id="auth-gate-input"
+      placeholder="Password…" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')checkGate()">
+    <div class="auth-err" id="auth-gate-err">Incorrect password. Try again.</div>
+    <button class="auth-btn" onclick="checkGate()">Unlock</button>
+  </div>
+  <!-- Step 2: admin or shop selection -->
+  <div id="auth-role" class="auth-box" style="display:none">
+    <div class="auth-logo"><div class="auth-logo-dot"></div>Mobile HQ</div>
+    <div class="auth-title">Select Access</div>
+    <div class="auth-sub">Enter the admin password for full access, or tap your shop for limited access.</div>
+    <input type="password" class="auth-input" id="auth-admin-input"
+      placeholder="Admin password…" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')checkAdmin()">
+    <div class="auth-err" id="auth-admin-err">Incorrect admin password.</div>
+    <button class="auth-btn" onclick="checkAdmin()">Admin Login</button>
+    <div class="auth-divider">or select your shop</div>
+    <div class="auth-shop-grid">
+      <button class="auth-shop-btn" data-s="456" onclick="enterShopMode('456')">Shop 456</button>
+      <button class="auth-shop-btn" data-s="G15" onclick="enterShopMode('G15')">Shop G15</button>
+      <button class="auth-shop-btn" data-s="192" onclick="enterShopMode('192')">Shop 192</button>
+    </div>
+  </div>
+</div>
+
 
 <div id="topbar">
   <div class="logo"><div class="logo-dot"></div>Mobile HQ</div>
@@ -1042,6 +1145,7 @@ function applyPhoneMode(){
 }
 
 let activeShop='456',activePage='scan',scanMode='add',pendingIMEI='',camStream=null;
+let shopModeActive=false;
 let dayState={shop:'456',date:today(),cats:{},expenses:[],purchases:[],transfers:[],carryForward:0};
 let allIMEIStock=[],allIMEISales=[],imeiFilter='all';
 let allDays=[],allShopExp=[],allDispatches=[],allShipments=[],hqStock={items:[]};
@@ -1055,8 +1159,21 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 function showToast(msg,type='success'){const t=$('toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
 async function api(method,url,body){
   const opts={method,headers:{'Content-Type':'application/json'}};
+  const tok=sessionStorage.getItem('authToken');
+  if(tok)opts.headers['Authorization']='Bearer '+tok;
   if(body)opts.body=JSON.stringify(body);
-  try{const r=await fetch(BASE+url,opts);try{return await r.json();}catch(e){return{};}}catch(e){return{};}
+  try{
+    const r=await fetch(BASE+url,opts);
+    if(r.status===401){
+      // Session expired — clear and force re-auth
+      sessionStorage.removeItem('authToken');sessionStorage.removeItem('authRole');sessionStorage.removeItem('authShop');
+      authRole=null;authShop=null;
+      $('auth-overlay').classList.remove('hidden');
+      $('auth-gate').style.display='';$('auth-role').style.display='none';
+      showToast('Session expired — please sign in again','warn');
+      return {};
+    }
+    try{return await r.json();}catch(e){return{};}}catch(e){return{};}
 }
 
 // Clock
@@ -1089,6 +1206,7 @@ function nav(page){
 }
 
 function switchShop(s){
+  if(shopModeActive)return; // locked in shop mode
   activeShop=s;
   document.querySelectorAll('.stab').forEach(t=>t.classList.toggle('on',t.dataset.s===s));
   const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'99,102,241';
@@ -1393,6 +1511,12 @@ async function openCamera(mode='imei1'){
   $('camLabel').textContent=camLabels[mode]||'Scanning…';
   $('camUseImei1').style.display='';
   $('camUseImei2').style.display='';
+  // Reset UI to initial scanning state (without calling clearScanResult to avoid
+  // starting a scan loop before the detector is initialised)
+  $('camResultBox').style.display='none';
+  $('camActions').style.display='none';
+  $('camHint').style.display='block';
+  $('scanLine').style.animationPlayState='running';
   try{
     const constraints={video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}};
     camStream=await navigator.mediaDevices.getUserMedia(constraints);
@@ -1400,7 +1524,7 @@ async function openCamera(mode='imei1'){
     $('torchBtn').style.opacity=torchTrack?.getCapabilities?.()?.torch?'1':'0.3';
     $('camVideo').srcObject=camStream;
     $('camModal').style.display='flex';
-    clearScanResult();
+    // Initialise detector FIRST, then start the scan loop exactly once
     if(!detectorInstance&&!zxingReader){
       if('BarcodeDetector' in window){
         let formats;
@@ -1418,6 +1542,7 @@ async function openCamera(mode='imei1'){
     scanActive=true;
     startScanning();
   }catch(e){
+    camStream=null;
     showToast('Camera not available — HTTPS required on phone','error');
   }
 }
@@ -1541,17 +1666,21 @@ async function startScanning(){
       try{
         if(detectorInstance){
           const codes=await detectorInstance.detect(detectorCanvas);
-          if(codes.length>0){onBarcodeDetected(codes[0].rawValue,codes[0].format);return;}
+          // Do NOT return here — let scanActive decide whether to reschedule.
+          // If onBarcodeDetected rejects the value (wrong digit count, duplicate)
+          // the loop must keep running so the user can point at a valid barcode.
+          if(codes.length>0)onBarcodeDetected(codes[0].rawValue,codes[0].format);
         }else{
           const result=zxingReader.decodeFromCanvas(detectorCanvas);
-          if(result){onBarcodeDetected(result.getText(),result.getBarcodeFormat().toString());return;}
+          if(result)onBarcodeDetected(result.getText(),result.getBarcodeFormat().toString());
         }
       }catch(e){}
     }
+    // Reschedule only if still active (onBarcodeDetected may have set scanActive=false)
     if(scanActive&&scanLoopId===myLoopId)setTimeout(()=>requestAnimationFrame(scan),66);
   };
-  if(vid.readyState>=3)requestAnimationFrame(scan);
-  else vid.addEventListener('playing',()=>requestAnimationFrame(scan),{once:true});
+  if(vid.readyState>=2)requestAnimationFrame(scan);
+  else vid.addEventListener('canplay',()=>requestAnimationFrame(scan),{once:true});
 }
 // ── IMEI STOCK LIST ──
 let groupedView = true; // default: grouped by model
@@ -2319,11 +2448,117 @@ $('modal-bg').addEventListener('click',e=>{if(e.target===$('modal-bg'))closeModa
 
 function dlCSV(content,filename){const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(content);a.download=filename;a.click();}
 
+// ── AUTH ──────────────────────────────────────────────────────────
+let authRole=null,authShop=null,_pendingGatePassword='';
+
+async function _authPost(payload){
+  try{
+    const r=await fetch(BASE+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    return await r.json();
+  }catch(e){return{ok:false};}
+}
+
+async function checkGate(){
+  const pw=$('auth-gate-input').value;
+  if(!pw){$('auth-gate-input').focus();return;}
+  const d=await _authPost({type:'gate',password:pw});
+  if(d.ok){
+    _pendingGatePassword=pw; // kept in memory only — never stored to sessionStorage
+    $('auth-gate').style.display='none';
+    $('auth-role').style.display='';
+    setTimeout(()=>$('auth-admin-input')?.focus(),80);
+  }else{
+    const e=$('auth-gate-err');e.classList.add('show');
+    $('auth-gate-input').value='';$('auth-gate-input').focus();
+    setTimeout(()=>e.classList.remove('show'),3000);
+  }
+}
+
+async function checkAdmin(){
+  const pw=$('auth-admin-input').value;
+  if(!pw){$('auth-admin-input').focus();return;}
+  const d=await _authPost({type:'admin',password:pw});
+  if(d.ok){
+    sessionStorage.setItem('authToken',d.token);
+    sessionStorage.setItem('authRole','admin');
+    sessionStorage.removeItem('authShop');
+    authRole='admin';authShop=null;
+    $('auth-overlay').classList.add('hidden');
+    await bootApp();
+  }else{
+    const e=$('auth-admin-err');e.classList.add('show');
+    $('auth-admin-input').value='';$('auth-admin-input').focus();
+    setTimeout(()=>e.classList.remove('show'),3000);
+  }
+}
+
+async function enterShopMode(shop){
+  // Shop auth requires the gate password to prevent gate bypass via direct API call
+  const d=await _authPost({type:'shop',password:_pendingGatePassword,shop});
+  if(!d.ok){showToast('Auth error — please refresh and try again','error');return;}
+  sessionStorage.setItem('authToken',d.token);
+  sessionStorage.setItem('authRole','shop');
+  sessionStorage.setItem('authShop',shop);
+  authRole='shop';authShop=shop;
+  $('auth-overlay').classList.add('hidden');
+  await bootApp();
+}
+
+function applyShopMode(shop){
+  shopModeActive=true;
+  // Only show the selected shop's tab
+  document.querySelectorAll('.stab').forEach(t=>{
+    t.style.display=(t.dataset.s===shop)?'':'none';
+  });
+  // Restrict sidebar nav to scan and imeistock only
+  ['ni-saleslog','ni-stock','ni-expenses','ni-history','ni-backup'].forEach(id=>{
+    const el=$(id);if(el)el.style.display='none';
+  });
+  // Hide Head Office and Tools sidebar sections
+  document.querySelectorAll('.sb-lbl').forEach(el=>{
+    if(el.textContent.trim()==='Head Office'||el.textContent.trim()==='Tools'){
+      const sec=el.closest('.sb-sec');
+      if(sec){
+        sec.style.display='none';
+        const prev=sec.previousElementSibling;
+        if(prev&&prev.classList.contains('sdiv'))prev.style.display='none';
+      }
+    }
+  });
+  // Hide Batch Add mode button — shop staff only add one phone at a time
+  const mb=$('modeBatch');if(mb)mb.style.display='none';
+  // Lock nav to allowed pages (flag-based, not function override)
+  const _nav=nav;
+  window.nav=function(page){
+    if(!['scan','imeistock'].includes(page)){showToast('Not available in shop mode','warn');return;}
+    _nav(page);
+  };
+}
+
 // ── BOOT ──
-(async()=>{
+async function bootApp(){
   applyPhoneMode();
+  const shop=(authRole==='shop')?authShop:activeShop;
+  activeShop=shop;
+  switchShop(shop);                       // must come before applyShopMode locks switchShop
+  if(authRole==='shop')applyShopMode(shop);
   $('work-date').value=today();$('hq-date').value=today();
   $('monthly-month').value=ym(today());$('exp-month-filter').value=ym(today());$('ship-month-filter').value=ym(today());
   await loadSidebarStats();await loadIMEIData();$('imeiInput')?.focus();
+}
+
+// ── AUTH CHECK ──
+(async()=>{
+  const token=sessionStorage.getItem('authToken');
+  const role=sessionStorage.getItem('authRole');
+  const shop=sessionStorage.getItem('authShop');
+  if(token&&role){
+    // Resume session — server will reject token on first API call if it expired
+    authRole=role;authShop=shop||null;
+    $('auth-overlay').classList.add('hidden');
+    await bootApp();
+  }else{
+    setTimeout(()=>$('auth-gate-input')?.focus(),80);
+  }
 })();
 </script></body></html>
