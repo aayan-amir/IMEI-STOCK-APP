@@ -1538,11 +1538,11 @@ async function openCamera(mode='imei1'){
         catch(e){formats=['code_128','code_39','ean_13','ean_8','itf','upc_a','upc_e','qr_code','data_matrix','aztec'];}
         detectorInstance=new BarcodeDetector({formats});
         detectorCanvas=document.createElement('canvas');
-        detectorCtx=detectorCanvas.getContext('2d');
+        detectorCtx=detectorCanvas.getContext('2d',{willReadFrequently:true});
       }else if(window.ZXing){
         zxingReader=new ZXing.BrowserMultiFormatReader();
         detectorCanvas=document.createElement('canvas');
-        detectorCtx=detectorCanvas.getContext('2d');
+        detectorCtx=detectorCanvas.getContext('2d',{willReadFrequently:true});
       }
     }
     scanActive=true;
@@ -1670,7 +1670,7 @@ async function triggerFocus(){
 
 async function startScanning(){
   if(!detectorInstance&&!zxingReader){
-    $('camHint').innerHTML='<span style="color:var(--warn)">⚠ Native barcode scanning unavailable. Using software fallback. For best results use Chrome or Edge.</span>';
+    $('camHint').innerHTML='<span style="color:var(--warn)">⚠ Barcode scanning is not supported in this browser. Please use Chrome, Edge, or Safari.</span>';
     return;
   }
   const vid=$('camVideo');
@@ -1687,8 +1687,8 @@ async function startScanning(){
       const bw=visW*0.80,bh=visH*0.38;
       detectorCanvas.width=Math.round(bw);
       detectorCanvas.height=Math.round(bh);
-      detectorCtx.drawImage(vid,bx,by,bw,bh,0,0,detectorCanvas.width,detectorCanvas.height);
       try{
+        detectorCtx.drawImage(vid,bx,by,bw,bh,0,0,detectorCanvas.width,detectorCanvas.height);
         if(detectorInstance){
           const codes=await detectorInstance.detect(detectorCanvas);
           // Do NOT return here — let scanActive decide whether to reschedule.
