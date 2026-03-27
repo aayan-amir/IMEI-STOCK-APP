@@ -120,7 +120,7 @@ const Dispatch = mongoose.model('Dispatch', DispatchSchema);
 
 // ── PASSWORDS (set via env vars) ───────────────
 const GATE_PASSWORD  = process.env.GATE_PASSWORD  || 'mobworld';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'aayan104';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'anasanas';
 
 // ── SESSION TOKENS ─────────────────────────────
 // Simple in-memory store: token -> { role, shop, expiresAt }
