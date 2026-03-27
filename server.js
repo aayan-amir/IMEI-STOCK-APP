@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -121,18 +122,101 @@ const Dispatch = mongoose.model('Dispatch', DispatchSchema);
 const GATE_PASSWORD  = process.env.GATE_PASSWORD  || 'mobworld';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'aayan104';
 
+// ── SESSION TOKENS ─────────────────────────────
+// Simple in-memory store: token -> { role, shop, expiresAt }
+const tokenStore = new Map();
+const TOKEN_TTL = 8 * 60 * 60 * 1000; // 8 hours
+
+// Expire old tokens periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [tok, data] of tokenStore) {
+    if (data.expiresAt < now) tokenStore.delete(tok);
+  }
+}, 60 * 60 * 1000);
+
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Constant-time string comparison to prevent timing attacks
+function safeCompare(a, b) {
+  try {
+    const ba = Buffer.from(String(a || ''), 'utf8');
+    const bb = Buffer.from(String(b || ''), 'utf8');
+    if (ba.length !== bb.length) {
+      crypto.timingSafeEqual(ba, ba); // burn time, always false
+      return false;
+    }
+    return crypto.timingSafeEqual(ba, bb);
+  } catch { return false; }
+}
+
+// Auth middleware — verifies Bearer token in Authorization header
+function requireAuth(roles = ['admin', 'shop']) {
+  return (req, res, next) => {
+    const header = req.headers['authorization'] || '';
+    const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+    const session = tokenStore.get(token);
+    if (!session || session.expiresAt < Date.now()) {
+      if (session) tokenStore.delete(token);
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    if (!roles.includes(session.role)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    req.authRole = session.role;
+    req.authShop = session.shop; // null for admin
+    next();
+  };
+}
+
+const adminOnly = requireAuth(['admin']);
+const anyAuth   = requireAuth(['admin', 'shop']);
+
+// Strict rate limiter for the auth endpoint: 10 attempts per 15 minutes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Too many attempts, please try again later.' },
+});
+
 // ── ROUTES ─────────────────────────────────────
 
-// Auth — validates passwords without exposing them to the client
-app.post('/api/auth', (req, res) => {
-  const { type, password } = req.body || {};
-  if (type === 'gate')  return res.json({ ok: password === GATE_PASSWORD });
-  if (type === 'admin') return res.json({ ok: password === ADMIN_PASSWORD });
+// Auth — validates passwords and issues session tokens (never exposes passwords)
+app.post('/api/auth', authLimiter, (req, res) => {
+  const { type, password, shop } = req.body || {};
+
+  // Step 1: gate check (no token issued — just confirms the gate password)
+  if (type === 'gate') {
+    return res.json({ ok: safeCompare(password, GATE_PASSWORD) });
+  }
+
+  // Step 2a: admin login
+  if (type === 'admin') {
+    if (!safeCompare(password, ADMIN_PASSWORD)) return res.json({ ok: false });
+    const token = generateToken();
+    tokenStore.set(token, { role: 'admin', shop: null, expiresAt: Date.now() + TOKEN_TTL });
+    return res.json({ ok: true, token, role: 'admin' });
+  }
+
+  // Step 2b: shop login — requires gate password to prevent gate bypass
+  if (type === 'shop') {
+    const VALID_SHOPS = ['456', '192', 'G15'];
+    if (!safeCompare(password, GATE_PASSWORD)) return res.json({ ok: false });
+    if (!VALID_SHOPS.includes(shop)) return res.status(400).json({ ok: false, error: 'Invalid shop' });
+    const token = generateToken();
+    tokenStore.set(token, { role: 'shop', shop, expiresAt: Date.now() + TOKEN_TTL });
+    return res.json({ ok: true, token, role: 'shop', shop });
+  }
+
   return res.status(400).json({ ok: false });
 });
 
 // Lookup single phone by IMEI (used by scan/sell flow)
-app.get('/api/lookup/:imei', async (req, res) => {
+app.get('/api/lookup/:imei', anyAuth, async (req, res) => {
   try {
     const phone = await Phone.findOne({ imei: req.params.imei });
     if (!phone) return res.json({});
@@ -142,34 +226,32 @@ app.get('/api/lookup/:imei', async (req, res) => {
   }
 });
 
-// Get stock
-app.get('/api/stock', async (req, res) => {
-  const shop = req.query.shop;
+// Get stock — shop users are scoped to their own shop
+app.get('/api/stock', anyAuth, async (req, res) => {
+  const shop = req.authShop || req.query.shop;
   const query = shop ? { shop } : {};
   const items = await Phone.find(query);
   res.json(items);
 });
 
-// Add stock
-app.post('/api/stock/add', async (req, res) => {
-  const { imei } = req.body;
+// Add stock — shop users can only add to their own shop
+app.post('/api/stock/add', anyAuth, async (req, res) => {
+  const body = { ...req.body };
+  if (req.authRole === 'shop') body.shop = req.authShop;
 
+  const { imei } = body;
   if (!imei) return res.status(400).json({ error: 'IMEI required' });
 
   const exists = await Phone.findOne({ imei });
   if (exists) return res.status(409).json({ error: 'IMEI exists' });
 
-  const phone = new Phone({
-    ...req.body,
-    addedAt: new Date().toISOString()
-  });
-
+  const phone = new Phone({ ...body, addedAt: new Date().toISOString() });
   await phone.save();
   res.json({ success: true, phone });
 });
 
-// Sell phone
-app.post('/api/stock/sell', async (req, res) => {
+// Sell phone — shop users can only sell phones that belong to their shop
+app.post('/api/stock/sell', anyAuth, async (req, res) => {
   try {
     const { imei, salePrice, buyerName, notes, shop } = req.body;
 
@@ -183,6 +265,11 @@ app.post('/api/stock/sell', async (req, res) => {
     if (!phone) return res.status(404).json({ error: 'Not found' });
     if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
 
+    // Shop users may only sell phones assigned to their shop
+    if (req.authRole === 'shop' && phone.shop !== req.authShop) {
+      return res.status(403).json({ error: 'Phone not assigned to your shop' });
+    }
+
     const sp = Number(salePrice);
     if (Number.isNaN(sp) || sp <= 0) return res.status(400).json({ error: 'Sale price must be greater than zero' });
 
@@ -192,7 +279,8 @@ app.post('/api/stock/sell', async (req, res) => {
     phone.status = 'sold';
     phone.salePrice = sp;
     phone.soldAt = new Date().toISOString();
-    if (shop !== undefined) phone.shop = shop;
+    // Shop users cannot reassign the phone's shop
+    if (req.authRole === 'admin' && shop !== undefined) phone.shop = shop;
 
     await phone.save();
 
@@ -212,7 +300,6 @@ app.post('/api/stock/sell', async (req, res) => {
     try {
       await sale.save();
     } catch (saleErr) {
-      // Revert phone to in_stock so data stays consistent
       phone.status = 'in_stock';
       phone.salePrice = undefined;
       phone.soldAt = undefined;
@@ -220,7 +307,6 @@ app.post('/api/stock/sell', async (req, res) => {
       throw saleErr;
     }
 
-    // Return the saved sale so frontend can consume it immediately
     res.json({ success: true, sale });
   } catch (err) {
     console.error('Sell endpoint error:', err);
@@ -228,17 +314,17 @@ app.post('/api/stock/sell', async (req, res) => {
   }
 });
 
-// Get sales
-app.get('/api/sales', async (req, res) => {
+// Get sales — admin only
+app.get('/api/sales', adminOnly, async (req, res) => {
   const shop = req.query.shop;
   const query = shop ? { shop } : {};
   const sales = await Sale.find(query);
   res.json(sales);
 });
 
-// Stats
-app.get('/api/stats', async (req, res) => {
-  const shop = req.query.shop;
+// Stats — shop users are scoped to their own shop
+app.get('/api/stats', anyAuth, async (req, res) => {
+  const shop = req.authShop || req.query.shop;
   const query = shop ? { shop } : {};
   const stock = await Phone.find(query);
   const sales = await Sale.find(query);
@@ -252,12 +338,11 @@ app.get('/api/stats', async (req, res) => {
   });
 });
 
-// Edit phone
-app.put('/api/stock/:id', async (req, res) => {
+// Edit phone — admin only
+app.put('/api/stock/:id', adminOnly, async (req, res) => {
   try {
     const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body;
     const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
-    // Remove undefined fields so they are not overwritten
     Object.keys(allowed).forEach(k => allowed[k] === undefined && delete allowed[k]);
     const phone = await Phone.findByIdAndUpdate(req.params.id, allowed, { new: true });
     if (!phone) return res.status(404).json({ error: 'Not found' });
@@ -267,8 +352,8 @@ app.put('/api/stock/:id', async (req, res) => {
   }
 });
 
-// Delete phone
-app.delete('/api/stock/:id', async (req, res) => {
+// Delete phone — admin only
+app.delete('/api/stock/:id', adminOnly, async (req, res) => {
   try {
     const { id } = req.params;
     if (!id || id === 'undefined' || !mongoose.Types.ObjectId.isValid(id)) {
@@ -283,8 +368,7 @@ app.delete('/api/stock/:id', async (req, res) => {
 
 // ── DAILY SHEET ────────────────────────────────
 
-// Get all daily sheets (?shop= and/or ?month= filters)
-app.get('/api/days', async (req, res) => {
+app.get('/api/days', adminOnly, async (req, res) => {
   try {
     const { shop, month } = req.query;
     const query = {};
@@ -297,8 +381,7 @@ app.get('/api/days', async (req, res) => {
   }
 });
 
-// Get specific daily sheet
-app.get('/api/days/:shop/:date', async (req, res) => {
+app.get('/api/days/:shop/:date', adminOnly, async (req, res) => {
   try {
     const day = await Day.findOne({ shop: req.params.shop, date: req.params.date });
     res.json(day || {});
@@ -307,8 +390,7 @@ app.get('/api/days/:shop/:date', async (req, res) => {
   }
 });
 
-// Save/update daily sheet
-app.put('/api/days/:shop/:date', async (req, res) => {
+app.put('/api/days/:shop/:date', adminOnly, async (req, res) => {
   try {
     const { shop, date } = req.params;
     const update = { ...req.body, shop, date };
@@ -325,7 +407,7 @@ app.put('/api/days/:shop/:date', async (req, res) => {
 
 // ── SHOP EXPENSES ───────────────────────────────
 
-app.get('/api/shopexpenses', async (req, res) => {
+app.get('/api/shopexpenses', adminOnly, async (req, res) => {
   try {
     const { shop, month } = req.query;
     const query = {};
@@ -338,7 +420,7 @@ app.get('/api/shopexpenses', async (req, res) => {
   }
 });
 
-app.post('/api/shopexpenses', async (req, res) => {
+app.post('/api/shopexpenses', adminOnly, async (req, res) => {
   try {
     const expense = new ShopExpense({ ...req.body, addedAt: new Date().toISOString() });
     await expense.save();
@@ -348,7 +430,7 @@ app.post('/api/shopexpenses', async (req, res) => {
   }
 });
 
-app.delete('/api/shopexpenses/:id', async (req, res) => {
+app.delete('/api/shopexpenses/:id', adminOnly, async (req, res) => {
   try {
     await ShopExpense.findByIdAndDelete(req.params.id);
     res.json({ success: true });
@@ -359,7 +441,7 @@ app.delete('/api/shopexpenses/:id', async (req, res) => {
 
 // ── HQ STOCK ────────────────────────────────────
 
-app.get('/api/hqstock', async (req, res) => {
+app.get('/api/hqstock', adminOnly, async (req, res) => {
   try {
     const stock = await HQStockModel.findOne({ key: 'hq' });
     res.json(stock || { items: [] });
@@ -368,7 +450,7 @@ app.get('/api/hqstock', async (req, res) => {
   }
 });
 
-app.put('/api/hqstock', async (req, res) => {
+app.put('/api/hqstock', adminOnly, async (req, res) => {
   try {
     const update = { ...req.body, key: 'hq', updatedAt: new Date().toISOString() };
     const stock = await HQStockModel.findOneAndUpdate(
@@ -384,7 +466,7 @@ app.put('/api/hqstock', async (req, res) => {
 
 // ── SHIPMENTS & DISPATCHES ──────────────────────
 
-app.post('/api/shipments', async (req, res) => {
+app.post('/api/shipments', adminOnly, async (req, res) => {
   try {
     const shipment = new Shipment({ ...req.body, addedAt: new Date().toISOString() });
     await shipment.save();
@@ -394,7 +476,7 @@ app.post('/api/shipments', async (req, res) => {
   }
 });
 
-app.get('/api/shipments', async (req, res) => {
+app.get('/api/shipments', adminOnly, async (req, res) => {
   try {
     const shipments = await Shipment.find().sort({ date: -1 });
     res.json(shipments);
@@ -403,7 +485,7 @@ app.get('/api/shipments', async (req, res) => {
   }
 });
 
-app.post('/api/dispatches', async (req, res) => {
+app.post('/api/dispatches', adminOnly, async (req, res) => {
   try {
     const dispatch = new Dispatch({ ...req.body, addedAt: new Date().toISOString() });
     await dispatch.save();
@@ -413,7 +495,7 @@ app.post('/api/dispatches', async (req, res) => {
   }
 });
 
-app.get('/api/dispatches', async (req, res) => {
+app.get('/api/dispatches', adminOnly, async (req, res) => {
   try {
     const dispatches = await Dispatch.find().sort({ date: -1 });
     res.json(dispatches);
@@ -423,8 +505,7 @@ app.get('/api/dispatches', async (req, res) => {
 });
 
 // ── BULK DELETE SALES ────────────────────────────
-// Deletes all sales (optionally filtered by ?shop=) and reverts phones to in_stock
-app.delete('/api/sales', async (req, res) => {
+app.delete('/api/sales', adminOnly, async (req, res) => {
   try {
     const { shop } = req.query;
     const query = shop ? { shop } : {};
@@ -449,8 +530,7 @@ app.delete('/api/sales', async (req, res) => {
 });
 
 // ── DELETE SALE ─────────────────────────────────
-// Deletes a sale record and reverts the phone back to in_stock
-app.delete('/api/sales/:id', async (req, res) => {
+app.delete('/api/sales/:id', adminOnly, async (req, res) => {
   try {
     const sale = await Sale.findById(req.params.id);
     if (!sale) return res.status(404).json({ error: 'Sale not found' });
@@ -471,7 +551,7 @@ app.delete('/api/sales/:id', async (req, res) => {
 
 // ── BACKUP & RESTORE ────────────────────────────
 
-app.get('/api/backup', async (req, res) => {
+app.get('/api/backup', adminOnly, async (req, res) => {
   try {
     const [phones, sales, days, expenses, hqstock, shipments, dispatches] = await Promise.all([
       Phone.find({}),
@@ -494,7 +574,7 @@ app.get('/api/backup', async (req, res) => {
   }
 });
 
-app.post('/api/restore', express.json({ limit: '50mb' }), async (req, res) => {
+app.post('/api/restore', adminOnly, express.json({ limit: '50mb' }), async (req, res) => {
   try {
     const { phones, sales, days, expenses, hqstock, shipments, dispatches } = req.body;
     if (phones?.length) {

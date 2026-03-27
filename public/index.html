@@ -1145,6 +1145,7 @@ function applyPhoneMode(){
 }
 
 let activeShop='456',activePage='scan',scanMode='add',pendingIMEI='',camStream=null;
+let shopModeActive=false;
 let dayState={shop:'456',date:today(),cats:{},expenses:[],purchases:[],transfers:[],carryForward:0};
 let allIMEIStock=[],allIMEISales=[],imeiFilter='all';
 let allDays=[],allShopExp=[],allDispatches=[],allShipments=[],hqStock={items:[]};
@@ -1158,8 +1159,21 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 function showToast(msg,type='success'){const t=$('toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
 async function api(method,url,body){
   const opts={method,headers:{'Content-Type':'application/json'}};
+  const tok=sessionStorage.getItem('authToken');
+  if(tok)opts.headers['Authorization']='Bearer '+tok;
   if(body)opts.body=JSON.stringify(body);
-  try{const r=await fetch(BASE+url,opts);try{return await r.json();}catch(e){return{};}}catch(e){return{};}
+  try{
+    const r=await fetch(BASE+url,opts);
+    if(r.status===401){
+      // Session expired — clear and force re-auth
+      sessionStorage.removeItem('authToken');sessionStorage.removeItem('authRole');sessionStorage.removeItem('authShop');
+      authRole=null;authShop=null;
+      $('auth-overlay').classList.remove('hidden');
+      $('auth-gate').style.display='';$('auth-role').style.display='none';
+      showToast('Session expired — please sign in again','warn');
+      return {};
+    }
+    try{return await r.json();}catch(e){return{};}}catch(e){return{};}
 }
 
 // Clock
@@ -1192,6 +1206,7 @@ function nav(page){
 }
 
 function switchShop(s){
+  if(shopModeActive)return; // locked in shop mode
   activeShop=s;
   document.querySelectorAll('.stab').forEach(t=>t.classList.toggle('on',t.dataset.s===s));
   const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'99,102,241';
@@ -1496,6 +1511,12 @@ async function openCamera(mode='imei1'){
   $('camLabel').textContent=camLabels[mode]||'Scanning…';
   $('camUseImei1').style.display='';
   $('camUseImei2').style.display='';
+  // Reset UI to initial scanning state (without calling clearScanResult to avoid
+  // starting a scan loop before the detector is initialised)
+  $('camResultBox').style.display='none';
+  $('camActions').style.display='none';
+  $('camHint').style.display='block';
+  $('scanLine').style.animationPlayState='running';
   try{
     const constraints={video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}};
     camStream=await navigator.mediaDevices.getUserMedia(constraints);
@@ -1503,7 +1524,7 @@ async function openCamera(mode='imei1'){
     $('torchBtn').style.opacity=torchTrack?.getCapabilities?.()?.torch?'1':'0.3';
     $('camVideo').srcObject=camStream;
     $('camModal').style.display='flex';
-    clearScanResult();
+    // Initialise detector FIRST, then start the scan loop exactly once
     if(!detectorInstance&&!zxingReader){
       if('BarcodeDetector' in window){
         let formats;
@@ -1521,6 +1542,7 @@ async function openCamera(mode='imei1'){
     scanActive=true;
     startScanning();
   }catch(e){
+    camStream=null;
     showToast('Camera not available — HTTPS required on phone','error');
   }
 }
@@ -1644,17 +1666,21 @@ async function startScanning(){
       try{
         if(detectorInstance){
           const codes=await detectorInstance.detect(detectorCanvas);
-          if(codes.length>0){onBarcodeDetected(codes[0].rawValue,codes[0].format);return;}
+          // Do NOT return here — let scanActive decide whether to reschedule.
+          // If onBarcodeDetected rejects the value (wrong digit count, duplicate)
+          // the loop must keep running so the user can point at a valid barcode.
+          if(codes.length>0)onBarcodeDetected(codes[0].rawValue,codes[0].format);
         }else{
           const result=zxingReader.decodeFromCanvas(detectorCanvas);
-          if(result){onBarcodeDetected(result.getText(),result.getBarcodeFormat().toString());return;}
+          if(result)onBarcodeDetected(result.getText(),result.getBarcodeFormat().toString());
         }
       }catch(e){}
     }
+    // Reschedule only if still active (onBarcodeDetected may have set scanActive=false)
     if(scanActive&&scanLoopId===myLoopId)setTimeout(()=>requestAnimationFrame(scan),66);
   };
-  if(vid.readyState>=3)requestAnimationFrame(scan);
-  else vid.addEventListener('playing',()=>requestAnimationFrame(scan),{once:true});
+  if(vid.readyState>=2)requestAnimationFrame(scan);
+  else vid.addEventListener('canplay',()=>requestAnimationFrame(scan),{once:true});
 }
 // ── IMEI STOCK LIST ──
 let groupedView = true; // default: grouped by model
@@ -2423,18 +2449,21 @@ $('modal-bg').addEventListener('click',e=>{if(e.target===$('modal-bg'))closeModa
 function dlCSV(content,filename){const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(content);a.download=filename;a.click();}
 
 // ── AUTH ──────────────────────────────────────────────────────────
-let authRole=null,authShop=null;
+let authRole=null,authShop=null,_pendingGatePassword='';
 
-async function _authPost(type,password){
-  try{const r=await fetch(BASE+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,password})});return await r.json();}catch(e){return{ok:false};}
+async function _authPost(payload){
+  try{
+    const r=await fetch(BASE+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    return await r.json();
+  }catch(e){return{ok:false};}
 }
 
 async function checkGate(){
   const pw=$('auth-gate-input').value;
   if(!pw){$('auth-gate-input').focus();return;}
-  const d=await _authPost('gate',pw);
+  const d=await _authPost({type:'gate',password:pw});
   if(d.ok){
-    sessionStorage.setItem('gateOk','1');
+    _pendingGatePassword=pw; // kept in memory only — never stored to sessionStorage
     $('auth-gate').style.display='none';
     $('auth-role').style.display='';
     setTimeout(()=>$('auth-admin-input')?.focus(),80);
@@ -2448,9 +2477,11 @@ async function checkGate(){
 async function checkAdmin(){
   const pw=$('auth-admin-input').value;
   if(!pw){$('auth-admin-input').focus();return;}
-  const d=await _authPost('admin',pw);
+  const d=await _authPost({type:'admin',password:pw});
   if(d.ok){
+    sessionStorage.setItem('authToken',d.token);
     sessionStorage.setItem('authRole','admin');
+    sessionStorage.removeItem('authShop');
     authRole='admin';authShop=null;
     $('auth-overlay').classList.add('hidden');
     await bootApp();
@@ -2461,24 +2492,29 @@ async function checkAdmin(){
   }
 }
 
-function enterShopMode(shop){
+async function enterShopMode(shop){
+  // Shop auth requires the gate password to prevent gate bypass via direct API call
+  const d=await _authPost({type:'shop',password:_pendingGatePassword,shop});
+  if(!d.ok){showToast('Auth error — please refresh and try again','error');return;}
+  sessionStorage.setItem('authToken',d.token);
   sessionStorage.setItem('authRole','shop');
   sessionStorage.setItem('authShop',shop);
   authRole='shop';authShop=shop;
   $('auth-overlay').classList.add('hidden');
-  bootApp();
+  await bootApp();
 }
 
 function applyShopMode(shop){
-  // Restrict shop tabs to selected shop only
+  shopModeActive=true;
+  // Only show the selected shop's tab
   document.querySelectorAll('.stab').forEach(t=>{
     t.style.display=(t.dataset.s===shop)?'':'none';
   });
-  // Restrict sidebar nav
+  // Restrict sidebar nav to scan and imeistock only
   ['ni-saleslog','ni-stock','ni-expenses','ni-history','ni-backup'].forEach(id=>{
     const el=$(id);if(el)el.style.display='none';
   });
-  // Hide Head Office and Tools sections
+  // Hide Head Office and Tools sidebar sections
   document.querySelectorAll('.sb-lbl').forEach(el=>{
     if(el.textContent.trim()==='Head Office'||el.textContent.trim()==='Tools'){
       const sec=el.closest('.sb-sec');
@@ -2489,16 +2525,14 @@ function applyShopMode(shop){
       }
     }
   });
-  // Hide Batch Add mode button in scan page
+  // Hide Batch Add mode button — shop staff only add one phone at a time
   const mb=$('modeBatch');if(mb)mb.style.display='none';
-  // Lock navigation to scan and imeistock only
+  // Lock nav to allowed pages (flag-based, not function override)
   const _nav=nav;
   window.nav=function(page){
     if(!['scan','imeistock'].includes(page)){showToast('Not available in shop mode','warn');return;}
     _nav(page);
   };
-  // Lock shop switching
-  window.switchShop=function(){};
 }
 
 // ── BOOT ──
@@ -2506,7 +2540,7 @@ async function bootApp(){
   applyPhoneMode();
   const shop=(authRole==='shop')?authShop:activeShop;
   activeShop=shop;
-  switchShop(shop);
+  switchShop(shop);                       // must come before applyShopMode locks switchShop
   if(authRole==='shop')applyShopMode(shop);
   $('work-date').value=today();$('hq-date').value=today();
   $('monthly-month').value=ym(today());$('exp-month-filter').value=ym(today());$('ship-month-filter').value=ym(today());
@@ -2515,17 +2549,14 @@ async function bootApp(){
 
 // ── AUTH CHECK ──
 (async()=>{
-  const gateOk=sessionStorage.getItem('gateOk');
+  const token=sessionStorage.getItem('authToken');
   const role=sessionStorage.getItem('authRole');
   const shop=sessionStorage.getItem('authShop');
-  if(gateOk&&role){
+  if(token&&role){
+    // Resume session — server will reject token on first API call if it expired
     authRole=role;authShop=shop||null;
     $('auth-overlay').classList.add('hidden');
     await bootApp();
-  }else if(gateOk){
-    $('auth-gate').style.display='none';
-    $('auth-role').style.display='';
-    setTimeout(()=>$('auth-admin-input')?.focus(),80);
   }else{
     setTimeout(()=>$('auth-gate-input')?.focus(),80);
   }
