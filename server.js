@@ -117,7 +117,19 @@ const DispatchSchema = new mongoose.Schema({
 });
 const Dispatch = mongoose.model('Dispatch', DispatchSchema);
 
+// ── PASSWORDS (set via env vars) ───────────────
+const GATE_PASSWORD  = process.env.GATE_PASSWORD  || 'mobworld';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'aayan104';
+
 // ── ROUTES ─────────────────────────────────────
+
+// Auth — validates passwords without exposing them to the client
+app.post('/api/auth', (req, res) => {
+  const { type, password } = req.body || {};
+  if (type === 'gate')  return res.json({ ok: password === GATE_PASSWORD });
+  if (type === 'admin') return res.json({ ok: password === ADMIN_PASSWORD });
+  return res.status(400).json({ ok: false });
+});
 
 // Lookup single phone by IMEI (used by scan/sell flow)
 app.get('/api/lookup/:imei', async (req, res) => {

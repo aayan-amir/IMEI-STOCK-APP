@@ -510,9 +510,112 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
   .tb{gap:.3rem;}
   .tb-title{font-size:.88rem;}
 }
+
+/* ── AUTH OVERLAY ── */
+#auth-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  padding:1rem;
+}
+#auth-overlay.hidden{display:none;}
+.auth-box{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:2rem 2rem 1.8rem;
+  width:100%;max-width:390px;
+  box-shadow:0 10px 40px rgba(0,0,0,.12);
+}
+.auth-logo{
+  display:flex;align-items:center;gap:8px;
+  font-size:1.15rem;font-weight:800;color:var(--white);
+  margin-bottom:1.5rem;letter-spacing:-.02em;
+}
+.auth-logo-dot{width:10px;height:10px;border-radius:50%;background:var(--a1);}
+.auth-title{font-size:.9rem;font-weight:700;color:var(--white);margin-bottom:.3rem;}
+.auth-sub{font-size:.72rem;color:var(--text2);margin-bottom:1.3rem;line-height:1.55;}
+.auth-input{
+  width:100%;background:var(--s2);border:1px solid var(--border);
+  border-radius:9px;padding:.65rem .85rem;
+  font-family:var(--mono);font-size:1rem;color:var(--white);
+  outline:none;transition:border-color .15s;
+  margin-bottom:.7rem;-webkit-appearance:none;
+}
+.auth-input:focus{border-color:var(--a1);}
+.auth-err{
+  font-size:.68rem;color:var(--danger);
+  min-height:1.1em;margin-bottom:.55rem;display:none;
+}
+.auth-err.show{display:block;}
+.auth-btn{
+  width:100%;padding:.72rem;border-radius:9px;border:none;
+  background:var(--a1);color:#fff;
+  font-family:var(--sans);font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:filter .15s;margin-bottom:.9rem;
+  -webkit-appearance:none;
+}
+.auth-btn:hover{filter:brightness(1.12);}
+.auth-btn:active{filter:brightness(.95);}
+.auth-divider{
+  display:flex;align-items:center;gap:.6rem;
+  margin:.2rem 0 .9rem;font-size:.64rem;color:var(--text3);
+}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;border-top:1px solid var(--border);}
+.auth-shop-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:.55rem;
+}
+.auth-shop-btn{
+  padding:.75rem .4rem;border-radius:10px;
+  border:2px solid var(--border);background:var(--s2);
+  font-family:var(--sans);font-size:.8rem;font-weight:700;
+  color:var(--text2);cursor:pointer;transition:all .15s;
+  text-align:center;-webkit-appearance:none;
+}
+.auth-shop-btn:hover,.auth-shop-btn:active{border-color:var(--a1);color:var(--a1);background:rgba(99,102,241,.06);}
+.auth-shop-btn[data-s="456"]:hover,.auth-shop-btn[data-s="456"]:active{border-color:var(--c456);color:var(--c456);}
+.auth-shop-btn[data-s="192"]:hover,.auth-shop-btn[data-s="192"]:active{border-color:var(--c192);color:var(--c192);}
+.auth-shop-btn[data-s="G15"]:hover,.auth-shop-btn[data-s="G15"]:active{border-color:var(--cg15);color:var(--cg15);}
+@media(max-width:400px){
+  .auth-box{padding:1.5rem 1.2rem 1.4rem;}
+  .auth-input{font-size:.95rem;}
+}
 </style>
 </head>
 <body>
+
+<!-- ── AUTH OVERLAY ── -->
+<div id="auth-overlay">
+  <!-- Step 1: gate password -->
+  <div id="auth-gate" class="auth-box">
+    <div class="auth-logo"><div class="auth-logo-dot"></div>Mobile HQ</div>
+    <div class="auth-title">Site Access</div>
+    <div class="auth-sub">Enter the site password to continue.</div>
+    <input type="password" class="auth-input" id="auth-gate-input"
+      placeholder="Password…" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')checkGate()">
+    <div class="auth-err" id="auth-gate-err">Incorrect password. Try again.</div>
+    <button class="auth-btn" onclick="checkGate()">Unlock</button>
+  </div>
+  <!-- Step 2: admin or shop selection -->
+  <div id="auth-role" class="auth-box" style="display:none">
+    <div class="auth-logo"><div class="auth-logo-dot"></div>Mobile HQ</div>
+    <div class="auth-title">Select Access</div>
+    <div class="auth-sub">Enter the admin password for full access, or tap your shop for limited access.</div>
+    <input type="password" class="auth-input" id="auth-admin-input"
+      placeholder="Admin password…" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')checkAdmin()">
+    <div class="auth-err" id="auth-admin-err">Incorrect admin password.</div>
+    <button class="auth-btn" onclick="checkAdmin()">Admin Login</button>
+    <div class="auth-divider">or select your shop</div>
+    <div class="auth-shop-grid">
+      <button class="auth-shop-btn" data-s="456" onclick="enterShopMode('456')">Shop 456</button>
+      <button class="auth-shop-btn" data-s="G15" onclick="enterShopMode('G15')">Shop G15</button>
+      <button class="auth-shop-btn" data-s="192" onclick="enterShopMode('192')">Shop 192</button>
+    </div>
+  </div>
+</div>
+
 
 <div id="topbar">
   <div class="logo"><div class="logo-dot"></div>Mobile HQ</div>
@@ -2319,11 +2422,112 @@ $('modal-bg').addEventListener('click',e=>{if(e.target===$('modal-bg'))closeModa
 
 function dlCSV(content,filename){const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(content);a.download=filename;a.click();}
 
+// ── AUTH ──────────────────────────────────────────────────────────
+let authRole=null,authShop=null;
+
+async function _authPost(type,password){
+  try{const r=await fetch(BASE+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,password})});return await r.json();}catch(e){return{ok:false};}
+}
+
+async function checkGate(){
+  const pw=$('auth-gate-input').value;
+  if(!pw){$('auth-gate-input').focus();return;}
+  const d=await _authPost('gate',pw);
+  if(d.ok){
+    sessionStorage.setItem('gateOk','1');
+    $('auth-gate').style.display='none';
+    $('auth-role').style.display='';
+    setTimeout(()=>$('auth-admin-input')?.focus(),80);
+  }else{
+    const e=$('auth-gate-err');e.classList.add('show');
+    $('auth-gate-input').value='';$('auth-gate-input').focus();
+    setTimeout(()=>e.classList.remove('show'),3000);
+  }
+}
+
+async function checkAdmin(){
+  const pw=$('auth-admin-input').value;
+  if(!pw){$('auth-admin-input').focus();return;}
+  const d=await _authPost('admin',pw);
+  if(d.ok){
+    sessionStorage.setItem('authRole','admin');
+    authRole='admin';authShop=null;
+    $('auth-overlay').classList.add('hidden');
+    await bootApp();
+  }else{
+    const e=$('auth-admin-err');e.classList.add('show');
+    $('auth-admin-input').value='';$('auth-admin-input').focus();
+    setTimeout(()=>e.classList.remove('show'),3000);
+  }
+}
+
+function enterShopMode(shop){
+  sessionStorage.setItem('authRole','shop');
+  sessionStorage.setItem('authShop',shop);
+  authRole='shop';authShop=shop;
+  $('auth-overlay').classList.add('hidden');
+  bootApp();
+}
+
+function applyShopMode(shop){
+  // Restrict shop tabs to selected shop only
+  document.querySelectorAll('.stab').forEach(t=>{
+    t.style.display=(t.dataset.s===shop)?'':'none';
+  });
+  // Restrict sidebar nav
+  ['ni-saleslog','ni-stock','ni-expenses','ni-history','ni-backup'].forEach(id=>{
+    const el=$(id);if(el)el.style.display='none';
+  });
+  // Hide Head Office and Tools sections
+  document.querySelectorAll('.sb-lbl').forEach(el=>{
+    if(el.textContent.trim()==='Head Office'||el.textContent.trim()==='Tools'){
+      const sec=el.closest('.sb-sec');
+      if(sec){
+        sec.style.display='none';
+        const prev=sec.previousElementSibling;
+        if(prev&&prev.classList.contains('sdiv'))prev.style.display='none';
+      }
+    }
+  });
+  // Hide Batch Add mode button in scan page
+  const mb=$('modeBatch');if(mb)mb.style.display='none';
+  // Lock navigation to scan and imeistock only
+  const _nav=nav;
+  window.nav=function(page){
+    if(!['scan','imeistock'].includes(page)){showToast('Not available in shop mode','warn');return;}
+    _nav(page);
+  };
+  // Lock shop switching
+  window.switchShop=function(){};
+}
+
 // ── BOOT ──
-(async()=>{
+async function bootApp(){
   applyPhoneMode();
+  const shop=(authRole==='shop')?authShop:activeShop;
+  activeShop=shop;
+  switchShop(shop);
+  if(authRole==='shop')applyShopMode(shop);
   $('work-date').value=today();$('hq-date').value=today();
   $('monthly-month').value=ym(today());$('exp-month-filter').value=ym(today());$('ship-month-filter').value=ym(today());
   await loadSidebarStats();await loadIMEIData();$('imeiInput')?.focus();
+}
+
+// ── AUTH CHECK ──
+(async()=>{
+  const gateOk=sessionStorage.getItem('gateOk');
+  const role=sessionStorage.getItem('authRole');
+  const shop=sessionStorage.getItem('authShop');
+  if(gateOk&&role){
+    authRole=role;authShop=shop||null;
+    $('auth-overlay').classList.add('hidden');
+    await bootApp();
+  }else if(gateOk){
+    $('auth-gate').style.display='none';
+    $('auth-role').style.display='';
+    setTimeout(()=>$('auth-admin-input')?.focus(),80);
+  }else{
+    setTimeout(()=>$('auth-gate-input')?.focus(),80);
+  }
 })();
 </script></body></html>
