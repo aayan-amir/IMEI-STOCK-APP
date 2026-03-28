@@ -379,7 +379,7 @@ app.put('/api/stock/:id', adminOnly, async (req, res) => {
     const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body;
     const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
     Object.keys(allowed).forEach(k => allowed[k] === undefined && delete allowed[k]);
-    const phone = await Phone.findByIdAndUpdate(req.params.id, allowed, { new: true });
+    const phone = await Phone.findByIdAndUpdate(req.params.id, allowed, { returnDocument: 'after' });
     if (!phone) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true, phone });
   } catch (err) {
@@ -437,7 +437,7 @@ app.put('/api/days/:shop/:date', adminOnly, async (req, res) => {
     const day = await Day.findOneAndUpdate(
       { shop, date },
       update,
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
     res.json({ success: true, day });
   } catch (err) {
@@ -496,7 +496,7 @@ app.put('/api/hqstock', adminOnly, async (req, res) => {
     const stock = await HQStockModel.findOneAndUpdate(
       { key: 'hq' },
       update,
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
     res.json({ success: true, stock });
   } catch (err) {
@@ -617,7 +617,7 @@ app.post('/api/customers', adminOnly, async (req, res) => {
 app.put('/api/customers/:id', adminOnly, async (req, res) => {
   try {
     const { name, phone, email, notes } = req.body;
-    const customer = await Customer.findByIdAndUpdate(req.params.id, { name, phone, email, notes }, { new: true });
+    const customer = await Customer.findByIdAndUpdate(req.params.id, { name, phone, email, notes }, { returnDocument: 'after' });
     if (!customer) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true, customer });
   } catch (err) {
@@ -841,7 +841,7 @@ app.post('/api/reports/generate', adminOnly, async (req, res) => {
     const report = await Report.findOneAndUpdate(
       { type, shop, period },
       { type, shop, period, data, generatedAt: new Date().toISOString() },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
     res.json({ success: true, report });
   } catch (err) {
