@@ -118,6 +118,33 @@ const DispatchSchema = new mongoose.Schema({
 });
 const Dispatch = mongoose.model('Dispatch', DispatchSchema);
 
+const CustomerSchema = new mongoose.Schema({
+  name: String,
+  phone: String,
+  email: String,
+  notes: String,
+  addedAt: String,
+});
+const Customer = mongoose.model('Customer', CustomerSchema);
+
+const AuditLogSchema = new mongoose.Schema({
+  action: String,
+  shop: String,
+  role: String,
+  details: mongoose.Schema.Types.Mixed,
+  ts: { type: String, default: () => new Date().toISOString() },
+});
+const AuditLog = mongoose.model('AuditLog', AuditLogSchema);
+
+const ReportSchema = new mongoose.Schema({
+  type: String,   // 'daily' | 'monthly'
+  shop: String,
+  period: String, // YYYY-MM-DD or YYYY-MM
+  data: mongoose.Schema.Types.Mixed,
+  generatedAt: String,
+});
+const Report = mongoose.model('Report', ReportSchema);
+
 // ── PASSWORDS (set via env vars) ───────────────
 const GATE_PASSWORD  = process.env.GATE_PASSWORD  || 'mobworld';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'anasanas';
@@ -173,6 +200,12 @@ function requireAuth(roles = ['admin', 'shop']) {
 
 const adminOnly = requireAuth(['admin']);
 const anyAuth   = requireAuth(['admin', 'shop']);
+
+// Fire-and-forget audit log writer
+function logAction(action, shop, role, details) {
+  AuditLog.create({ action, shop: shop || null, role: role || null, details })
+    .catch(err => console.error('Audit log error:', err));
+}
 
 // Strict rate limiter for the auth endpoint: 10 attempts per 15 minutes
 const authLimiter = rateLimit({
@@ -247,6 +280,7 @@ app.post('/api/stock/add', anyAuth, async (req, res) => {
 
   const phone = new Phone({ ...body, addedAt: new Date().toISOString() });
   await phone.save();
+  logAction('stock_add', body.shop || null, req.authRole, { imei, brand: body.brand, model: body.model, buyPrice: body.buyPrice });
   res.json({ success: true, phone });
 });
 
@@ -307,6 +341,7 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       throw saleErr;
     }
 
+    logAction('stock_sell', phone.shop || null, req.authRole, { imei: phone.imei, brand: phone.brand, model: phone.model, salePrice: sp, profit, buyerName: buyerName || null });
     res.json({ success: true, sale });
   } catch (err) {
     console.error('Sell endpoint error:', err);
@@ -359,7 +394,12 @@ app.delete('/api/stock/:id', adminOnly, async (req, res) => {
     if (!id || id === 'undefined' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid phone id' });
     }
-    await Phone.findByIdAndDelete(id);
+    // Retrieve the phone first so we can log its shop before deletion
+    const phone = await Phone.findById(id);
+    if (phone) {
+      await Phone.findByIdAndDelete(id);
+      logAction('stock_delete', phone.shop || null, req.authRole, { id, imei: phone.imei, brand: phone.brand, model: phone.model });
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -545,6 +585,276 @@ app.delete('/api/sales/:id', adminOnly, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Delete sale error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── CUSTOMERS ───────────────────────────────────
+
+app.get('/api/customers', adminOnly, async (req, res) => {
+  try {
+    const { q } = req.query;
+    const query = q ? { $or: [{ name: { $regex: q, $options: 'i' } }, { phone: { $regex: q } }] } : {};
+    const customers = await Customer.find(query).sort({ name: 1 });
+    res.json(customers);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/customers', adminOnly, async (req, res) => {
+  try {
+    const { name, phone, email, notes } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name required' });
+    const customer = new Customer({ name, phone, email, notes, addedAt: new Date().toISOString() });
+    await customer.save();
+    res.json({ success: true, customer });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/customers/:id', adminOnly, async (req, res) => {
+  try {
+    const { name, phone, email, notes } = req.body;
+    const customer = await Customer.findByIdAndUpdate(req.params.id, { name, phone, email, notes }, { new: true });
+    if (!customer) return res.status(404).json({ error: 'Not found' });
+    res.json({ success: true, customer });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/customers/:id', adminOnly, async (req, res) => {
+  try {
+    await Customer.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── AUDIT LOGS ───────────────────────────────────
+
+app.get('/api/logs', adminOnly, async (req, res) => {
+  try {
+    const { shop, limit = 300 } = req.query;
+    const query = shop ? { shop } : {};
+    const logs = await AuditLog.find(query).sort({ ts: -1 }).limit(Number(limit));
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── MODEL ANALYTICS ──────────────────────────────
+
+app.get('/api/analytics/models', adminOnly, async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const since = new Date(Date.now() - Number(days) * 24 * 60 * 60 * 1000).toISOString();
+    const staleDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [recentSales, staleStock] = await Promise.all([
+      Sale.find({ soldAt: { $gte: since } }),
+      Phone.find({ status: 'in_stock', addedAt: { $lte: staleDate } }),
+    ]);
+
+    // Top sold models
+    const modelMap = {};
+    recentSales.forEach(s => {
+      const key = `${s.brand || ''} ${s.model || ''}`.trim() || 'Unknown';
+      if (!modelMap[key]) modelMap[key] = { model: key, count: 0, revenue: 0, profit: 0 };
+      modelMap[key].count++;
+      modelMap[key].revenue += s.salePrice || 0;
+      modelMap[key].profit += s.profit || 0;
+    });
+    const topSold = Object.values(modelMap).sort((a, b) => b.count - a.count).slice(0, 15);
+
+    // Stagnating stock
+    const staleMap = {};
+    staleStock.forEach(p => {
+      const key = `${p.brand || ''} ${p.model || ''}`.trim() || 'Unknown';
+      const ageDays = Math.floor((Date.now() - new Date(p.addedAt || 0)) / 86400000);
+      if (!staleMap[key]) staleMap[key] = { model: key, count: 0, totalCost: 0, oldestDays: 0, shops: {} };
+      staleMap[key].count++;
+      staleMap[key].totalCost += p.buyPrice || 0;
+      if (ageDays > staleMap[key].oldestDays) staleMap[key].oldestDays = ageDays;
+      if (p.shop) staleMap[key].shops[p.shop] = (staleMap[key].shops[p.shop] || 0) + 1;
+    });
+    const stagnating = Object.values(staleMap)
+      .sort((a, b) => b.oldestDays - a.oldestDays)
+      .slice(0, 15)
+      .map(x => ({ ...x, shops: Object.entries(x.shops).map(([s, c]) => `${s}(${c})`).join(', ') }));
+
+    res.json({ topSold, stagnating, days: Number(days) });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── CEO SUMMARY ──────────────────────────────────
+
+app.get('/api/ceo/summary', adminOnly, async (req, res) => {
+  try {
+    const { month } = req.query;
+    const currentMonth = month || new Date().toISOString().slice(0, 7);
+    const [y, m] = currentMonth.split('-').map(Number);
+    const prevDate = new Date(y, m - 2, 1);
+    const prevMonth = prevDate.toISOString().slice(0, 7);
+
+    const [currentSales, prevSales, currentExpenses, stock] = await Promise.all([
+      Sale.find({ soldAt: { $regex: `^${currentMonth}` } }),
+      Sale.find({ soldAt: { $regex: `^${prevMonth}` } }),
+      ShopExpense.find({ month: currentMonth }),
+      Phone.find({ status: 'in_stock' }),
+    ]);
+
+    // Per-shop breakdown
+    const VALID_SHOPS = ['456', '192', 'G15'];
+    const shopStats = {};
+    VALID_SHOPS.forEach(s => { shopStats[s] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 }; });
+
+    currentSales.forEach(s => {
+      const sh = s.shop;
+      if (!sh) return;
+      if (!shopStats[sh]) shopStats[sh] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 };
+      shopStats[sh].revenue += s.salePrice || 0;
+      shopStats[sh].cost += s.buyPrice || 0;
+      shopStats[sh].profit += s.profit || 0;
+      shopStats[sh].units++;
+    });
+
+    currentExpenses.forEach(e => {
+      const sh = e.shop;
+      if (!sh) return;
+      if (!shopStats[sh]) shopStats[sh] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 };
+      shopStats[sh].expenses += e.amount || 0;
+    });
+
+    // Top models
+    const modelCounts = {};
+    currentSales.forEach(s => {
+      const key = `${s.brand || ''} ${s.model || ''}`.trim();
+      if (key) modelCounts[key] = (modelCounts[key] || 0) + 1;
+    });
+    const topModels = Object.entries(modelCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([model, count]) => ({ model, count }));
+
+    const totalRevenue = currentSales.reduce((s, x) => s + (x.salePrice || 0), 0);
+    const totalProfit = currentSales.reduce((s, x) => s + (x.profit || 0), 0);
+    const totalExpenses = currentExpenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const prevRevenue = prevSales.reduce((s, x) => s + (x.salePrice || 0), 0);
+    const prevProfit = prevSales.reduce((s, x) => s + (x.profit || 0), 0);
+
+    res.json({
+      month: currentMonth,
+      prevMonth,
+      current: {
+        revenue: totalRevenue,
+        profit: totalProfit,
+        expenses: totalExpenses,
+        units: currentSales.length,
+        netProfit: totalProfit - totalExpenses,
+      },
+      prev: { revenue: prevRevenue, profit: prevProfit },
+      shopStats,
+      topModels,
+      inventoryCount: stock.length,
+      inventoryValue: stock.reduce((s, p) => s + (p.buyPrice || 0), 0),
+    });
+  } catch (err) {
+    console.error('CEO summary error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── REPORTS / INVOICES ───────────────────────────
+
+app.get('/api/reports', adminOnly, async (req, res) => {
+  try {
+    const { shop, type } = req.query;
+    const query = {};
+    if (shop) query.shop = shop;
+    if (type) query.type = type;
+    const reports = await Report.find(query).sort({ period: -1 }).limit(100);
+    res.json(reports);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/reports/generate', adminOnly, async (req, res) => {
+  try {
+    const { type, shop, period } = req.body;
+    if (!type || !shop || !period) return res.status(400).json({ error: 'type, shop, period required' });
+
+    let data = {};
+
+    if (type === 'daily') {
+      const shopQ = shop === 'ALL' ? {} : { shop };
+      const [sales, day] = await Promise.all([
+        Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
+        shop === 'ALL' ? Promise.resolve(null) : Day.findOne({ shop, date: period }),
+      ]);
+      const expenses = (day?.expenses || []).reduce((s, e) => s + (e.amt || 0), 0);
+      data = {
+        totalSales: sales.reduce((s, x) => s + (x.salePrice || 0), 0),
+        totalCost: sales.reduce((s, x) => s + (x.buyPrice || 0), 0),
+        grossProfit: sales.reduce((s, x) => s + (x.profit || 0), 0),
+        unitsSold: sales.length,
+        expenses,
+        netProfit: sales.reduce((s, x) => s + (x.profit || 0), 0) - expenses,
+        salesList: sales.map(s => ({
+          model: `${s.brand || ''} ${s.model || ''}`.trim(),
+          imei: s.imei,
+          salePrice: s.salePrice,
+          buyPrice: s.buyPrice,
+          profit: s.profit,
+          buyerName: s.buyerName || null,
+          shop: s.shop,
+        })),
+      };
+    } else if (type === 'monthly') {
+      const shopQ = shop === 'ALL' ? {} : { shop };
+      const [sales, expenses] = await Promise.all([
+        Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
+        ShopExpense.find(shop === 'ALL' ? { month: period } : { shop, month: period }),
+      ]);
+      const grossProfit = sales.reduce((s, x) => s + (x.profit || 0), 0);
+      const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+      data = {
+        totalSales: sales.reduce((s, x) => s + (x.salePrice || 0), 0),
+        totalCost: sales.reduce((s, x) => s + (x.buyPrice || 0), 0),
+        grossProfit,
+        unitsSold: sales.length,
+        totalExpenses,
+        netProfit: grossProfit - totalExpenses,
+        expenseBreakdown: expenses.map(e => ({ category: e.category, description: e.description, amount: e.amount, date: e.date })),
+      };
+    } else {
+      return res.status(400).json({ error: 'Invalid type' });
+    }
+
+    const report = await Report.findOneAndUpdate(
+      { type, shop, period },
+      { type, shop, period, data, generatedAt: new Date().toISOString() },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.json({ success: true, report });
+  } catch (err) {
+    console.error('Report generate error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/reports/:id', adminOnly, async (req, res) => {
+  try {
+    await Report.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });

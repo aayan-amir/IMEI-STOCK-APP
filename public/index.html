@@ -504,6 +504,89 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--text2);}
 
+/* ── CEO DASHBOARD ── */
+.ceo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.65rem;padding:.9rem .9rem 0;}
+.kpi-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi-card.green::before{background:var(--success);}
+.kpi-card.red::before{background:var(--danger);}
+.kpi-card.amber::before{background:var(--a5);}
+.kpi-card.blue::before{background:var(--a1);}
+.kpi-card.purple::before{background:var(--a2);}
+.kpi-lbl{font-size:.52rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text2);font-weight:700;margin-bottom:3px;}
+.kpi-val{font-family:var(--mono);font-size:1.15rem;font-weight:500;color:var(--white);}
+.kpi-val.success{color:var(--success);}
+.kpi-val.danger{color:var(--danger);}
+.kpi-val.amber{color:var(--a5);}
+.kpi-val.blue{color:var(--a1);}
+.kpi-mom{font-size:.58rem;margin-top:3px;font-family:var(--mono);}
+.kpi-mom.up{color:var(--success);}
+.kpi-mom.dn{color:var(--danger);}
+.kpi-mom.flat{color:var(--text2);}
+.ceo-section-title{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);padding:.8rem .9rem .35rem;}
+.ceo-shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.55rem;padding:0 .9rem;}
+.ceo-shop-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.ceo-shop-hd{padding:.45rem .75rem;display:flex;justify-content:space-between;align-items:center;}
+.ceo-shop-body{padding:.45rem .75rem .6rem;}
+.ceo-shop-row{display:flex;justify-content:space-between;font-size:.68rem;padding:3px 0;border-bottom:1px solid var(--border2);}
+.ceo-shop-row:last-child{border-bottom:none;}
+.ceo-shop-row.total{font-weight:700;color:var(--white);font-size:.72rem;border-top:1px solid var(--border);padding-top:5px;margin-top:2px;}
+.top-model-row{display:flex;align-items:center;gap:.55rem;padding:.35rem .75rem;border-bottom:1px solid var(--border2);}
+.top-model-row:last-child{border-bottom:none;}
+.top-model-rank{font-family:var(--mono);font-size:.62rem;color:var(--text3);min-width:18px;}
+.top-model-name{flex:1;font-size:.72rem;color:var(--white);font-weight:600;}
+.top-model-count{font-family:var(--mono);font-size:.68rem;color:var(--a1);font-weight:700;}
+
+/* ── CONTACTS ── */
+.contact-table{width:100%;border-collapse:collapse;font-size:.68rem;}
+.contact-table th{background:var(--s2);padding:.3rem .7rem;text-align:left;font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);border:1px solid var(--border2);font-family:var(--mono);position:sticky;top:0;z-index:9;}
+.contact-table td{padding:.3rem .7rem;border:1px solid var(--border2);color:var(--white);vertical-align:middle;}
+.contact-table tbody tr:hover{background:rgba(0,0,0,.025);}
+
+/* ── ANALYTICS ── */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;padding:.9rem;}
+@media(max-width:700px){.analytics-grid{grid-template-columns:1fr;}}
+.analytics-panel{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.analytics-hd{padding:.55rem .85rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem;}
+.analytics-hd-title{font-size:.8rem;font-weight:700;color:var(--white);}
+.analytics-hd-sub{font-size:.6rem;color:var(--text2);}
+.analytics-row{display:flex;align-items:center;gap:.5rem;padding:.32rem .75rem;border-bottom:1px solid var(--border2);}
+.analytics-row:last-child{border-bottom:none;}
+.analytics-rank{font-family:var(--mono);font-size:.62rem;color:var(--text3);min-width:20px;font-weight:600;}
+.analytics-model{flex:1;font-size:.7rem;font-weight:600;color:var(--white);}
+.analytics-bar-wrap{width:70px;background:var(--s3);border-radius:3px;height:5px;overflow:hidden;}
+.analytics-bar{height:5px;border-radius:3px;}
+.analytics-bar.hot{background:var(--success);}
+.analytics-bar.stale{background:var(--danger);}
+.analytics-count{font-family:var(--mono);font-size:.65rem;font-weight:700;min-width:28px;text-align:right;}
+.analytics-meta{font-family:var(--mono);font-size:.6rem;color:var(--text2);}
+
+/* ── LOGS ── */
+.log-row{display:flex;align-items:flex-start;gap:.65rem;padding:.42rem .9rem;border-bottom:1px solid var(--border2);}
+.log-row:hover{background:rgba(0,0,0,.025);}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.log-dot.add{background:var(--success);}
+.log-dot.sell{background:var(--a1);}
+.log-dot.delete{background:var(--danger);}
+.log-dot.other{background:var(--text3);}
+.log-body{flex:1;min-width:0;}
+.log-action{font-size:.68rem;font-weight:600;color:var(--white);}
+.log-detail{font-size:.62rem;color:var(--text2);margin-top:1px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.log-ts{font-family:var(--mono);font-size:.58rem;color:var(--text3);white-space:nowrap;flex-shrink:0;}
+
+/* ── REPORTS ── */
+.report-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:.55rem;overflow:hidden;}
+.report-hd{padding:.5rem .85rem;display:flex;align-items:center;gap:.65rem;cursor:pointer;transition:background .15s;}
+.report-hd:hover{background:var(--s3);}
+.report-type-badge{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:10px;}
+.report-type-badge.daily{background:rgba(99,102,241,.12);color:var(--a1);border:1px solid rgba(99,102,241,.3);}
+.report-type-badge.monthly{background:rgba(20,184,166,.1);color:var(--chq);border:1px solid rgba(20,184,166,.3);}
+.report-body{display:none;border-top:1px solid var(--border);padding:.75rem .9rem;}
+.report-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.5rem;margin-bottom:.65rem;}
+.rs{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem;}
+.rs-lbl{font-size:.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:2px;}
+.rs-val{font-family:var(--mono);font-size:.88rem;font-weight:500;}
+
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
   #sb{display:none;}
@@ -647,14 +730,19 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
     <div class="sb-sec">
       <div class="sb-lbl">Head Office</div>
       <div class="ni" id="ni-hq"        onclick="nav('hq')">       <div class="nd" style="background:var(--chq)"></div>Overview</div>
+      <div class="ni" id="ni-ceo"       onclick="nav('ceo')">       <div class="nd" style="background:var(--a5)"></div>CEO Dashboard</div>
       <div class="ni" id="ni-warehouse" onclick="nav('warehouse')"> <div class="nd" style="background:var(--a6)"></div>Warehouse</div>
       <div class="ni" id="ni-shipments" onclick="nav('shipments')"> <div class="nd" style="background:var(--a4)"></div>Shipments</div>
       <div class="ni" id="ni-monthly"   onclick="nav('monthly')">   <div class="nd" style="background:var(--a1)"></div>Monthly P&L</div>
+      <div class="ni" id="ni-analytics" onclick="nav('analytics')"> <div class="nd" style="background:var(--a2)"></div>Analytics</div>
     </div>
     <hr class="sdiv">
     <div class="sb-sec">
       <div class="sb-lbl">Tools</div>
-      <div class="ni" id="ni-backup" onclick="nav('backup')"><div class="nd" style="background:var(--success)"></div>Backup</div>
+      <div class="ni" id="ni-contacts" onclick="nav('contacts')"><div class="nd" style="background:var(--a4)"></div>Contacts</div>
+      <div class="ni" id="ni-reports"  onclick="nav('reports')"> <div class="nd" style="background:var(--a5)"></div>Invoices</div>
+      <div class="ni" id="ni-logs"     onclick="nav('logs')">    <div class="nd" style="background:var(--text3)"></div>Activity Log</div>
+      <div class="ni" id="ni-backup"   onclick="nav('backup')">  <div class="nd" style="background:var(--success)"></div>Backup</div>
       <div class="ni" onclick="openCamera('free')"><div class="nd" style="background:var(--a4)"></div>Barcode Scanner</div>
     </div>
     <div class="sb-stats">
@@ -1017,6 +1105,102 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
       <div class="monthly-scroll" id="monthly-body"></div>
     </div>
 
+    <!-- ══ CEO DASHBOARD ══ -->
+    <div class="pg" id="pg-ceo">
+      <div class="tb">
+        <div class="tb-title">CEO Dashboard</div>
+        <div class="tbsep"></div>
+        <input type="month" id="ceo-month" onchange="renderCEO()"
+          style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+        <div class="tbsep"></div>
+        <button class="btn bo" onclick="renderCEO()" style="font-size:.62rem">↻ Refresh</button>
+      </div>
+      <div class="monthly-scroll" id="ceo-body">
+        <div class="empty"><div class="empty-icon">📊</div><h3>Loading…</h3></div>
+      </div>
+    </div>
+
+    <!-- ══ CONTACTS ══ -->
+    <div class="pg" id="pg-contacts">
+      <div class="tb">
+        <div class="tb-title">Customer Contacts</div>
+        <div class="tbsep"></div>
+        <input type="text" id="contact-search" placeholder="Search name or phone…" oninput="searchContacts()"
+          style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--mono);font-size:.68rem;padding:.24rem .55rem;outline:none;width:180px;">
+        <div class="tbsep"></div>
+        <button class="btn bv" onclick="openAddContactModal()">+ Add Contact</button>
+      </div>
+      <div class="hq-body" id="contacts-body">
+        <div class="empty"><div class="empty-icon">👥</div><h3>No contacts yet</h3><p>Click + Add Contact to build your customer book</p></div>
+      </div>
+    </div>
+
+    <!-- ══ ANALYTICS ══ -->
+    <div class="pg" id="pg-analytics">
+      <div class="tb">
+        <div class="tb-title">Model Analytics</div>
+        <div class="tbsep"></div>
+        <select id="analytics-days" onchange="renderAnalytics()"
+          style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last 12 months</option>
+        </select>
+        <div class="tbsep"></div>
+        <button class="btn bo" onclick="renderAnalytics()" style="font-size:.62rem">↻ Refresh</button>
+      </div>
+      <div class="monthly-scroll" id="analytics-body">
+        <div class="empty"><div class="empty-icon">📈</div><h3>Loading…</h3></div>
+      </div>
+    </div>
+
+    <!-- ══ ACTIVITY LOG ══ -->
+    <div class="pg" id="pg-logs">
+      <div class="tb">
+        <div class="tb-title">Activity Log</div>
+        <div class="tbsep"></div>
+        <select id="log-shop" onchange="loadLogs()"
+          style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="">All Shops</option>
+          <option value="456">Shop 456</option>
+          <option value="192">Shop 192</option>
+          <option value="G15">Shop G15</option>
+        </select>
+        <div class="tbsep"></div>
+        <button class="btn bo" onclick="loadLogs()" style="font-size:.62rem">↻ Refresh</button>
+      </div>
+      <div class="hq-body" id="logs-body">
+        <div class="empty"><div class="empty-icon">📋</div><h3>No logs yet</h3><p>Actions like adding and selling phones will appear here</p></div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTS / INVOICES ══ -->
+    <div class="pg" id="pg-reports">
+      <div class="tb">
+        <div class="tb-title">Invoices &amp; Reports</div>
+        <div class="tbsep"></div>
+        <select id="rpt-type" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="daily">Daily</option>
+          <option value="monthly">Monthly</option>
+        </select>
+        <select id="rpt-shop" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <option value="ALL">All Shops</option>
+          <option value="456">Shop 456</option>
+          <option value="192">Shop 192</option>
+          <option value="G15">Shop G15</option>
+        </select>
+        <input type="text" id="rpt-period" placeholder="YYYY-MM-DD or YYYY-MM"
+          style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--mono);font-size:.68rem;padding:.24rem .55rem;outline:none;width:140px;">
+        <button class="btn bv" onclick="generateReport()" style="font-size:.7rem">⚡ Generate</button>
+        <div class="tbsep"></div>
+        <button class="btn bo" onclick="loadReports()" style="font-size:.62rem">↻ Refresh</button>
+      </div>
+      <div class="hq-body" id="reports-body">
+        <div class="empty"><div class="empty-icon">🧾</div><h3>No reports yet</h3><p>Select type, shop and period then click Generate</p></div>
+      </div>
+    </div>
+
     <!-- ══ BACKUP ══ -->
     <div class="pg" id="pg-backup">
       <div class="tb"><div class="tb-title">Backup / Restore</div></div>
@@ -1125,7 +1309,7 @@ const IS_PHONE = ROLE === 'phone';
 function applyPhoneMode(){
   if(!IS_PHONE) return;
   // Hide pages phones shouldn't access
-  ['ni-stock','ni-expenses','ni-history','ni-hq','ni-warehouse','ni-shipments','ni-monthly','ni-backup','ni-saleslog']
+  ADMIN_ONLY_PAGES.map(p=>'ni-'+p)
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   // Hide HQ section label and divider
   // Hide Head Office section and its preceding divider
@@ -1150,6 +1334,9 @@ let shopModeActive=false;
 let dayState={shop:'456',date:today(),cats:{},expenses:[],purchases:[],transfers:[],carryForward:0};
 let allIMEIStock=[],allIMEISales=[],imeiFilter='all';
 let allDays=[],allShopExp=[],allDispatches=[],allShipments=[],hqStock={items:[]};
+
+// Pages hidden on phone/shop mode (admin-only desktop pages)
+const ADMIN_ONLY_PAGES=['stock','expenses','history','hq','warehouse','shipments','monthly','backup','saleslog','ceo','contacts','analytics','logs','reports'];
 
 function $(id){return document.getElementById(id);}
 function today(){return new Date().toISOString().slice(0,10);}
@@ -1184,8 +1371,7 @@ setInterval(tickClock,30000);tickClock();
 // Nav
 function nav(page){
   // Block desktop-only pages on phone
-  const desktopOnly=['stock','expenses','history','hq','warehouse','shipments','monthly','backup','saleslog'];
-  if(IS_PHONE && desktopOnly.includes(page)){ showToast('Not available on phone mode','warn'); return; }
+  if(IS_PHONE && ADMIN_ONLY_PAGES.includes(page)){ showToast('Not available on phone mode','warn'); return; }
   activePage=page;
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -1203,6 +1389,11 @@ function nav(page){
     shipments:loadShipments,
     monthly:()=>{$('monthly-month').value=ym(today());renderMonthly();},
     backup:()=>{},
+    ceo:()=>{$('ceo-month').value=ym(today());renderCEO();},
+    contacts:()=>loadContacts(),
+    analytics:()=>renderAnalytics(),
+    logs:()=>loadLogs(),
+    reports:()=>{ $('rpt-period').value=today(); loadReports(); },
   }[page]||function(){})();
 }
 
@@ -2473,6 +2664,438 @@ async function doRestore(){
   try{const data=JSON.parse(await file.text());const r=await api('POST','/api/restore',data);if(r.success){showToast('✅ Restore complete — reloading…');setTimeout(()=>location.reload(),1200);}else showToast('Restore failed: '+(r.error||'unknown'),'error');}catch(e){showToast('Error reading file','error');}
 }
 
+// ── CEO DASHBOARD ────────────────────────────────
+async function renderCEO(){
+  const month=$('ceo-month').value||ym(today());
+  const body=$('ceo-body');
+  body.innerHTML=`<div class="empty"><div class="empty-icon">⏳</div><h3>Loading…</h3></div>`;
+  const d=await api('GET',`/api/ceo/summary?month=${month}`);
+  if(d.error){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><h3>${d.error}</h3></div>`;return;}
+
+  const momRev=d.prev.revenue>0?((d.current.revenue-d.prev.revenue)/d.prev.revenue*100):null;
+  const momPL=d.prev.profit>0?((d.current.profit-d.prev.profit)/d.prev.profit*100):null;
+
+  function momTag(pct){
+    if(pct===null)return`<div class="kpi-mom flat">— no prior month</div>`;
+    const up=pct>=0;const abs=Math.abs(pct).toFixed(1);
+    return`<div class="kpi-mom ${up?'up':'dn'}">${up?'▲':'▼'} ${abs}% vs last month</div>`;
+  }
+  function sign(n){return n>=0?'+ ':'- ';}
+  const net=d.current.netProfit;
+
+  let html=`<div class="ceo-grid">
+    <div class="kpi-card green">
+      <div class="kpi-lbl">Monthly Revenue</div>
+      <div class="kpi-val success">${pkr(d.current.revenue)}</div>
+      ${momTag(momRev)}
+    </div>
+    <div class="kpi-card ${net>=0?'green':'red'}">
+      <div class="kpi-lbl">Net Profit / Loss</div>
+      <div class="kpi-val ${net>=0?'success':'danger'}">${pkr(net)}</div>
+      ${momTag(momPL)}
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-lbl">Total Expenses</div>
+      <div class="kpi-val danger">${pkr(d.current.expenses)}</div>
+      <div class="kpi-mom flat">all shops combined</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-lbl">Units Sold</div>
+      <div class="kpi-val amber">${d.current.units}</div>
+      <div class="kpi-mom flat">phones this month</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-lbl">Inventory (in stock)</div>
+      <div class="kpi-val blue">${d.inventoryCount}</div>
+      <div class="kpi-mom flat">${pkr(d.inventoryValue)} cost value</div>
+    </div>
+    <div class="kpi-card ${d.current.profit>=0?'green':'red'}">
+      <div class="kpi-lbl">Gross Profit</div>
+      <div class="kpi-val ${d.current.profit>=0?'success':'danger'}">${pkr(d.current.profit)}</div>
+      <div class="kpi-mom flat">before expenses</div>
+    </div>
+  </div>`;
+
+  // Per-shop performance
+  html+=`<div class="ceo-section-title">Shop Performance — ${month}</div><div class="ceo-shop-grid">`;
+  const VALID_SHOPS=['456','192','G15'];
+  VALID_SHOPS.forEach(sh=>{
+    const v=d.shopStats[sh]||{revenue:0,profit:0,units:0,expenses:0};
+    const net=v.profit-v.expenses;
+    const c=SHOP_COLOR[sh]||'var(--a5)';const r=SHOP_RGBA[sh]||'99,102,241';
+    const health=net>=0?'var(--success)':'var(--danger)';
+    html+=`<div class="ceo-shop-card">
+      <div class="ceo-shop-hd" style="background:rgba(${r},.06);border-bottom:1px solid rgba(${r},.15)">
+        <div style="font-size:.88rem;font-weight:700;color:${c}">Shop ${sh}</div>
+        <div style="font-size:.62rem;padding:2px 8px;border-radius:20px;background:${net>=0?'rgba(16,185,129,.1)':'rgba(244,63,94,.1)'};color:${health};border:1px solid ${net>=0?'rgba(16,185,129,.25)':'rgba(244,63,94,.25)'};">${net>=0?'✓ Profitable':'⚠ Loss'}</div>
+      </div>
+      <div class="ceo-shop-body">
+        <div class="ceo-shop-row"><span>Revenue</span><span style="color:var(--success);font-family:var(--mono)">${pkr(v.revenue)}</span></div>
+        <div class="ceo-shop-row"><span>Cost of Sales</span><span style="color:var(--text2);font-family:var(--mono)">${pkr(v.cost)}</span></div>
+        <div class="ceo-shop-row"><span>Gross Profit</span><span style="color:${v.profit>=0?'var(--a4)':'var(--danger)'};font-family:var(--mono)">${pkr(v.profit)}</span></div>
+        <div class="ceo-shop-row"><span>Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(v.expenses)}</span></div>
+        <div class="ceo-shop-row total"><span>Net P/L</span><span style="color:${health};font-family:var(--mono)">${pkr(net)}</span></div>
+        <div class="ceo-shop-row"><span>Units Sold</span><span style="color:var(--a1)">${v.units}</span></div>
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  // Top models
+  if(d.topModels?.length){
+    html+=`<div class="ceo-section-title">🔥 Top Selling Models — ${month}</div>
+    <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;margin:0 .9rem .9rem;overflow:hidden;">
+      ${d.topModels.map((m,i)=>`<div class="top-model-row">
+        <div class="top-model-rank">#${i+1}</div>
+        <div class="top-model-name">${esc(m.model)}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="top-model-count">${m.count} unit${m.count!==1?'s':''}</div>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Quick insights
+  const bestShop=VALID_SHOPS.reduce((best,sh)=>{
+    const v=d.shopStats[sh]||{};
+    return (v.revenue||0)>(d.shopStats[best]?.revenue||0)?sh:best;
+  },VALID_SHOPS[0]);
+  html+=`<div style="margin:.2rem .9rem .9rem;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.18);border-radius:10px;padding:.75rem 1rem;">
+    <div style="font-size:.62rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">📌 Quick Insights</div>
+    <div style="font-size:.72rem;color:var(--text2);line-height:1.9">
+      ${d.current.revenue>d.prev.revenue?'📈 Revenue is <b style="color:var(--success)">up</b>':'📉 Revenue is <b style="color:var(--danger)">down</b>'} compared to last month.<br>
+      Best performing shop this month: <b style="color:${SHOP_COLOR[bestShop]||'var(--a5)'}">Shop ${bestShop}</b>.<br>
+      Net profit this month: <b style="color:${net>=0?'var(--success)':'var(--danger)'}">${pkr(net)}</b> (after all expenses).<br>
+      You have <b style="color:var(--a1)">${d.inventoryCount} phones</b> in stock worth <b style="color:var(--a5)">${pkr(d.inventoryValue)}</b>.
+    </div>
+  </div>`;
+
+  body.innerHTML=html;
+}
+
+// ── CONTACTS ─────────────────────────────────────
+let allContacts=[];
+
+async function loadContacts(){
+  const q=$('contact-search')?.value||'';
+  const url=q?`/api/customers?q=${encodeURIComponent(q)}`:'/api/customers';
+  const data=await api('GET',url);
+  allContacts=Array.isArray(data)?data:[];
+  renderContacts();
+}
+
+function searchContacts(){
+  clearTimeout(searchContacts._t);
+  searchContacts._t=setTimeout(loadContacts,300);
+}
+
+function renderContacts(){
+  const body=$('contacts-body');
+  if(!allContacts.length){
+    body.innerHTML=`<div class="empty"><div class="empty-icon">👥</div><h3>No contacts found</h3></div>`;
+    return;
+  }
+  body.innerHTML=`<div style="padding:.9rem;overflow-x:auto;">
+    <table class="contact-table">
+      <thead><tr>
+        <th>NAME</th><th>PHONE</th><th>EMAIL</th><th>NOTES</th><th>ADDED</th><th style="width:70px"></th>
+      </tr></thead>
+      <tbody>${allContacts.map(c=>`<tr>
+        <td style="font-weight:600">${esc(c.name||'')}</td>
+        <td style="font-family:var(--mono);font-size:.65rem">${esc(c.phone||'—')}</td>
+        <td style="font-size:.65rem;color:var(--text2)">${esc(c.email||'—')}</td>
+        <td style="font-size:.65rem;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.notes||'')}</td>
+        <td style="font-family:var(--mono);font-size:.6rem;color:var(--text3)">${fmtDate(c.addedAt)}</td>
+        <td style="text-align:center">
+          <button class="btn bo" onclick="openEditContactModal('${c._id}')" style="font-size:.6rem;padding:.18rem .45rem;margin-right:3px">✏️</button>
+          <button class="bx" onclick="deleteContact('${c._id}')" title="Delete">✕</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function openAddContactModal(){
+  showModal(`<h3>+ Add Contact</h3>
+    <div class="fc">
+      <div class="f2">
+        <div class="fi"><label>Name *</label><input type="text" id="ct-name" placeholder="Full name"></div>
+        <div class="fi"><label>Phone</label><input type="text" id="ct-phone" placeholder="+92 300 1234567" inputmode="tel"></div>
+      </div>
+      <div class="fi"><label>Email</label><input type="text" id="ct-email" placeholder="example@email.com"></div>
+      <div class="fi"><label>Notes</label><input type="text" id="ct-notes" placeholder="Any notes…"></div>
+    </div>
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveContact(null)">💾 Save</button></div>`);
+  setTimeout(()=>$('ct-name')?.focus(),80);
+}
+
+function openEditContactModal(id){
+  const c=allContacts.find(x=>x._id===id);
+  if(!c)return;
+  showModal(`<h3>✏️ Edit Contact</h3>
+    <div class="fc">
+      <div class="f2">
+        <div class="fi"><label>Name *</label><input type="text" id="ct-name" placeholder="Full name"></div>
+        <div class="fi"><label>Phone</label><input type="text" id="ct-phone" placeholder="+92 300 1234567" inputmode="tel"></div>
+      </div>
+      <div class="fi"><label>Email</label><input type="text" id="ct-email"></div>
+      <div class="fi"><label>Notes</label><input type="text" id="ct-notes"></div>
+    </div>
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveContact('${id}')">💾 Save</button></div>`);
+  setTimeout(()=>{
+    $('ct-name').value=c.name||'';
+    $('ct-phone').value=c.phone||'';
+    $('ct-email').value=c.email||'';
+    $('ct-notes').value=c.notes||'';
+    $('ct-name')?.focus();
+  },80);
+}
+
+async function saveContact(id){
+  const name=$('ct-name')?.value.trim();
+  if(!name){showToast('Name is required','error');return;}
+  const payload={name,phone:$('ct-phone')?.value.trim(),email:$('ct-email')?.value.trim(),notes:$('ct-notes')?.value.trim()};
+  const d=id?await api('PUT',`/api/customers/${id}`,payload):await api('POST','/api/customers',payload);
+  if(d.error){showToast(d.error,'error');return;}
+  closeModal();showToast(id?'Contact updated':'Contact added');
+  loadContacts();
+}
+
+async function deleteContact(id){
+  if(!confirm('Delete this contact?'))return;
+  const d=await api('DELETE',`/api/customers/${id}`);
+  if(d.error){showToast(d.error,'error');return;}
+  showToast('Contact deleted','warn');
+  loadContacts();
+}
+
+// ── ANALYTICS ────────────────────────────────────
+async function renderAnalytics(){
+  const days=$('analytics-days')?.value||30;
+  const body=$('analytics-body');
+  body.innerHTML=`<div class="empty"><div class="empty-icon">⏳</div><h3>Loading…</h3></div>`;
+  const d=await api('GET',`/api/analytics/models?days=${days}`);
+  if(d.error){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><h3>${d.error}</h3></div>`;return;}
+
+  const maxSold=d.topSold.length?d.topSold[0].count:1;
+  const maxStale=d.stagnating.length?d.stagnating[0].oldestDays:1;
+
+  const soldRows=d.topSold.length?d.topSold.map((m,i)=>`
+    <div class="analytics-row">
+      <div class="analytics-rank">#${i+1}</div>
+      <div>
+        <div class="analytics-model">${esc(m.model)}</div>
+        <div class="analytics-meta">${pkr(m.revenue)} revenue · ${pkr(m.profit)} profit</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px">
+        <div class="analytics-bar-wrap"><div class="analytics-bar hot" style="width:${Math.round(m.count/maxSold*100)}%"></div></div>
+        <div class="analytics-count" style="color:var(--success)">${m.count}</div>
+      </div>
+    </div>`).join(''):`<div style="padding:1.5rem;text-align:center;color:var(--text2);font-size:.72rem">No sales in this period</div>`;
+
+  const staleRows=d.stagnating.length?d.stagnating.map((m,i)=>`
+    <div class="analytics-row">
+      <div class="analytics-rank">#${i+1}</div>
+      <div>
+        <div class="analytics-model">${esc(m.model)}</div>
+        <div class="analytics-meta">${m.count} unit${m.count!==1?'s':''} · ${pkr(m.totalCost)} tied up${m.shops?` · ${m.shops}`:''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px">
+        <div class="analytics-bar-wrap"><div class="analytics-bar stale" style="width:${Math.round(m.oldestDays/maxStale*100)}%"></div></div>
+        <div class="analytics-count" style="color:var(--danger)">${m.oldestDays}d</div>
+      </div>
+    </div>`).join(''):`<div style="padding:1.5rem;text-align:center;color:var(--success);font-size:.72rem">✓ No stagnating stock!</div>`;
+
+  body.innerHTML=`<div class="analytics-grid">
+    <div class="analytics-panel">
+      <div class="analytics-hd">
+        <div>
+          <div class="analytics-hd-title">🔥 Top Selling Models</div>
+          <div class="analytics-hd-sub">Last ${days} days · sorted by units sold</div>
+        </div>
+      </div>
+      ${soldRows}
+    </div>
+    <div class="analytics-panel">
+      <div class="analytics-hd">
+        <div>
+          <div class="analytics-hd-title">⚠️ Stagnating Stock</div>
+          <div class="analytics-hd-sub">In stock &gt;30 days · sorted by age</div>
+        </div>
+      </div>
+      ${staleRows}
+    </div>
+  </div>`;
+}
+
+// ── ACTIVITY LOG ─────────────────────────────────
+const LOG_LABELS={
+  stock_add:'Phone Added to Stock',
+  stock_sell:'Phone Sold',
+  stock_delete:'Phone Deleted from Stock',
+};
+const LOG_DOT={stock_add:'add',stock_sell:'sell',stock_delete:'delete'};
+
+async function loadLogs(){
+  const shop=$('log-shop')?.value||'';
+  const url=shop?`/api/logs?shop=${shop}`:'/api/logs';
+  const data=await api('GET',url);
+  const body=$('logs-body');
+  if(!Array.isArray(data)||!data.length){
+    body.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><h3>No activity yet</h3><p>Actions will appear here once the system is in use</p></div>`;
+    return;
+  }
+  body.innerHTML=`<div>${data.map(l=>{
+    const dotCls=LOG_DOT[l.action]||'other';
+    const label=LOG_LABELS[l.action]||l.action;
+    const det=l.details||{};
+    let detail='';
+    if(l.action==='stock_add')detail=`${det.brand||''} ${det.model||''} · IMEI ${det.imei||''} · ${det.buyPrice?pkr(det.buyPrice):'no price'}`;
+    else if(l.action==='stock_sell')detail=`${det.brand||''} ${det.model||''} · IMEI ${det.imei||''} · Sold ${det.salePrice?pkr(det.salePrice):''} · Profit ${det.profit!=null?pkr(det.profit):'—'}${det.buyerName?' · Buyer: '+det.buyerName:''}`;
+    else if(l.action==='stock_delete')detail=`ID: ${det.id||''}`;
+    const shopBadge=l.shop?`<span style="background:rgba(${SHOP_RGBA[l.shop]||'99,102,241'},.15);color:${SHOP_COLOR[l.shop]||'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[l.shop]||'99,102,241'},.3);padding:1px 7px;border-radius:10px;font-size:.57rem;font-weight:700;margin-right:6px">Shop ${l.shop}</span>`:'';
+    const d=new Date(l.ts);
+    const ts=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="log-row">
+      <div class="log-dot ${dotCls}"></div>
+      <div class="log-body">
+        <div class="log-action">${shopBadge}${label}</div>
+        ${detail?`<div class="log-detail">${esc(detail)}</div>`:''}
+      </div>
+      <div class="log-ts">${ts}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ── REPORTS / INVOICES ───────────────────────────
+let allReports=[];
+
+async function loadReports(){
+  const data=await api('GET','/api/reports');
+  allReports=Array.isArray(data)?data:[];
+  renderReports();
+}
+
+function renderReports(){
+  const body=$('reports-body');
+  if(!allReports.length){
+    body.innerHTML=`<div class="empty"><div class="empty-icon">🧾</div><h3>No reports yet</h3><p>Select type, shop and period then click Generate</p></div>`;
+    return;
+  }
+  body.innerHTML=`<div style="padding:.9rem">${allReports.map(r=>{
+    const uid=r._id;
+    const titleParts=[r.type==='daily'?'Daily Report':'Monthly Report',r.shop==='ALL'?'All Shops':'Shop '+r.shop,r.period];
+    return`<div class="report-card" id="rpt-${uid}">
+      <div class="report-hd" onclick="toggleReportBody('${uid}')">
+        <span class="report-type-badge ${r.type}">${r.type}</span>
+        <span style="font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--white)">${r.period}</span>
+        <span style="font-size:.68rem;color:var(--text2)">${r.shop==='ALL'?'All Shops':'Shop '+r.shop}</span>
+        <span style="margin-left:auto;font-size:.6rem;color:var(--text3)">${fmtDate(r.generatedAt)}</span>
+        <button class="bx" onclick="event.stopPropagation();deleteReport('${uid}')" title="Delete">✕</button>
+        <span id="rpt-arr-${uid}" style="color:var(--text2);font-size:.75rem;margin-left:4px">▶</span>
+      </div>
+      <div class="report-body" id="rpt-body-${uid}">
+        ${renderReportData(r)}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderReportData(r){
+  const d=r.data||{};
+  const netCls=d.netProfit>=0?'var(--success)':'var(--danger)';
+  let html=`<div class="report-stat-grid">
+    <div class="rs"><div class="rs-lbl">Total Sales</div><div class="rs-val" style="color:var(--success)">${pkr(d.totalSales)}</div></div>
+    <div class="rs"><div class="rs-lbl">Cost of Sales</div><div class="rs-val" style="color:var(--text2)">${pkr(d.totalCost)}</div></div>
+    <div class="rs"><div class="rs-lbl">Gross Profit</div><div class="rs-val" style="color:${d.grossProfit>=0?'var(--a4)':'var(--danger)'}">${pkr(d.grossProfit)}</div></div>
+    <div class="rs"><div class="rs-lbl">Expenses</div><div class="rs-val" style="color:var(--danger)">${pkr(d.expenses||d.totalExpenses||0)}</div></div>
+    <div class="rs"><div class="rs-lbl">Net Profit</div><div class="rs-val" style="color:${netCls};font-weight:700">${pkr(d.netProfit)}</div></div>
+    <div class="rs"><div class="rs-lbl">Units Sold</div><div class="rs-val" style="color:var(--a1)">${d.unitsSold||0}</div></div>
+  </div>`;
+
+  // Sales list for daily reports
+  if(r.type==='daily'&&d.salesList?.length){
+    html+=`<div style="font-size:.6rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Sales Breakdown</div>
+    <table style="width:100%;border-collapse:collapse;font-size:.62rem;margin-bottom:.65rem;">
+      <thead><tr style="background:var(--s3)">
+        <th style="text-align:left;padding:.25rem .6rem;color:var(--text3);font-weight:600">PHONE</th>
+        <th style="text-align:left;padding:.25rem .6rem;color:var(--text3);font-weight:600">IMEI</th>
+        <th style="text-align:left;padding:.25rem .6rem;color:var(--text3);font-weight:600">BUYER</th>
+        <th style="text-align:right;padding:.25rem .6rem;color:var(--text3);font-weight:600">SOLD FOR</th>
+        <th style="text-align:right;padding:.25rem .6rem;color:var(--text3);font-weight:600">PROFIT</th>
+      </tr></thead>
+      <tbody>${d.salesList.map(s=>`<tr style="border-top:1px solid var(--border2)">
+        <td style="padding:.25rem .6rem;color:var(--white);font-weight:600">${esc(s.model||'')}</td>
+        <td style="padding:.25rem .6rem;font-family:var(--mono);color:var(--text2)">${s.imei||''}</td>
+        <td style="padding:.25rem .6rem;color:var(--text2)">${esc(s.buyerName||'—')}</td>
+        <td style="padding:.25rem .6rem;text-align:right;font-family:var(--mono);color:var(--success)">${pkr(s.salePrice)}</td>
+        <td style="padding:.25rem .6rem;text-align:right;font-family:var(--mono);color:${(s.profit||0)>=0?'var(--a4)':'var(--danger)'}">${s.profit!=null?pkr(s.profit):'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  // Expense breakdown for monthly reports
+  if(r.type==='monthly'&&d.expenseBreakdown?.length){
+    html+=`<div style="font-size:.6rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Expense Breakdown</div>
+    <table style="width:100%;border-collapse:collapse;font-size:.62rem;">
+      <thead><tr style="background:var(--s3)">
+        <th style="text-align:left;padding:.25rem .6rem;color:var(--text3);font-weight:600">DATE</th>
+        <th style="text-align:left;padding:.25rem .6rem;color:var(--text3);font-weight:600">CATEGORY</th>
+        <th style="text-align:left;padding:.25rem .6rem;color:var(--text3);font-weight:600">DESCRIPTION</th>
+        <th style="text-align:right;padding:.25rem .6rem;color:var(--text3);font-weight:600">AMOUNT</th>
+      </tr></thead>
+      <tbody>${d.expenseBreakdown.map(e=>`<tr style="border-top:1px solid var(--border2)">
+        <td style="padding:.25rem .6rem;font-family:var(--mono);color:var(--text2)">${e.date||''}</td>
+        <td style="padding:.25rem .6rem;color:var(--text2)">${esc(e.category||'')}</td>
+        <td style="padding:.25rem .6rem;color:var(--white)">${esc(e.description||'')}</td>
+        <td style="padding:.25rem .6rem;text-align:right;font-family:var(--mono);color:var(--danger)">${pkr(e.amount)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  html+=`<div style="margin-top:.65rem;display:flex;justify-content:flex-end">
+    <button class="btn bo" style="font-size:.6rem;padding:.18rem .5rem" onclick="exportReportCSV('${r._id}')">↓ Export CSV</button>
+  </div>`;
+  return html;
+}
+
+function toggleReportBody(uid){
+  const el=$('rpt-body-'+uid);if(!el)return;
+  const open=el.style.display!=='none'&&el.style.display!=='';
+  el.style.display=open?'none':'block';
+  const arr=$('rpt-arr-'+uid);if(arr)arr.textContent=open?'▶':'▼';
+}
+
+async function generateReport(){
+  const type=$('rpt-type')?.value,shop=$('rpt-shop')?.value,period=$('rpt-period')?.value.trim();
+  if(!period){showToast('Enter a period (YYYY-MM-DD or YYYY-MM)','error');return;}
+  const d=await api('POST','/api/reports/generate',{type,shop,period});
+  if(d.error){showToast(d.error,'error');return;}
+  showToast('✅ Report generated!');
+  loadReports();
+}
+
+async function deleteReport(id){
+  if(!confirm('Delete this report?'))return;
+  const d=await api('DELETE',`/api/reports/${id}`);
+  if(d.error){showToast(d.error,'error');return;}
+  showToast('Report deleted','warn');
+  loadReports();
+}
+
+function exportReportCSV(id){
+  const r=allReports.find(x=>x._id===id);
+  if(!r)return;
+  const d=r.data||{};
+  let csv=`Report Type,${r.type}\nShop,${r.shop}\nPeriod,${r.period}\nGenerated,${r.generatedAt}\n\n`;
+  csv+=`Total Sales,${d.totalSales||0}\nCost of Sales,${d.totalCost||0}\nGross Profit,${d.grossProfit||0}\nExpenses,${d.expenses||d.totalExpenses||0}\nNet Profit,${d.netProfit||0}\nUnits Sold,${d.unitsSold||0}\n`;
+  if(d.salesList?.length){
+    csv+=`\nSales List\nPhone,IMEI,Buyer,Cost,Sold For,Profit\n`;
+    d.salesList.forEach(s=>csv+=`${s.model||''},${s.imei||''},${s.buyerName||''},${s.buyPrice||''},${s.salePrice||''},${s.profit||''}\n`);
+  }
+  dlCSV(csv,`Report_${r.shop}_${r.period}.csv`);
+}
+
 // ── MODAL ──
 function showModal(html,wide=false){$('modal').innerHTML=html;$('modal').style.maxWidth=wide?'640px':'520px';$('modal-bg').classList.add('open');}
 function closeModal(){$('modal-bg').classList.remove('open');}
@@ -2543,7 +3166,8 @@ function applyShopMode(shop){
     t.style.display=(t.dataset.s===shop)?'':'none';
   });
   // Restrict sidebar nav to scan and imeistock only
-  ['ni-saleslog','ni-stock','ni-expenses','ni-history','ni-backup'].forEach(id=>{
+  // Shop mode: hide all admin/desktop pages from sidebar
+  ADMIN_ONLY_PAGES.map(p=>'ni-'+p).forEach(id=>{
     const el=$(id);if(el)el.style.display='none';
   });
   // Hide Head Office and Tools sidebar sections
