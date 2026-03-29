@@ -1961,7 +1961,7 @@ let groupedView = true; // default: grouped by model
 async function loadIMEIData(){
   const sh=activeShop==='HQ'?null:activeShop;
   let [stock,sales]=await Promise.all([
-    api('GET',sh?`/api/stock?shop=${sh}`:'/api/stock'),
+    api('GET',sh?`/api/stock?shop=${sh}&all=true`:'/api/stock?all=true'),
     api('GET',sh?`/api/sales?shop=${sh}`:'/api/sales')
   ]);
   allIMEIStock=Array.isArray(stock)?[...stock].reverse():[];
@@ -2322,7 +2322,7 @@ async function loadDay(){
   dayState=makeEmptyDay(shop,date);
 
   // Always fetch fresh stock to recalculate OUT/OP (so sold phones reflect immediately)
-  const stockUrl = shop ? `/api/stock?shop=${shop}` : '/api/stock';
+  const stockUrl = shop ? `/api/stock?shop=${shop}&all=true` : '/api/stock?all=true';
   const [saved, stockItems] = await Promise.all([
     api('GET',`/api/days/${shop}/${date}`),
     api('GET', stockUrl)
@@ -2408,6 +2408,7 @@ function renderStock(){
       let tOP=0,tIN=0,tOUT=0,tBAL=0,tTC=0,tSA=0,tPL=0;
       rows.forEach((r,i)=>{
         const op=r.op||0,inQ=r.inQty||0,out=r.out||0,bal=op+inQ-out;
+        if(!op&&!inQ&&!out)return;
         const tc=(r.costPerUnit||0)*out,sa=r.soldFor||0,pl=sa-tc;
         tOP+=op;tIN+=inQ;tOUT+=out;tBAL+=bal;tTC+=tc;tSA+=sa;tPL+=pl;
         html+=`<tr class="${out>0?'sold':''}">
@@ -2666,7 +2667,7 @@ function renderHistory(){
           : `<div style="color:var(--text3);font-style:italic;padding:4px 0">No sales recorded this day</div>`
         }
         ${(d.expenses||[]).length?`<div style="margin-top:6px;padding-top:5px;border-top:1px solid var(--border);color:var(--danger)">Expenses: ${pkr((d.expenses||[]).reduce((s,e)=>s+(e.amt||0),0))}</div>`:''}
-        <div style="margin-top:8px"><button class="btn bo" style="font-size:.6rem;padding:.2rem .5rem" onclick="loadHistDay('${d.shop}','${d.date}')">📋 Open Full Day</button></div>
+        <div style="margin-top:8px;display:flex;gap:.4rem;align-items:center"><button class="btn bo" style="font-size:.6rem;padding:.2rem .5rem" onclick="loadHistDay('${d.shop}','${d.date}')">📋 Open Full Day</button><button class="btn" style="font-size:.6rem;padding:.2rem .5rem;background:var(--danger);color:#fff;border-color:var(--danger)" onclick="deleteHistDay('${d.shop}','${d.date}')">🗑 Delete</button></div>
       </div>
     </div>`;
   }).join('');
@@ -2680,6 +2681,12 @@ function toggleHistCard(hdr){
   if(arr)arr.textContent=open?'▶':'▼';
 }
 function loadHistDay(shop,date){activeShop=shop;switchShop(shop);$('work-date').value=date;nav('stock');}
+async function deleteHistDay(shop,date){
+  if(!confirm(`Delete history for Shop ${shop} on ${date}? This cannot be undone.`))return;
+  const r=await api('DELETE',`/api/days/${shop}/${date}`);
+  if(r.success){allDays=allDays.filter(d=>!(d.shop===shop&&d.date===date));renderHistory();}
+  else alert('Failed to delete day.');
+}
 
 // ── HQ OVERVIEW ──
 // ── WAREHOUSE ──
