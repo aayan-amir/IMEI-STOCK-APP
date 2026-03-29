@@ -263,7 +263,8 @@ app.get('/api/lookup/:imei', anyAuth, async (req, res) => {
 // Get stock — shop users are scoped to their own shop
 app.get('/api/stock', anyAuth, async (req, res) => {
   const shop = req.authShop || req.query.shop;
-  const query = shop ? { shop, status: 'in_stock' } : { status: 'in_stock' };
+  const query = shop ? { shop } : {};
+  if (req.query.all !== 'true') query.status = 'in_stock';
   const items = await Phone.find(query);
   res.json(items);
 });
@@ -467,6 +468,16 @@ app.put('/api/days/:shop/:date', adminOnly, async (req, res) => {
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
     res.json({ success: true, day });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/days/:shop/:date', adminOnly, async (req, res) => {
+  try {
+    const { shop, date } = req.params;
+    await Day.deleteOne({ shop, date });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
