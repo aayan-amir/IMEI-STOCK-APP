@@ -263,7 +263,7 @@ app.get('/api/lookup/:imei', anyAuth, async (req, res) => {
 // Get stock — shop users are scoped to their own shop
 app.get('/api/stock', anyAuth, async (req, res) => {
   const shop = req.authShop || req.query.shop;
-  const query = shop ? { shop } : {};
+  const query = shop ? { shop, status: 'in_stock' } : { status: 'in_stock' };
   const items = await Phone.find(query);
   res.json(items);
 });
