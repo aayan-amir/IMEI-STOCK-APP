@@ -1544,8 +1544,13 @@ async function handleImeiSubmit(){
     try{
       const r=await api('GET',`/api/lookup/${pendingIMEI}`);
       if(r.imei){
-        showPreview('⚠️ Already in Stock',phoneCardHTML(r,true));
-        showToast('IMEI already exists!','warn');
+        if(r.status==='sold'){
+          showPreview('⚠️ Already Sold',phoneCardHTML(r,true));
+          showToast('This IMEI belongs to a sold phone','warn');
+        } else {
+          showPreview('⚠️ Already in Stock',phoneCardHTML(r,true));
+          showToast('IMEI already exists!','warn');
+        }
         return;
       }
     }catch(e){}
@@ -1657,8 +1662,17 @@ async function submitSell(){
   if(d.error){showToast(d.error,'error');return;}
   const profit=d.sale?.profit;
   showToast(`💰 Sale recorded!${profit!=null?' Profit: '+pkr(profit):''}`, 'success');
+  const soldIMEI=pendingIMEI;
+  const soldPrice=d.sale?.salePrice;
+  const soldAt=d.sale?.soldAt||new Date().toISOString();
   cancelForm();
   ['fSalePrice','fBuyerName','fBuyerPhone','fSaleNotes'].forEach(id=>{if($(id))$(id).value='';});
+  // Update local cache immediately so imeistock page reflects the sale without waiting for a full refresh
+  const soldIdx=allIMEIStock.findIndex(p=>p.imei===soldIMEI);
+  if(soldIdx!==-1){
+    allIMEIStock[soldIdx]={...allIMEIStock[soldIdx],status:'sold',salePrice:soldPrice,soldAt};
+    renderIMEIStock();
+  }
   loadSidebarStats();
   if(activePage==='stock') loadDay();
   if(activePage==='saleslog') loadSalesLog();
