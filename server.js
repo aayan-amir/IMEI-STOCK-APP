@@ -146,9 +146,20 @@ const ReportSchema = new mongoose.Schema({
 });
 const Report = mongoose.model('Report', ReportSchema);
 
-// ── PASSWORDS (set via env vars) ───────────────
-const GATE_PASSWORD  = process.env.GATE_PASSWORD  || 'mobworld';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'anasanas';
+// ── PASSWORDS (required — set via env vars, no defaults) ──────
+if (!process.env.GATE_PASSWORD || !process.env.ADMIN_PASSWORD) {
+  console.error('❌ GATE_PASSWORD and ADMIN_PASSWORD must be set as environment variables. Refusing to start.');
+  process.exit(1);
+}
+const GATE_PASSWORD  = process.env.GATE_PASSWORD;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+// ── VALID SHOPS (set via VALID_SHOPS env var as comma-separated list) ──
+// Not a secret, but configure this to match your actual shop identifiers.
+// Example: VALID_SHOPS=shopA,shopB,shopC
+const VALID_SHOPS = process.env.VALID_SHOPS
+  ? process.env.VALID_SHOPS.split(',').map(s => s.trim()).filter(Boolean)
+  : ['456', '192', 'G15'];
 
 // ── SESSION TOKENS ─────────────────────────────
 // Simple in-memory store: token -> { role, shop, expiresAt }
@@ -238,7 +249,6 @@ app.post('/api/auth', authLimiter, (req, res) => {
 
   // Step 2b: shop login — requires gate password to prevent gate bypass
   if (type === 'shop') {
-    const VALID_SHOPS = ['456', '192', 'G15'];
     if (!safeCompare(password, GATE_PASSWORD)) return res.json({ ok: false });
     if (!VALID_SHOPS.includes(shop)) return res.status(400).json({ ok: false, error: 'Invalid shop' });
     const token = generateToken();

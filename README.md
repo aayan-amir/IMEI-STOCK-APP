@@ -54,13 +54,13 @@ npm install
 
 ### Configuration
 
-Create a `.env` file in the project root (or set environment variables directly):
+Copy `.env.example` to `.env` and fill in the values, **or** set the variables directly in your host's dashboard (e.g. Render → Environment):
 
 ```env
 # Required
-MONGO_URI=mongodb://localhost:27017/phone-stock
+MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/phone-stock
 
-# Auth passwords (change these before deploying)
+# Auth passwords — server refuses to start if either is missing
 GATE_PASSWORD=your_gate_password
 ADMIN_PASSWORD=your_admin_password
 
@@ -69,11 +69,14 @@ PORT=3000
 NODE_ENV=production
 
 # Reverse-proxy trust (true | false | integer hop count)
-# Defaults to 1 in production when unset
+# Render sits behind one proxy, so 1 is correct
 TRUST_PROXY=1
+
+# Comma-separated valid shop identifiers (default: 456,192,G15)
+# VALID_SHOPS=456,192,G15
 ```
 
-> **Security note:** The default passwords (`mobworld` / `anasanas`) are insecure. Always override them via environment variables in any non-local deployment.
+> **Security note:** The server will **refuse to start** if `GATE_PASSWORD` or `ADMIN_PASSWORD` are not set. There are no insecure defaults.
 
 ### Running
 
@@ -98,7 +101,7 @@ Sessions expire after **8 hours** and are stored in server memory (tokens are lo
 
 ### Shops
 
-The valid shop identifiers are `456`, `192`, and `G15`.
+The valid shop identifiers are configured via the `VALID_SHOPS` environment variable (comma-separated). The default value is `456,192,G15`.
 
 ---
 
@@ -165,8 +168,19 @@ All endpoints require a `Authorization: Bearer <token>` header unless noted.
 
 The app can be deployed to any Node.js-compatible host (Render, Railway, Heroku, VPS, etc.).
 
+### Render
+
+1. Connect the GitHub repo in the Render dashboard.
+2. Set the following environment variables under **Environment**:
+   - `MONGO_URI` — your MongoDB Atlas connection string
+   - `GATE_PASSWORD` — a strong password for gate access
+   - `ADMIN_PASSWORD` — a strong password for admin access
+   - `NODE_ENV=production`
+   - `TRUST_PROXY=1` (Render sits behind one proxy layer)
+3. Render provides HTTPS automatically — no certificate configuration needed in the app.
+
 Key points:
-- Set all environment variables (especially `MONGO_URI`, `ADMIN_PASSWORD`, `GATE_PASSWORD`) before starting.
-- If running behind a reverse proxy (Nginx, Render, Heroku), set `TRUST_PROXY` appropriately so rate limiting uses real client IPs.
+- The server **refuses to start** if `GATE_PASSWORD` or `ADMIN_PASSWORD` are missing.
 - In-memory tokens are cleared on restart — users will need to log in again after a redeploy.
+- The `certs/` directory is gitignored; do not commit TLS private keys.
 
