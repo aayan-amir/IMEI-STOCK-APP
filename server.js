@@ -64,6 +64,7 @@ const SaleSchema = new mongoose.Schema({
   profit: Number,
   shop: String,
   buyerName: String,
+  buyerPhone: String,
   notes: String,
   soldAt: String
 });
@@ -287,7 +288,7 @@ app.post('/api/stock/add', anyAuth, async (req, res) => {
 // Sell phone — shop users can only sell phones that belong to their shop
 app.post('/api/stock/sell', anyAuth, async (req, res) => {
   try {
-    const { imei, salePrice, buyerName, notes, shop } = req.body;
+    const { imei, salePrice, buyerName, buyerPhone, notes, shop } = req.body;
 
     if (!imei) return res.status(400).json({ error: 'IMEI required' });
     if (salePrice === undefined || salePrice === null || salePrice === '') {
@@ -327,6 +328,7 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       profit: profit,
       shop: phone.shop,
       buyerName: buyerName || null,
+      buyerPhone: buyerPhone || null,
       notes: notes || null,
       soldAt: phone.soldAt
     });
@@ -339,6 +341,31 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       phone.soldAt = undefined;
       await phone.save().catch(revertErr => console.error('Failed to revert phone after sale error:', revertErr));
       throw saleErr;
+    }
+
+    // Auto-upsert customer contact if buyer info is provided
+    if (buyerName || buyerPhone) {
+      try {
+        const nameVal = (buyerName || '').trim();
+        const phoneVal = (buyerPhone || '').trim();
+        if (nameVal) {
+          // Try to find existing customer by name (case-insensitive) or phone
+          const orClauses = [{ name: { $regex: `^${nameVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } }];
+          if (phoneVal) orClauses.push({ phone: phoneVal });
+          const existing = await Customer.findOne({ $or: orClauses });
+          if (existing) {
+            // Update phone if not already set
+            if (phoneVal && !existing.phone) {
+              existing.phone = phoneVal;
+              await existing.save();
+            }
+          } else {
+            await Customer.create({ name: nameVal, phone: phoneVal || undefined, addedAt: new Date().toISOString() });
+          }
+        }
+      } catch (contactErr) {
+        console.error('Auto-save contact error (non-fatal):', contactErr);
+      }
     }
 
     logAction('stock_sell', phone.shop || null, req.authRole, { imei: phone.imei, brand: phone.brand, model: phone.model, salePrice: sp, profit, buyerName: buyerName || null });
