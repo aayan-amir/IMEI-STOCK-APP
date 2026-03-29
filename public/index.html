@@ -2685,7 +2685,6 @@ function toggleHistCard(hdr){
   const open=body.style.display!=='none'&&body.style.display!=='';
   body.style.display=open?'none':'block';
   if(arr)arr.textContent=open?'▶':'▼';
-  hdr.onmouseout=open?()=>hdr.style.background='':null;
 }
 function loadHistDay(shop,date){activeShop=shop;switchShop(shop);$('work-date').value=date;nav('stock');}
 
