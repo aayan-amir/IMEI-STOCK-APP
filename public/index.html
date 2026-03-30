@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Mobile HQ</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@zxing/library@0.19.2/umd/index.min.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
 <style>
 :root{
@@ -19,7 +19,7 @@
   --text3:#a0aec0;
   --white:#1a202c;
   --mono:'JetBrains Mono',monospace;
-  --sans:'Syne',sans-serif;
+  --sans:'Inter',sans-serif;
   --radius:10px;
   --a1:#4f46e5;
   --a2:#7c3aed;
@@ -309,7 +309,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   width:38px;height:38px;border-radius:9px;
   background:var(--s2);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
-  font-size:1.2rem;flex-shrink:0;
+  flex-shrink:0;color:var(--text2);
 }
 .phone-info{flex:1;min-width:0;}
 .phone-name{font-weight:700;font-size:.88rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -759,13 +759,13 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tb-title">IMEI Scan</div>
         <div class="tb-badge" id="scan-shop-badge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:var(--c456);border-radius:20px;padding:2px 10px;">Shop 456</div>
         <div class="tbsep"></div>
-        <button class="btn bb" onclick="openCamera()" style="font-size:.7rem;">📷 Scan Barcode</button>
+        <button class="btn bb" onclick="openCamera()" style="font-size:.7rem;">Scan Barcode</button>
       </div>
       <div class="stock-scroll" style="padding:16px;">
         <div class="mode-toggle" style="grid-template-columns:1fr 1fr 1fr;">
           <button class="mode-btn active" id="modeAdd" onclick="setMode('add')">+ Add</button>
-          <button class="mode-btn" id="modeBatch" onclick="setMode('batch')">⊕ Batch Add</button>
-          <button class="mode-btn sell" id="modeSell" onclick="setMode('sell')">$ Sell</button>
+          <button class="mode-btn" id="modeBatch" onclick="setMode('batch')">Batch Add</button>
+          <button class="mode-btn sell" id="modeSell" onclick="setMode('sell')">Sell</button>
         </div>
         <div class="scan-section">
           <h2>Scan or Enter IMEI</h2>
@@ -775,7 +775,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
               inputmode="numeric" autocomplete="off" spellcheck="false"
               oninput="this.value=this.value.replace(/[^0-9]/g,'')"
               onkeydown="if(event.key==='Enter')handleImeiSubmit()">
-            <button class="btn bo" onclick="openCamera('imei1')" title="Use camera">📷</button>
+            <button class="btn bo" onclick="openCamera('imei1')" title="Use camera">Cam</button>
             <button class="btn bg" onclick="handleImeiSubmit()">Go</button>
           </div>
           <p style="font-size:.62rem;color:var(--text2);margin-top:7px;font-family:var(--mono)">Hardware scanner auto-submits on Enter · Scan IMEI 1, details form appears</p>
@@ -811,7 +811,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
             <div class="form-group"><label>Buy Price (PKR)</label><input type="number" id="fBuyPrice" placeholder="Cost price"></div>
             <!-- IMEI PAIR -->
             <div class="imei-pair">
-              <div class="imei-pair-title">📡 IMEI Numbers</div>
+              <div class="imei-pair-title">IMEI Numbers</div>
               <div class="imei-pair-grid">
                 <div>
                   <div style="font-size:.58rem;font-weight:700;color:var(--a1);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 1 (scanned)</div>
