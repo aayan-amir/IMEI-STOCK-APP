@@ -309,7 +309,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   width:38px;height:38px;border-radius:9px;
   background:var(--s2);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:var(--text2);font-size:.85rem;font-weight:700;
+  flex-shrink:0;color:var(--text2);font-size:.85rem;font-weight:700;text-align:center;
 }
 .phone-info{flex:1;min-width:0;}
 .phone-name{font-weight:700;font-size:.88rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -930,10 +930,10 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <button class="btn bo" style="font-size:.65rem" onclick="loadIMEIData()">↻ Refresh</button>
         <button class="btn bo" style="font-size:.65rem" onclick="exportIMEICSV()">↓ CSV</button>
-        <button class="btn bo" style="font-size:.65rem" id="groupBtn" onclick="toggleGrouped()">Ungrouped</button>
+        <button class="btn bo" style="font-size:.65rem" id="groupBtn" onclick="toggleGrouped()">Flat List</button>
       </div>
       <div class="stock-scroll">
-        <div class="search-wrap"><span class="search-icon">○</span><input type="text" id="imeiSearch" placeholder="Search brand, model, IMEI…" oninput="renderIMEIStock()"></div>
+        <div class="search-wrap"><span class="search-icon" aria-hidden="true">○</span><input type="text" id="imeiSearch" placeholder="Search brand, model, IMEI…" oninput="renderIMEIStock()"></div>
         <div class="filter-row">
           <div class="filter-chip" onclick="setIMEIFilter('all',this)">All</div>
           <div class="filter-chip active" onclick="setIMEIFilter('in_stock',this)">In Stock</div>
@@ -1983,7 +1983,7 @@ async function loadIMEIData(){
   renderIMEIStock();
 }
 function setIMEIFilter(f,el){imeiFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderIMEIStock();}
-function toggleGrouped(){groupedView=!groupedView;$('groupBtn').textContent=groupedView?'Ungrouped':'Grouped';renderIMEIStock();}
+function toggleGrouped(){groupedView=!groupedView;$('groupBtn').textContent=groupedView?'Flat List':'Group by Model';renderIMEIStock();}
 
 function renderIMEIStock(){
   const q=$('imeiSearch').value.toLowerCase();
@@ -2077,7 +2077,7 @@ function phoneCardHTML(p, standalone=true){
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
       ${!IS_PHONE?`<button class="btn bo" onclick="openEditPhone('${p.id}')" style="font-size:.62rem;padding:.22rem .5rem;">Edit</button>`:''}
-      ${p.status==='in_stock'?`<button class="del-btn" onclick="deletePhone('${p.id}')" title="Remove">×</button>`:''}
+      ${p.status==='in_stock'?`<button class="del-btn" onclick="deletePhone('${p.id}')" title="Remove" aria-label="Delete phone">×</button>`:''}
     </div>
   </div>`;
 }
