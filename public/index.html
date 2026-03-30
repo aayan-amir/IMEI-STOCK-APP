@@ -309,7 +309,7 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   width:38px;height:38px;border-radius:9px;
   background:var(--s2);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:var(--text2);
+  flex-shrink:0;color:var(--text2);font-size:.85rem;font-weight:700;
 }
 .phone-info{flex:1;min-width:0;}
 .phone-name{font-weight:700;font-size:.88rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -824,7 +824,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
                       oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                       onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('fBrand').focus();}"
                       style="flex:1">
-                    <button type="button" class="btn bo" onclick="openCamera('imei2')" title="Scan with camera" style="padding:6px 9px;font-size:.75rem;flex-shrink:0">📷</button>
+                    <button type="button" class="btn bo" onclick="openCamera('imei2')" title="Scan with camera" style="padding:6px 9px;font-size:.75rem;flex-shrink:0">Cam</button>
                   </div>
                   <div style="font-size:.58rem;color:var(--text2);margin-top:3px;font-family:var(--mono)">Click field then scan barcode</div>
                 </div>
@@ -833,7 +833,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
             <div class="form-group full"><label>Notes</label><textarea id="fNotes" placeholder="Condition, accessories included…"></textarea></div>
           </div>
           <div style="display:flex;gap:8px;margin-top:14px">
-            <button class="btn bv" onclick="submitAdd()">✅ Add to Stock</button>
+            <button class="btn bv" onclick="submitAdd()">Add to Stock</button>
             <button class="btn bo" onclick="cancelForm()">Cancel</button>
           </div>
         </div>
@@ -848,13 +848,13 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
             <div class="form-group full"><label>Notes</label><textarea id="fSaleNotes" placeholder="Any notes about this sale…"></textarea></div>
           </div>
           <div style="display:flex;gap:8px;margin-top:14px">
-            <button class="btn br" onclick="submitSell()">✅ Confirm Sale</button>
+            <button class="btn br" onclick="submitSell()">Confirm Sale</button>
             <button class="btn bo" onclick="cancelForm()">Cancel</button>
           </div>
         </div>
         <!-- BATCH ADD FORM -->
         <div class="scan-section" id="batchForm" style="display:none">
-          <h2>⊕ Batch Add Phones</h2>
+          <h2>Batch Add Phones</h2>
           <p style="font-size:.68rem;color:var(--text2);margin-bottom:12px;line-height:1.5">Set the model details once, then scan IMEI pairs one by one. All phones will share the same brand/model/price.</p>
 
           <!-- Shared details — set once -->
@@ -881,7 +881,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 
           <!-- IMEI pair scanner -->
           <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:12px;">
-            <div style="font-size:.6rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">📡 Scan Next IMEI Pair</div>
+            <div style="font-size:.6rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Scan Next IMEI Pair</div>
             <div class="imei-pair-grid" style="margin-bottom:8px;">
               <div>
                 <div style="font-size:.58rem;font-weight:700;color:var(--a1);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 1</div>
@@ -889,7 +889,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
                   <input type="text" id="bImei1" placeholder="Scan IMEI 1…" inputmode="numeric" class="imei2-field" style="flex:1"
                     oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                     onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('bImei2').focus();}">
-                  <button class="btn bo" onclick="openCamera('batch1')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">📷</button>
+                  <button class="btn bo" onclick="openCamera('batch1')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">Cam</button>
                 </div>
               </div>
               <div>
@@ -898,7 +898,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
                   <input type="text" id="bImei2" placeholder="Scan IMEI 2…" inputmode="numeric" class="imei2-field" style="flex:1"
                     oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                     onkeydown="if(event.key==='Enter'){event.preventDefault();addToBatchQueue();}">
-                  <button class="btn bo" onclick="openCamera('batch')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">📷</button>
+                  <button class="btn bo" onclick="openCamera('batch')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">Cam</button>
                 </div>
               </div>
             </div>
@@ -915,7 +915,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
           </div>
 
           <div style="display:flex;gap:8px;">
-            <button class="btn bv" id="batchSaveBtn" onclick="submitBatch()" style="flex:1;font-size:.78rem;" disabled>💾 Save All to Stock</button>
+            <button class="btn bv" id="batchSaveBtn" onclick="submitBatch()" style="flex:1;font-size:.78rem;" disabled>Save All to Stock</button>
             <button class="btn bo" onclick="cancelForm()">Cancel</button>
           </div>
         </div>
@@ -930,10 +930,10 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <button class="btn bo" style="font-size:.65rem" onclick="loadIMEIData()">↻ Refresh</button>
         <button class="btn bo" style="font-size:.65rem" onclick="exportIMEICSV()">↓ CSV</button>
-        <button class="btn bo" style="font-size:.65rem" id="groupBtn" onclick="toggleGrouped()">☰ Ungrouped</button>
+        <button class="btn bo" style="font-size:.65rem" id="groupBtn" onclick="toggleGrouped()">Ungrouped</button>
       </div>
       <div class="stock-scroll">
-        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="imeiSearch" placeholder="Search brand, model, IMEI…" oninput="renderIMEIStock()"></div>
+        <div class="search-wrap"><span class="search-icon">○</span><input type="text" id="imeiSearch" placeholder="Search brand, model, IMEI…" oninput="renderIMEIStock()"></div>
         <div class="filter-row">
           <div class="filter-chip" onclick="setIMEIFilter('all',this)">All</div>
           <div class="filter-chip active" onclick="setIMEIFilter('in_stock',this)">In Stock</div>
@@ -958,11 +958,11 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <button class="btn bo" onclick="loadSalesLog()" style="font-size:.62rem">↻ Refresh</button>
         <button class="btn bo" onclick="exportSalesLogCSV()" style="font-size:.62rem">↓ CSV</button>
-        <button class="btn bo" onclick="printSalesLog()" style="font-size:.62rem">🖨 Print</button>
-        <button class="btn br" onclick="clearAllSales()" style="font-size:.62rem">🗑 Clear All</button>
+        <button class="btn bo" onclick="printSalesLog()" style="font-size:.62rem">Print</button>
+        <button class="btn br" onclick="clearAllSales()" style="font-size:.62rem">Clear All</button>
       </div>
       <div class="hq-body" id="sl-body">
-        <div class="empty"><div class="empty-icon">📋</div><h3>No sales yet</h3><p>Sales will appear here after they are recorded</p></div>
+        <div class="empty"><div class="empty-icon">—</div><h3>No sales yet</h3><p>Sales will appear here after they are recorded</p></div>
       </div>
     </div>
 
@@ -974,11 +974,11 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <input type="date" id="work-date" onchange="loadDay()">
         <div class="tbsep"></div>
-        <button class="btn bg" onclick="saveDay()">💾 Save</button>
+        <button class="btn bg" onclick="saveDay()">Save</button>
         <button class="btn bo" onclick="openNewDayModal()">+ New Day</button>
         <div class="tbsep"></div>
         <button class="btn bo" style="font-size:.62rem" onclick="exportDayCSV()">↓ CSV</button>
-        <button class="btn bo" style="font-size:.62rem" onclick="printDaySheet()">🖨 Print</button>
+        <button class="btn bo" style="font-size:.62rem" onclick="printDaySheet()">Print</button>
       </div>
       <div class="stock-scroll" id="stock-wrap">
         <div style="color:var(--text2);font-size:.78rem;padding:2.5rem;text-align:center">Select a date and shop to load the daily sheet</div>
@@ -1011,7 +1011,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
             <div class="carry-w"><span>Rs</span><input type="number" id="cf-carry" placeholder="0" oninput="recalc()"></div>
           </div>
           <div class="cfi cash-pill">
-            <div class="cfl">💰 Cash on Hand</div>
+            <div class="cfl">Cash on Hand</div>
             <div class="cfv g" style="font-size:.88rem" id="cf-fc">Rs 0</div>
           </div>
         </div>
@@ -1031,7 +1031,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <button class="btn bv" onclick="openAddExpenseModal()">+ Add Expense</button>
       </div>
       <div class="hq-body" id="exp-body">
-        <div class="empty"><div class="empty-icon">💸</div><h3>No expenses</h3><p>Click + Add Expense</p></div>
+        <div class="empty"><div class="empty-icon">—</div><h3>No expenses</h3><p>Click + Add Expense</p></div>
       </div>
     </div>
 
@@ -1045,7 +1045,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         </select>
       </div>
       <div class="hq-body" id="hist-body">
-        <div class="empty"><div class="empty-icon">📅</div><h3>No history yet</h3><p>Save daily sheets to see them here</p></div>
+        <div class="empty"><div class="empty-icon">—</div><h3>No history yet</h3><p>Save daily sheets to see them here</p></div>
       </div>
     </div>
 
@@ -1076,7 +1076,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <button class="btn bb" onclick="openDispatchFromShipments()">↗ Dispatch</button>
         <button class="btn bb" onclick="openReceiveModal()">+ Log Shipment</button>
-        <button class="btn bo" onclick="printShipments()" style="font-size:.62rem">🖨 Print</button>
+        <button class="btn bo" onclick="printShipments()" style="font-size:.62rem">Print</button>
       </div>
       <div class="hq-body" id="ship-body"></div>
     </div>
@@ -1105,7 +1105,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <button class="btn bo" onclick="renderCEO()" style="font-size:.62rem">↻ Refresh</button>
       </div>
       <div class="monthly-scroll" id="ceo-body">
-        <div class="empty"><div class="empty-icon">📊</div><h3>Loading…</h3></div>
+        <div class="empty"><div class="empty-icon">—</div><h3>Loading…</h3></div>
       </div>
     </div>
 
@@ -1120,7 +1120,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <button class="btn bv" onclick="openAddContactModal()">+ Add Contact</button>
       </div>
       <div class="hq-body" id="contacts-body">
-        <div class="empty"><div class="empty-icon">👥</div><h3>No contacts yet</h3><p>Click + Add Contact to build your customer book</p></div>
+        <div class="empty"><div class="empty-icon">—</div><h3>No contacts yet</h3><p>Click + Add Contact to build your customer book</p></div>
       </div>
     </div>
 
@@ -1140,7 +1140,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <button class="btn bo" onclick="renderAnalytics()" style="font-size:.62rem">↻ Refresh</button>
       </div>
       <div class="monthly-scroll" id="analytics-body">
-        <div class="empty"><div class="empty-icon">📈</div><h3>Loading…</h3></div>
+        <div class="empty"><div class="empty-icon">—</div><h3>Loading…</h3></div>
       </div>
     </div>
 
@@ -1160,7 +1160,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <button class="btn bo" onclick="loadLogs()" style="font-size:.62rem">↻ Refresh</button>
       </div>
       <div class="hq-body" id="logs-body">
-        <div class="empty"><div class="empty-icon">📋</div><h3>No logs yet</h3><p>Actions like adding and selling phones will appear here</p></div>
+        <div class="empty"><div class="empty-icon">—</div><h3>No logs yet</h3><p>Actions like adding and selling phones will appear here</p></div>
       </div>
     </div>
 
@@ -1181,12 +1181,12 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         </select>
         <input type="text" id="rpt-period" placeholder="YYYY-MM-DD or YYYY-MM"
           style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--mono);font-size:.68rem;padding:.24rem .55rem;outline:none;width:140px;">
-        <button class="btn bv" onclick="generateReport()" style="font-size:.7rem">⚡ Generate</button>
+        <button class="btn bv" onclick="generateReport()" style="font-size:.7rem">Generate</button>
         <div class="tbsep"></div>
         <button class="btn bo" onclick="loadReports()" style="font-size:.62rem">↻ Refresh</button>
       </div>
       <div class="hq-body" id="reports-body">
-        <div class="empty"><div class="empty-icon">🧾</div><h3>No reports yet</h3><p>Select type, shop and period then click Generate</p></div>
+        <div class="empty"><div class="empty-icon">—</div><h3>No reports yet</h3><p>Select type, shop and period then click Generate</p></div>
       </div>
     </div>
 
@@ -1195,12 +1195,12 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
       <div class="tb"><div class="tb-title">Backup / Restore</div></div>
       <div class="hq-body" style="padding:1.2rem;max-width:480px;">
         <div class="scan-section">
-          <h2>💾 Backup</h2>
+          <h2>Backup</h2>
           <p style="font-size:.75rem;color:var(--text2);margin-bottom:14px;line-height:1.6">Download a full JSON backup of all stock, sales, daily sheets, expenses, and warehouse data.</p>
           <button class="btn bv" onclick="doBackup()">⬇ Download Backup</button>
         </div>
         <div class="scan-section" style="margin-top:12px">
-          <h2>📂 Restore</h2>
+          <h2>Restore</h2>
           <p style="font-size:.75rem;color:var(--text2);margin-bottom:14px;line-height:1.6">Upload a previously downloaded backup file. Existing records will be merged/overwritten.</p>
           <div class="form-group" style="margin-bottom:12px">
             <label>Backup file (.json)</label>
@@ -1242,7 +1242,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn bg" id="camUseImei1" onclick="useScanResult('imei1')" style="font-size:.7rem;">IMEI 1</button>
         <button class="btn bb" id="camUseImei2" onclick="useScanResult('imei2')" style="font-size:.7rem;">IMEI 2</button>
-        <button class="btn bo" onclick="useScanResult('copy')" style="font-size:.7rem;">📋 Copy</button>
+        <button class="btn bo" onclick="useScanResult('copy')" style="font-size:.7rem;">Copy</button>
         <button class="btn bo" onclick="clearScanResult()" style="font-size:.7rem;">↺ Rescan</button>
       </div>
     </div>
@@ -1255,8 +1255,8 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn bo" onclick="closeCamera()" style="flex:1;">Close</button>
-      <button class="btn bo" onclick="triggerFocus()" id="focusBtn" style="font-size:.75rem;padding:.28rem .65rem;" title="Tap to focus">🎯</button>
-      <button class="btn bo" onclick="toggleTorch()" id="torchBtn" style="font-size:.75rem;padding:.28rem .65rem;" title="Toggle flashlight">🔦</button>
+      <button class="btn bo" onclick="triggerFocus()" id="focusBtn" style="font-size:.75rem;padding:.28rem .65rem;" title="Tap to focus">Focus</button>
+      <button class="btn bo" onclick="toggleTorch()" id="torchBtn" style="font-size:.75rem;padding:.28rem .65rem;" title="Toggle flashlight">Torch</button>
     </div>
   </div>
 </div>
@@ -1314,7 +1314,7 @@ function applyPhoneMode(){
   // Add phone mode banner
   const banner = document.createElement('div');
   banner.style.cssText='background:rgba(99,102,241,.08);border-bottom:1px solid rgba(99,102,241,.2);padding:5px 12px;font-size:.65rem;color:var(--a1);font-weight:600;text-align:center;flex-shrink:0;';
-  banner.textContent='📱 Phone Mode — Scan & Add only';
+  banner.textContent='Phone Mode — Scan & Add only';
   document.getElementById('main').prepend(banner);
 }
 
@@ -1518,14 +1518,14 @@ async function submitBatch(){
     saveBtn.textContent=`Saving ${saved+failed.length}/${batchQueue.length}…`;
   }
 
-  saveBtn.textContent='💾 Save All to Stock';
+  saveBtn.textContent='Save All to Stock';
   saveBtn.disabled=false;
 
   if(failed.length){
     showToast(`⚠ ${saved} saved, ${failed.length} failed`,'warn');
     console.warn('Batch failures:', failed);
   } else {
-    showToast(`✅ ${saved} phones added to stock!`,'success');
+    showToast(`${saved} phones added to stock!`,'success');
   }
 
   batchQueue=[];
@@ -1545,10 +1545,10 @@ async function handleImeiSubmit(){
       const r=await api('GET',`/api/lookup/${pendingIMEI}`);
       if(r.imei){
         if(r.status==='sold'){
-          showPreview('⚠️ Already Sold',phoneCardHTML(r,true));
+          showPreview('Already Sold',phoneCardHTML(r,true));
           showToast('This IMEI belongs to a sold phone','warn');
         } else {
-          showPreview('⚠️ Already in Stock',phoneCardHTML(r,true));
+          showPreview('Already in Stock',phoneCardHTML(r,true));
           showToast('IMEI already exists!','warn');
         }
         return;
@@ -1587,7 +1587,7 @@ function showSellForm(phone){
   const imeiLine=phone.imei2?`<div class="phone-imei">IMEI 1: ${phone.imei}</div><div class="phone-imei2">IMEI 2: ${phone.imei2}</div>`:`<div class="phone-imei">${phone.imei}</div>`;
   $('sellPhoneInfo').innerHTML=`
     <div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px;display:flex;align-items:center;gap:12px">
-      <div class="phone-icon">📱</div>
+      <div class="phone-icon">${(phone.brand||'?')[0].toUpperCase()}</div>
       <div style="flex:1;">
         <div style="font-weight:700;font-size:.9rem;color:var(--white)">${phone.brand} ${phone.model}</div>
         ${imeiLine}
@@ -1643,7 +1643,7 @@ async function submitAdd(){
   const d=await api('POST','/api/stock/add',payload);
   if(d.error){showToast(d.error,'error');return;}
   const imeiInfo=imei2?` (2 IMEIs)`:'';
-  showToast(`✅ ${payload.brand||'Phone'} ${payload.model||''}${imeiInfo} added!`,'success');
+  showToast(`${payload.brand||'Phone'} ${payload.model||''}${imeiInfo} added!`,'success');
   cancelForm();
   ['fBrand','fModel','fColor','fBuyPrice','fNotes','fImei1','fImei2'].forEach(id=>{if($(id))$(id).value='';});
   $('fStorage').value=''; $('fCat').value='IPHONE';
@@ -1661,7 +1661,7 @@ async function submitSell(){
   });
   if(d.error){showToast(d.error,'error');return;}
   const profit=d.sale?.profit;
-  showToast(`💰 Sale recorded!${profit!=null?' Profit: '+pkr(profit):''}`, 'success');
+  showToast(`Sale recorded!${profit!=null?' Profit: '+pkr(profit):''}`, 'success');
   const soldIMEI=pendingIMEI;
   const soldPrice=d.sale?.salePrice;
   const soldAt=d.sale?.soldAt||new Date().toISOString();
@@ -1983,7 +1983,7 @@ async function loadIMEIData(){
   renderIMEIStock();
 }
 function setIMEIFilter(f,el){imeiFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderIMEIStock();}
-function toggleGrouped(){groupedView=!groupedView;$('groupBtn').textContent=groupedView?'☰ Ungrouped':'❏ Grouped';renderIMEIStock();}
+function toggleGrouped(){groupedView=!groupedView;$('groupBtn').textContent=groupedView?'Ungrouped':'Grouped';renderIMEIStock();}
 
 function renderIMEIStock(){
   const q=$('imeiSearch').value.toLowerCase();
@@ -1994,7 +1994,7 @@ function renderIMEIStock(){
   });
   $('imeiCount').textContent=`${items.length} phone${items.length!==1?'s':''}`;
   const list=$('imeiList');
-  if(!items.length){list.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>No phones found</h3></div>`;return;}
+  if(!items.length){list.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No phones found</h3></div>`;return;}
 
   if(!groupedView){
     list.innerHTML=items.map(p=>phoneCardHTML(p,true)).join('');
@@ -2019,7 +2019,7 @@ function renderIMEIStock(){
       <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;transition:background .15s;"
           onclick="toggleGroup('grp-${uid}')" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background=''">
-          <div class="phone-icon">📱</div>
+          <div class="phone-icon">${(g.brand||'?')[0].toUpperCase()}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:.9rem;color:var(--white);">${g.brand||'Unknown'} ${g.model||''}</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">
@@ -2056,7 +2056,7 @@ function phoneCardHTML(p, standalone=true){
   const profitTag=p.salePrice&&p.buyPrice?`<span class="badge ${p.salePrice-p.buyPrice>=0?'badge-green':'badge-red'}">${p.salePrice-p.buyPrice>=0?'+':''}${pkr(p.salePrice-p.buyPrice)}</span>`:'';
   const border=standalone?'border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;':'border-top:1px solid var(--border2);border-radius:0;margin-bottom:0;';
   return `<div class="phone-card" id="card-${p.id}" style="background:var(--s1);${border}">
-    <div class="phone-icon">📱</div>
+    <div class="phone-icon">${(p.brand||'?')[0].toUpperCase()}</div>
     <div class="phone-info">
       <div class="phone-name">${p.brand||'Unknown'} ${p.model||''}</div>
       <div class="phone-imei">IMEI 1: ${p.imei}</div>
@@ -2076,8 +2076,8 @@ function phoneCardHTML(p, standalone=true){
       ${p.salePrice?`<div style="color:var(--text2);font-size:.62rem;margin-top:3px">Sold</div><div style="color:var(--success)">${pkr(p.salePrice)}</div>`:''}
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-      ${!IS_PHONE?`<button class="btn bo" onclick="openEditPhone('${p.id}')" style="font-size:.62rem;padding:.22rem .5rem;">✏️ Edit</button>`:''}
-      ${p.status==='in_stock'?`<button class="del-btn" onclick="deletePhone('${p.id}')" title="Remove">🗑</button>`:''}
+      ${!IS_PHONE?`<button class="btn bo" onclick="openEditPhone('${p.id}')" style="font-size:.62rem;padding:.22rem .5rem;">Edit</button>`:''}
+      ${p.status==='in_stock'?`<button class="del-btn" onclick="deletePhone('${p.id}')" title="Remove">×</button>`:''}
     </div>
   </div>`;
 }
@@ -2087,7 +2087,7 @@ function openEditPhone(id){
   if(!p){showToast('Phone not found','error');return;}
   // Use DOM to build modal so values with quotes/apostrophes are safe
   const m=document.createElement('div');
-  m.innerHTML=`<h3>✏️ Edit Phone</h3>
+  m.innerHTML=`<h3>Edit Phone</h3>
     <div class="fc">
       <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:.72rem;color:var(--text2);">
         IMEI 1: <span style="color:var(--white)">${p.imei}</span>${p.imei2?`<br>IMEI 2: <span style="color:var(--white)">${p.imei2}</span>`:''}
@@ -2123,7 +2123,7 @@ function openEditPhone(id){
     </div>
     <div class="mf">
       <button class="btn bo" onclick="closeModal()">Cancel</button>
-      <button class="btn bg" onclick="saveEditPhone('${p.id}')">💾 Save Changes</button>
+      <button class="btn bg" onclick="saveEditPhone('${p.id}')">Save Changes</button>
     </div>`;
   // Set values safely via JS (handles any special chars)
   $('modal').innerHTML=''; $('modal').appendChild(m);
@@ -2154,7 +2154,7 @@ async function saveEditPhone(id){
   const d=await api('PUT',`/api/stock/${id}`,payload);
   if(d.error){showToast(d.error,'error');return;}
   closeModal();
-  showToast('✅ Phone updated');
+  showToast('Phone updated');
   await loadIMEIData();
 }
 
@@ -2198,7 +2198,7 @@ function renderSalesLog(){
   let sales=[...allSalesData];
   if(from) sales=sales.filter(s=>s.soldAt&&s.soldAt.slice(0,10)>=from);
   if(to)   sales=sales.filter(s=>s.soldAt&&s.soldAt.slice(0,10)<=to);
-  if(!sales.length){body.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><h3>No sales found</h3><p>Try adjusting the date filters</p></div>`;return;}
+  if(!sales.length){body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No sales found</h3><p>Try adjusting the date filters</p></div>`;return;}
   sales.sort((a,b)=>(b.soldAt||'').localeCompare(a.soldAt||''));
   const byDate={};
   sales.forEach(s=>{const d=s.soldAt?s.soldAt.slice(0,10):'Unknown';if(!byDate[d])byDate[d]=[];byDate[d].push(s);});
@@ -2246,7 +2246,7 @@ function renderSalesLog(){
             <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--text2)">${s.buyPrice?pkr(s.buyPrice):'—'}</td>
             <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--success)">${pkr(s.salePrice)}</td>
             <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:${(s.profit||0)>=0?'var(--a4)':'var(--danger)'}">${s.profit!=null?pkr(s.profit):'—'}</td>
-            <td style="padding:.3rem .4rem;text-align:center"><button class="bx" onclick="deleteSale('${s._id||s.id}')" title="Delete sale">🗑</button></td>
+            <td style="padding:.3rem .4rem;text-align:center"><button class="bx" onclick="deleteSale('${s._id||s.id}')" title="Delete sale">×</button></td>
           </tr>`).join('')}</tbody>
         </table>
       </div>
@@ -2296,7 +2296,7 @@ async function clearAllSales(){
   const url=shop==='ALL'?'/api/sales':`/api/sales?shop=${shop}`;
   const d=await api('DELETE',url);
   if(d.error){showToast(d.error,'error');return;}
-  showToast(`🗑 ${d.deleted||0} sale(s) cleared — phones returned to stock`,'warn');
+  showToast(`${d.deleted||0} sale(s) cleared — phones returned to stock`,'warn');
   allSalesData=[];
   renderSalesLog();
   loadSidebarStats();
@@ -2502,13 +2502,13 @@ function recalc(){
     <div class="sc gr"><div class="sc-lbl">Net P/L</div><div class="sc-val ${pl>=0?'gr':'rd'}">${pkr(pl)}</div><div class="sc-sub">after expenses</div></div>
     <div class="sc rd"><div class="sc-lbl">Expenses</div><div class="sc-val rd">${pkr(tExp)}</div><div class="sc-sub">${(dayState.expenses||[]).length} items</div></div>
     <div class="sc bl"><div class="sc-lbl">Purchased</div><div class="sc-val bl">${pkr(tPur)}</div><div class="sc-sub">cash paid</div></div>
-    <div class="sc g"><div class="sc-lbl">💰 Cash on Hand</div><div class="sc-val g">${pkr(coh)}</div><div class="sc-sub">after transfers</div></div>`;
+    <div class="sc g"><div class="sc-lbl">Cash on Hand</div><div class="sc-val g">${pkr(coh)}</div><div class="sc-sub">after transfers</div></div>`;
 }
 
 async function saveDay(){
   const shop=activeShop==='HQ'?'456':activeShop;const date=$('work-date').value||today();
   await api('PUT',`/api/days/${shop}/${date}`,dayState);
-  showToast(`✅ Day saved — ${shop} / ${date}`,'success');
+  showToast(`Day saved — ${shop} / ${date}`,'success');
 }
 function exportDayCSV(){
   let csv=`${dayState.shop} — ${dayState.date}\nDESCRIPTION,OP,IN,OUT,BAL,COST,SOLD FOR,P/L\n`;
@@ -2598,7 +2598,7 @@ async function renderShopExpenses(){
   const params=[];if(shop!=='ALL')params.push(`shop=${shop}`);if(month)params.push(`month=${month}`);
   allShopExp=await api('GET',`/api/shopexpenses${params.length?'?'+params.join('&'):''}`);
   const body=$('exp-body');
-  if(!allShopExp.length){body.innerHTML=`<div class="empty"><div class="empty-icon">💸</div><h3>No expenses found</h3></div>`;return;}
+  if(!allShopExp.length){body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No expenses found</h3></div>`;return;}
   const totals={};allShopExp.forEach(e=>totals[e.shop]=(totals[e.shop]||0)+(e.amount||0));
   let html=`<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem;">${Object.entries(totals).map(([s,amt])=>`<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:.45rem .8rem;min-width:120px;"><div style="font-size:.62rem;font-weight:700;color:${SHOP_COLOR[s]||'var(--text2)'};margin-bottom:2px">Shop ${s}</div><div style="font-family:var(--mono);font-size:.9rem;color:var(--danger)">${pkr(amt)}</div></div>`).join('')}</div>`;
   const byShop={};allShopExp.forEach(e=>{if(!byShop[e.shop])byShop[e.shop]=[];byShop[e.shop].push(e);});
@@ -2652,7 +2652,7 @@ async function loadAllDays(){
 }
 function renderHistory(){
   const body=$('hist-body');
-  if(!allDays.length){body.innerHTML=`<div class="empty"><div class="empty-icon">📅</div><h3>No history yet</h3><p>Save daily sheets to see them here</p></div>`;return;}
+  if(!allDays.length){body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No history yet</h3><p>Save daily sheets to see them here</p></div>`;return;}
   body.innerHTML=allDays.map(d=>{
     const tSales=Object.entries(d.cats||{}).reduce((s,[,cv])=>(cv.rows||[]).reduce((a,r)=>a+(r.soldFor||0),s),0);
     const sold=Object.entries(d.cats||{}).reduce((s,[ck,cv])=>CATS[ck]?.isExtra?s:(cv.rows||[]).reduce((a,r)=>a+(r.out||0),s),0);
@@ -2681,7 +2681,7 @@ function renderHistory(){
           : `<div style="color:var(--text3);font-style:italic;padding:4px 0">No sales recorded this day</div>`
         }
         ${(d.expenses||[]).length?`<div style="margin-top:6px;padding-top:5px;border-top:1px solid var(--border);color:var(--danger)">Expenses: ${pkr((d.expenses||[]).reduce((s,e)=>s+(e.amt||0),0))}</div>`:''}
-        <div style="margin-top:8px;display:flex;gap:.4rem;align-items:center"><button class="btn bo" style="font-size:.6rem;padding:.2rem .5rem" onclick="loadHistDay('${d.shop}','${d.date}')">📋 Open Full Day</button><button class="btn" style="font-size:.6rem;padding:.2rem .5rem;background:var(--danger);color:#fff;border-color:var(--danger)" onclick="deleteHistDay('${d.shop}','${d.date}')">🗑 Delete</button></div>
+        <div style="margin-top:8px;display:flex;gap:.4rem;align-items:center"><button class="btn bo" style="font-size:.6rem;padding:.2rem .5rem" onclick="loadHistDay('${d.shop}','${d.date}')">Open Full Day</button><button class="btn" style="font-size:.6rem;padding:.2rem .5rem;background:var(--danger);color:#fff;border-color:var(--danger)" onclick="deleteHistDay('${d.shop}','${d.date}')">Delete</button></div>
       </div>
     </div>`;
   }).join('');
@@ -2708,7 +2708,7 @@ async function loadWarehouse(){hqStock=await api('GET','/api/hqstock');renderWar
 function renderWarehouse(){
   const q=($('wh-search')?.value||'').toLowerCase();const items=(hqStock.items||[]).filter(it=>!q||(it.name+it.cat).toLowerCase().includes(q));
   const body=$('wh-body');
-  if(!items.length){body.innerHTML=`<div class="empty"><div class="empty-icon">📦</div><h3>Warehouse empty</h3><p>Click + Receive Stock to add items</p></div>`;return;}
+  if(!items.length){body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>Warehouse empty</h3><p>Click + Receive Stock to add items</p></div>`;return;}
   const byCat={};items.forEach(it=>{if(!byCat[it.cat])byCat[it.cat]=[];byCat[it.cat].push(it);});
   body.innerHTML=`<div style="padding:.9rem">${Object.entries(byCat).map(([cat,rows])=>{const c=CATS[cat];return `<div class="cb ${c?c.cls:'cot'}" style="margin-bottom:.65rem"><div class="ch"><div class="cl">${c?c.label:cat}</div><div class="cts"><span>Items:<b>${rows.length}</b></span><span>Units:<b>${rows.reduce((s,r)=>s+r.qty,0)}</b></span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.45rem">${rows.map(it=>`<div class="wh-card"><div class="wh-cat">${it.cat}</div><div class="wh-name">${esc(it.name)}</div><div class="wh-qty">${it.qty}</div><div class="wh-meta">${it.costPerUnit?pkr(it.costPerUnit)+' ea':''}</div></div>`).join('')}</div></div>`;}).join('')}</div>`;
 }
@@ -2743,7 +2743,7 @@ async function saveReceive(){
   if(!hqStock)hqStock={items:[]};if(!hqStock.items)hqStock.items=[];
   items.forEach(it=>{const ex=hqStock.items.find(x=>x.name===it.name&&x.cat===it.cat);if(ex){ex.qty+=it.qty;ex.costPerUnit=it.costPerUnit||ex.costPerUnit;}else hqStock.items.push({...it,addedAt:new Date().toISOString()});});
   await api('PUT','/api/hqstock',hqStock);await api('POST','/api/shipments',{date,supplier,ref,items});
-  closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`✅ ${items.length} item type(s) received`);
+  closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`${items.length} item type(s) received`);
 }
 
 function openDispatchModal(){
@@ -2764,7 +2764,7 @@ async function saveDispatch(items){
   items.forEach((it,i)=>{const chk=document.getElementById(`dsi-${i}`);const qty=parseInt(document.getElementById(`dsq-${i}`)?.value)||0;if(chk?.checked&&qty>0){dispatched.push({name:it.name,cat:it.cat,qty,costPerUnit:it.costPerUnit||0});const stock=hqStock.items.find(x=>x.name===it.name&&x.cat===it.cat);if(stock)stock.qty=Math.max(0,stock.qty-qty);}});
   if(!dispatched.length){showToast('Select at least one item','error');return;}
   await api('PUT','/api/hqstock',hqStock);await api('POST','/api/dispatches',{date,toShop,note,items:dispatched});
-  closeModal();loadWarehouse();loadShipments();showToast(`✅ ${dispatched.length} item type(s) dispatched to Shop ${toShop}`);
+  closeModal();loadWarehouse();loadShipments();showToast(`${dispatched.length} item type(s) dispatched to Shop ${toShop}`);
 }
 
 async function openDispatchFromShipments(){
@@ -2785,7 +2785,7 @@ function renderShipments(){
   if(monthF)all=all.filter(s=>s.date.startsWith(monthF));
   if(shopF!=='ALL'){if(shopF==='HQ')all=all.filter(s=>s.source==='inbound');else all=all.filter(s=>s.source==='dispatch'&&s.toShop===shopF);}
   const body=$('ship-body');
-  if(!all.length){body.innerHTML=`<div class="empty"><div class="empty-icon">🚚</div><h3>No shipments found</h3></div>`;return;}
+  if(!all.length){body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No shipments found</h3></div>`;return;}
   const catC={IPHONE:'var(--a1)',SAMSUNG:'var(--a2)',GOOGLE:'var(--a4)',OTHER:'var(--a5)',BOX:'var(--a6)',EXTRA:'var(--a3)'};
   body.innerHTML=`<div style="padding:.9rem">${all.map(sh=>{const isD=sh.source==='dispatch';const c=isD?(SHOP_COLOR[sh.toShop]||'var(--a5)'):'var(--a4)';const r=isD?(SHOP_RGBA[sh.toShop]||'99,102,241'):'20,184,166';const tot=(sh.items||[]).reduce((s,i)=>s+i.qty,0);return `<div class="ship-card"><div class="ship-hd" style="background:rgba(${r},.05);border-bottom:1px solid rgba(${r},.12)"><span style="font-size:.82rem;font-weight:700;color:${c}">${isD?`→ Shop ${sh.toShop}`:'⬇ Inbound'}</span><span style="font-family:var(--mono);font-size:.63rem;color:var(--text2)">${sh.date}</span>${sh.supplier?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.supplier)}</span>`:''}${sh.note||sh.ref?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.note||sh.ref)}</span>`:''}<span style="margin-left:auto;font-size:.63rem;color:var(--a5);font-family:var(--mono)">${tot} units</span></div><div class="ship-items">${(sh.items||[]).map(it=>`<div style="display:flex;gap:.5rem;align-items:center;padding:.2rem 0;border-bottom:1px solid var(--border2);font-size:.63rem"><span style="flex:1;color:var(--white)">${esc(it.name)}</span><span style="padding:.03rem .28rem;background:var(--s3);color:${catC[it.cat]||'var(--text2)'};border-radius:4px;font-size:.52rem;font-weight:600">${it.cat||''}</span><span style="color:var(--text2)">×${it.qty}</span>${it.costPerUnit?`<span style="color:var(--a5);font-family:var(--mono)">${pkr(it.costPerUnit)}</span>`:''}</div>`).join('')}</div></div>`;}).join('')}</div>`;
 }
@@ -2793,7 +2793,7 @@ function renderShipments(){
 // ── MONTHLY P&L ──
 async function renderMonthly(){
   const month=$('monthly-month').value,shopF=$('monthly-shop').value;
-  if(!month){$('monthly-body').innerHTML=`<div class="empty"><div class="empty-icon">📅</div><h3>Select a month</h3></div>`;return;}
+  if(!month){$('monthly-body').innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>Select a month</h3></div>`;return;}
   const [days,expenses]=await Promise.all([api('GET',`/api/days?month=${month}`),api('GET',`/api/shopexpenses?month=${month}`)]);
   const shops=shopF==='ALL'?SHOPS:[shopF];let html='';
   shops.forEach(sh=>{
@@ -2805,7 +2805,7 @@ async function renderMonthly(){
     const netPL=gPL-expT;const c=SHOP_COLOR[sh]||'var(--a5)';const r=SHOP_RGBA[sh]||'99,102,241';
     html+=`<div class="shop-card"><div class="shop-card-hd" style="border-left:3px solid ${c}"><div class="shop-card-name" style="color:${c}">Shop ${sh}</div><div style="font-size:.6rem;color:var(--text2)">${shD.length} days</div></div><div class="shop-card-body"><div class="shop-stat"><span>Total Sales</span><span style="color:var(--success);font-family:var(--mono)">${pkr(tSales)}</span></div><div class="shop-stat"><span>Cost of Sold</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(tCost)}</span></div><div class="shop-stat"><span>Gross P/L</span><span style="color:${gPL>=0?'var(--success)':'var(--danger)'};font-family:var(--mono)">${pkr(gPL)}</span></div><div class="shop-stat"><span>Total Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(expT)}</span></div><div class="shop-stat" style="border-top:1px solid var(--border);margin-top:3px;padding-top:4px"><span style="font-weight:700">Net P/L</span><span style="color:${netPL>=0?'var(--success)':'var(--danger)'};font-family:var(--mono);font-weight:700">${pkr(netPL)}</span></div><div class="shop-stat"><span>Units Sold</span><span style="color:var(--a1)">${sold}</span></div></div></div>`;
   });
-  if(!html)html=`<div class="empty"><div class="empty-icon">📊</div><h3>No data for ${month}</h3></div>`;
+  if(!html)html=`<div class="empty"><div class="empty-icon">—</div><h3>No data for ${month}</h3></div>`;
   $('monthly-body').innerHTML=html;
 }
 
@@ -2814,16 +2814,16 @@ function doBackup(){window.open(BASE+'/api/backup','_blank');}
 async function doRestore(){
   const file=$('restoreFile')?.files[0];if(!file){showToast('Select a backup file','error');return;}
   if(!confirm('This will overwrite existing data. Continue?'))return;
-  try{const data=JSON.parse(await file.text());const r=await api('POST','/api/restore',data);if(r.success){showToast('✅ Restore complete — reloading…');setTimeout(()=>location.reload(),1200);}else showToast('Restore failed: '+(r.error||'unknown'),'error');}catch(e){showToast('Error reading file','error');}
+  try{const data=JSON.parse(await file.text());const r=await api('POST','/api/restore',data);if(r.success){showToast('Restore complete — reloading…');setTimeout(()=>location.reload(),1200);}else showToast('Restore failed: '+(r.error||'unknown'),'error');}catch(e){showToast('Error reading file','error');}
 }
 
 // ── CEO DASHBOARD ────────────────────────────────
 async function renderCEO(){
   const month=$('ceo-month').value||ym(today());
   const body=$('ceo-body');
-  body.innerHTML=`<div class="empty"><div class="empty-icon">⏳</div><h3>Loading…</h3></div>`;
+  body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>Loading…</h3></div>`;
   const d=await api('GET',`/api/ceo/summary?month=${month}`);
-  if(d.error){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><h3>${d.error}</h3></div>`;return;}
+  if(d.error){body.innerHTML=`<div class="empty"><div class="empty-icon">!</div><h3>${d.error}</h3></div>`;return;}
 
   const momRev=d.prev.revenue>0?((d.current.revenue-d.prev.revenue)/d.prev.revenue*100):null;
   const momPL=d.prev.profit>0?((d.current.profit-d.prev.profit)/d.prev.profit*100):null;
@@ -2896,7 +2896,7 @@ async function renderCEO(){
 
   // Top models
   if(d.topModels?.length){
-    html+=`<div class="ceo-section-title">🔥 Top Selling Models — ${month}</div>
+    html+=`<div class="ceo-section-title">Top Selling Models — ${month}</div>
     <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;margin:0 .9rem .9rem;overflow:hidden;">
       ${d.topModels.map((m,i)=>`<div class="top-model-row">
         <div class="top-model-rank">#${i+1}</div>
@@ -2914,9 +2914,9 @@ async function renderCEO(){
     return (v.revenue||0)>(d.shopStats[best]?.revenue||0)?sh:best;
   },VALID_SHOPS[0]);
   html+=`<div style="margin:.2rem .9rem .9rem;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.18);border-radius:10px;padding:.75rem 1rem;">
-    <div style="font-size:.62rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">📌 Quick Insights</div>
+    <div style="font-size:.62rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Quick Insights</div>
     <div style="font-size:.72rem;color:var(--text2);line-height:1.9">
-      ${d.current.revenue>d.prev.revenue?'📈 Revenue is <b style="color:var(--success)">up</b>':'📉 Revenue is <b style="color:var(--danger)">down</b>'} compared to last month.<br>
+      ${d.current.revenue>d.prev.revenue?'Revenue is <b style="color:var(--success)">up</b>':'Revenue is <b style="color:var(--danger)">down</b>'} compared to last month.<br>
       Best performing shop this month: <b style="color:${SHOP_COLOR[bestShop]||'var(--a5)'}">Shop ${bestShop}</b>.<br>
       Net profit this month: <b style="color:${net>=0?'var(--success)':'var(--danger)'}">${pkr(net)}</b> (after all expenses).<br>
       You have <b style="color:var(--a1)">${d.inventoryCount} phones</b> in stock worth <b style="color:var(--a5)">${pkr(d.inventoryValue)}</b>.
@@ -2945,7 +2945,7 @@ function searchContacts(){
 function renderContacts(){
   const body=$('contacts-body');
   if(!allContacts.length){
-    body.innerHTML=`<div class="empty"><div class="empty-icon">👥</div><h3>No contacts found</h3></div>`;
+    body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No contacts found</h3></div>`;
     return;
   }
   body.innerHTML=`<div style="padding:.9rem;overflow-x:auto;">
@@ -2960,7 +2960,7 @@ function renderContacts(){
         <td style="font-size:.65rem;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.notes||'')}</td>
         <td style="font-family:var(--mono);font-size:.6rem;color:var(--text3)">${fmtDate(c.addedAt)}</td>
         <td style="text-align:center">
-          <button class="btn bo" onclick="openEditContactModal('${c._id}')" style="font-size:.6rem;padding:.18rem .45rem;margin-right:3px">✏️</button>
+          <button class="btn bo" onclick="openEditContactModal('${c._id}')" style="font-size:.6rem;padding:.18rem .45rem;margin-right:3px">Edit</button>
           <button class="bx" onclick="deleteContact('${c._id}')" title="Delete">✕</button>
         </td>
       </tr>`).join('')}</tbody>
@@ -2978,14 +2978,14 @@ function openAddContactModal(){
       <div class="fi"><label>Email</label><input type="text" id="ct-email" placeholder="example@email.com"></div>
       <div class="fi"><label>Notes</label><input type="text" id="ct-notes" placeholder="Any notes…"></div>
     </div>
-    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveContact(null)">💾 Save</button></div>`);
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveContact(null)">Save</button></div>`);
   setTimeout(()=>$('ct-name')?.focus(),80);
 }
 
 function openEditContactModal(id){
   const c=allContacts.find(x=>x._id===id);
   if(!c)return;
-  showModal(`<h3>✏️ Edit Contact</h3>
+  showModal(`<h3>Edit Contact</h3>
     <div class="fc">
       <div class="f2">
         <div class="fi"><label>Name *</label><input type="text" id="ct-name" placeholder="Full name"></div>
@@ -2994,7 +2994,7 @@ function openEditContactModal(id){
       <div class="fi"><label>Email</label><input type="text" id="ct-email"></div>
       <div class="fi"><label>Notes</label><input type="text" id="ct-notes"></div>
     </div>
-    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveContact('${id}')">💾 Save</button></div>`);
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveContact('${id}')">Save</button></div>`);
   setTimeout(()=>{
     $('ct-name').value=c.name||'';
     $('ct-phone').value=c.phone||'';
@@ -3026,9 +3026,9 @@ async function deleteContact(id){
 async function renderAnalytics(){
   const days=$('analytics-days')?.value||30;
   const body=$('analytics-body');
-  body.innerHTML=`<div class="empty"><div class="empty-icon">⏳</div><h3>Loading…</h3></div>`;
+  body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>Loading…</h3></div>`;
   const d=await api('GET',`/api/analytics/models?days=${days}`);
-  if(d.error){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><h3>${d.error}</h3></div>`;return;}
+  if(d.error){body.innerHTML=`<div class="empty"><div class="empty-icon">!</div><h3>${d.error}</h3></div>`;return;}
 
   const maxSold=d.topSold.length?d.topSold[0].count:1;
   const maxStale=d.stagnating.length?d.stagnating[0].oldestDays:1;
@@ -3063,7 +3063,7 @@ async function renderAnalytics(){
     <div class="analytics-panel">
       <div class="analytics-hd">
         <div>
-          <div class="analytics-hd-title">🔥 Top Selling Models</div>
+          <div class="analytics-hd-title">Top Selling Models</div>
           <div class="analytics-hd-sub">Last ${days} days · sorted by units sold</div>
         </div>
       </div>
@@ -3072,7 +3072,7 @@ async function renderAnalytics(){
     <div class="analytics-panel">
       <div class="analytics-hd">
         <div>
-          <div class="analytics-hd-title">⚠️ Stagnating Stock</div>
+          <div class="analytics-hd-title">Stagnating Stock</div>
           <div class="analytics-hd-sub">In stock &gt;30 days · sorted by age</div>
         </div>
       </div>
@@ -3095,7 +3095,7 @@ async function loadLogs(){
   const data=await api('GET',url);
   const body=$('logs-body');
   if(!Array.isArray(data)||!data.length){
-    body.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><h3>No activity yet</h3><p>Actions will appear here once the system is in use</p></div>`;
+    body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No activity yet</h3><p>Actions will appear here once the system is in use</p></div>`;
     return;
   }
   body.innerHTML=`<div>${data.map(l=>{
@@ -3160,7 +3160,7 @@ async function loadReports(){
 function renderReports(){
   const body=$('reports-body');
   if(!allReports.length){
-    body.innerHTML=`<div class="empty"><div class="empty-icon">🧾</div><h3>No reports yet</h3><p>Select type, shop and period then click Generate</p></div>`;
+    body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No reports yet</h3><p>Select type, shop and period then click Generate</p></div>`;
     return;
   }
   // Group reports by shop
@@ -3175,7 +3175,7 @@ function renderReports(){
     const sh=reports[0].shop;
     const c=SHOP_COLOR[sh]||'var(--a5)';
     html+=`<div style="margin-bottom:1.2rem">
-      <div style="font-size:.7rem;font-weight:700;color:${c};text-transform:uppercase;letter-spacing:.1em;padding:.35rem .6rem;background:rgba(${SHOP_RGBA[sh]||'99,102,241'},.1);border:1px solid rgba(${SHOP_RGBA[sh]||'99,102,241'},.25);border-radius:8px;margin-bottom:.5rem">🏪 ${shopLabel}</div>
+      <div style="font-size:.7rem;font-weight:700;color:${c};text-transform:uppercase;letter-spacing:.1em;padding:.35rem .6rem;background:rgba(${SHOP_RGBA[sh]||'99,102,241'},.1);border:1px solid rgba(${SHOP_RGBA[sh]||'99,102,241'},.25);border-radius:8px;margin-bottom:.5rem">${shopLabel}</div>
       ${reports.map(r=>{
         const uid=r._id;
         return`<div class="report-card" id="rpt-${uid}">
@@ -3183,7 +3183,7 @@ function renderReports(){
             <span class="report-type-badge ${r.type}">${r.type}</span>
             <span style="font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--white)">${r.period}</span>
             <span style="margin-left:auto;font-size:.6rem;color:var(--text3)">${fmtDate(r.generatedAt)}</span>
-            <button class="btn bo" style="font-size:.58rem;padding:.12rem .4rem" onclick="event.stopPropagation();printReport('${uid}')" title="Print / PDF">🖨</button>
+            <button class="btn bo" style="font-size:.58rem;padding:.12rem .4rem" onclick="event.stopPropagation();printReport('${uid}')" title="Print / PDF">Print</button>
             <button class="bx" onclick="event.stopPropagation();deleteReport('${uid}')" title="Delete">✕</button>
             <span id="rpt-arr-${uid}" style="color:var(--text2);font-size:.75rem;margin-left:4px">▶</span>
           </div>
@@ -3310,7 +3310,7 @@ async function generateReport(){
   if(!period){showToast('Enter a period (YYYY-MM-DD or YYYY-MM)','error');return;}
   const d=await api('POST','/api/reports/generate',{type,shop,period});
   if(d.error){showToast(d.error,'error');return;}
-  showToast('✅ Report generated!');
+  showToast('Report generated!');
   loadReports();
 }
 
