@@ -588,8 +588,32 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 .rs-val{font-family:var(--mono);font-size:.88rem;font-weight:500;}
 
 /* ── RESPONSIVE ── */
+/* ── HAMBURGER BUTTON (mobile only) ── */
+#sb-toggle{
+  display:none;
+  align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:8px;
+  background:transparent;border:1px solid var(--border);
+  cursor:pointer;flex-shrink:0;color:var(--text2);
+  font-size:1.1rem;line-height:1;transition:background .15s,color .15s;
+}
+#sb-toggle:hover{background:var(--s2);color:var(--white);}
+/* Backdrop for mobile sidebar */
+#sb-overlay{
+  display:none;position:fixed;inset:0;z-index:199;
+  background:rgba(0,0,0,.35);backdrop-filter:blur(1px);
+}
 @media(max-width:600px){
-  #sb{display:none;}
+  #sb-toggle{display:flex;}
+  #sb{
+    position:fixed;top:0;left:0;bottom:0;z-index:200;
+    width:220px;min-width:220px;
+    transform:translateX(-100%);
+    transition:transform .22s cubic-bezier(.4,0,.2,1);
+    box-shadow:4px 0 18px rgba(0,0,0,.18);
+  }
+  #sb.sb-open{transform:translateX(0);}
+  #sb-overlay.sb-open{display:block;}
   .tb{gap:.3rem;}
   .tb-title{font-size:.88rem;}
 }
@@ -701,6 +725,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 
 
 <div id="topbar">
+  <button id="sb-toggle" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
   <div class="logo"><div class="logo-dot"></div>Mobile HQ</div>
   <div class="tsep"></div>
   <div class="shop-tabs">
@@ -713,6 +738,9 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
     <div id="clk">--:--</div>
   </div>
 </div>
+
+<!-- SIDEBAR BACKDROP (mobile) -->
+<div id="sb-overlay" onclick="closeSidebar()"></div>
 
 <div id="wrap">
   <div id="sb">
@@ -1328,6 +1356,16 @@ let allDays=[],allShopExp=[],allDispatches=[],allShipments=[],hqStock={items:[]}
 const ADMIN_ONLY_PAGES=['stock','expenses','history','warehouse','shipments','monthly','backup','saleslog','ceo','contacts','analytics','logs','reports'];
 
 function $(id){return document.getElementById(id);}
+function toggleSidebar(){
+  const sb=document.getElementById('sb');
+  const ov=document.getElementById('sb-overlay');
+  const open=sb.classList.toggle('sb-open');
+  ov.classList.toggle('sb-open',open);
+}
+function closeSidebar(){
+  document.getElementById('sb').classList.remove('sb-open');
+  document.getElementById('sb-overlay').classList.remove('sb-open');
+}
 function today(){return new Date().toISOString().slice(0,10);}
 function ym(d){return d?d.slice(0,7):'';}
 function pkr(n){return 'Rs '+(Number(n)||0).toLocaleString('en-PK');}
@@ -1361,6 +1399,7 @@ setInterval(tickClock,30000);tickClock();
 function nav(page){
   // Block desktop-only pages on phone
   if(IS_PHONE && ADMIN_ONLY_PAGES.includes(page)){ showToast('Not available on phone mode','warn'); return; }
+  closeSidebar(); // close mobile sidebar overlay on navigation
   activePage=page;
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -1592,14 +1631,14 @@ function showSellForm(phone){
         <div style="font-weight:700;font-size:.9rem;color:var(--white)">${phone.brand} ${phone.model}</div>
         ${imeiLine}
         <div style="font-size:.72rem;color:var(--text2);margin-top:2px">${[phone.color,phone.storage].filter(Boolean).join(' · ')}</div>
-        ${phone.buyPrice?`<div style="font-size:.72rem;color:var(--a5);margin-top:2px">Cost: ${pkr(phone.buyPrice)}</div>`:''}
+        ${phone.buyPrice&&authRole==='admin'?`<div style="font-size:.72rem;color:var(--a5);margin-top:2px">Cost: ${pkr(phone.buyPrice)}</div>`:''}
       </div>
     </div>
-    ${phone.buyPrice?`<div id="profitPreview" style="font-size:.72rem;color:var(--text2);margin-top:8px;font-family:var(--mono)">Enter sale price to see profit</div>`:''}`;
+    ${phone.buyPrice&&authRole==='admin'?`<div id="profitPreview" style="font-size:.72rem;color:var(--text2);margin-top:8px;font-family:var(--mono)">Enter sale price to see profit</div>`:''}`;
   $('sellForm').style.display='block';
   $('sellForm').scrollIntoView({behavior:'smooth',block:'nearest'});
-  // Wire up profit preview
-  if(phone.buyPrice){
+  // Wire up profit preview (admin only)
+  if(phone.buyPrice && authRole==='admin'){
     $('fSalePrice').oninput=()=>{
       const sp=parseFloat($('fSalePrice').value)||0;
       const profit=sp-phone.buyPrice;
@@ -1661,7 +1700,7 @@ async function submitSell(){
   });
   if(d.error){showToast(d.error,'error');return;}
   const profit=d.sale?.profit;
-  showToast(`Sale recorded!${profit!=null?' Profit: '+pkr(profit):''}`, 'success');
+  showToast(`Sale recorded!${profit!=null&&authRole==='admin'?' Profit: '+pkr(profit):''}`, 'success');
   const soldIMEI=pendingIMEI;
   const soldPrice=d.sale?.salePrice;
   const soldAt=d.sale?.soldAt||new Date().toISOString();
@@ -2031,7 +2070,7 @@ function renderIMEIStock(){
             </div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
-            ${g.buyPrice?`<div style="font-family:var(--mono);font-size:.82rem;color:var(--a5)">${pkr(g.buyPrice)}</div><div style="font-size:.6rem;color:var(--text2)">ea.</div>`:''}
+            ${authRole==='admin'&&g.buyPrice?`<div style="font-family:var(--mono);font-size:.82rem;color:var(--a5)">${pkr(g.buyPrice)}</div><div style="font-size:.6rem;color:var(--text2)">ea.</div>`:''}
           </div>
           <div style="color:var(--text2);font-size:.75rem;margin-left:4px;" id="grp-arr-${uid}">${count===1?'':'▶'}</div>
         </div>
@@ -2053,7 +2092,7 @@ function toggleGroup(id){
 
 function phoneCardHTML(p, standalone=true){
   const imei2line=p.imei2?`<div class="phone-imei2">IMEI 2: ${p.imei2}</div>`:'';
-  const profitTag=p.salePrice&&p.buyPrice?`<span class="badge ${p.salePrice-p.buyPrice>=0?'badge-green':'badge-red'}">${p.salePrice-p.buyPrice>=0?'+':''}${pkr(p.salePrice-p.buyPrice)}</span>`:'';
+  const profitTag=authRole==='admin'&&p.salePrice&&p.buyPrice?`<span class="badge ${p.salePrice-p.buyPrice>=0?'badge-green':'badge-red'}">${p.salePrice-p.buyPrice>=0?'+':''}${pkr(p.salePrice-p.buyPrice)}</span>`:'';
   const border=standalone?'border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;':'border-top:1px solid var(--border2);border-radius:0;margin-bottom:0;';
   return `<div class="phone-card" id="card-${p.id}" style="background:var(--s1);${border}">
     <div class="phone-icon">${(p.brand||'?')[0].toUpperCase()}</div>
@@ -2072,7 +2111,7 @@ function phoneCardHTML(p, standalone=true){
       </div>
     </div>
     <div class="phone-price">
-      ${p.buyPrice?`<div style="color:var(--text2);font-size:.62rem">Cost</div><div>${pkr(p.buyPrice)}</div>`:''}
+      ${authRole==='admin'&&p.buyPrice?`<div style="color:var(--text2);font-size:.62rem">Cost</div><div>${pkr(p.buyPrice)}</div>`:''}
       ${p.salePrice?`<div style="color:var(--text2);font-size:.62rem;margin-top:3px">Sold</div><div style="color:var(--success)">${pkr(p.salePrice)}</div>`:''}
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
