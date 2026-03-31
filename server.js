@@ -286,6 +286,7 @@ app.post('/api/stock/add', anyAuth, async (req, res) => {
 
   const { imei } = body;
   if (!imei) return res.status(400).json({ error: 'IMEI required' });
+  if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
 
   const exists = await Phone.findOne({ imei });
   if (exists) return res.status(409).json({ error: 'IMEI exists' });
@@ -302,6 +303,7 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
     const { imei, salePrice, buyerName, buyerPhone, notes, shop } = req.body;
 
     if (!imei) return res.status(400).json({ error: 'IMEI required' });
+    if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
     if (salePrice === undefined || salePrice === null || salePrice === '') {
       return res.status(400).json({ error: 'salePrice required' });
     }
