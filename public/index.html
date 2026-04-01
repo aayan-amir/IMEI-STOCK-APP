@@ -958,6 +958,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <button class="btn bo" style="font-size:.65rem" onclick="loadIMEIData()">↻ Refresh</button>
         <button class="btn bo" style="font-size:.65rem" onclick="exportIMEICSV()">↓ CSV</button>
+        <button class="btn bo" style="font-size:.65rem" onclick="printIMEIStock()">Print</button>
         <button class="btn bo" style="font-size:.65rem" id="groupBtn" onclick="toggleGrouped()">Flat List</button>
       </div>
       <div class="stock-scroll">
@@ -1056,6 +1057,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         </select>
         <input type="month" id="exp-month-filter" onchange="renderShopExpenses()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
         <div class="tbsep"></div>
+        <button class="btn bo" onclick="printExpenses()" style="font-size:.62rem">Print</button>
         <button class="btn bv" onclick="openAddExpenseModal()">+ Add Expense</button>
       </div>
       <div class="hq-body" id="exp-body">
@@ -1071,6 +1073,8 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <select id="hist-shop" onchange="loadAllDays()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
           <option value="ALL">All Shops</option><option value="456">Shop 456</option><option value="192">Shop 192</option><option value="G15">Shop G15</option>
         </select>
+        <div class="tbsep"></div>
+        <button class="btn bo" onclick="printHistory()" style="font-size:.62rem">Print</button>
       </div>
       <div class="hq-body" id="hist-body">
         <div class="empty"><div class="empty-icon">—</div><h3>No history yet</h3><p>Save daily sheets to see them here</p></div>
@@ -1085,6 +1089,8 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <button class="btn bv" onclick="openReceiveModal()">+ Receive Stock</button>
         <button class="btn bb" onclick="openDispatchModal()">↗ Dispatch</button>
+        <div class="tbsep"></div>
+        <button class="btn bo" style="font-size:.62rem" onclick="printWarehouse()">Print</button>
         <div class="tbsep"></div>
         <input type="text" id="wh-search" placeholder="Search…" oninput="renderWarehouse()"
           style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--mono);font-size:.68rem;padding:.24rem .55rem;outline:none;width:140px;">
@@ -1118,6 +1124,8 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <select id="monthly-shop" onchange="renderMonthly()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
           <option value="ALL">All Shops</option><option value="456">Shop 456</option><option value="192">Shop 192</option><option value="G15">Shop G15</option>
         </select>
+        <div class="tbsep"></div>
+        <button class="btn bo" onclick="printMonthly()" style="font-size:.62rem">Print</button>
       </div>
       <div class="monthly-scroll" id="monthly-body"></div>
     </div>
@@ -1131,6 +1139,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
           style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
         <div class="tbsep"></div>
         <button class="btn bo" onclick="renderCEO()" style="font-size:.62rem">↻ Refresh</button>
+        <button class="btn bo" onclick="printCEO()" style="font-size:.62rem">Print</button>
       </div>
       <div class="monthly-scroll" id="ceo-body">
         <div class="empty"><div class="empty-icon">—</div><h3>Loading…</h3></div>
@@ -1145,6 +1154,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <input type="text" id="contact-search" placeholder="Search name or phone…" oninput="searchContacts()"
           style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--mono);font-size:.68rem;padding:.24rem .55rem;outline:none;width:180px;">
         <div class="tbsep"></div>
+        <button class="btn bo" onclick="printContacts()" style="font-size:.62rem">Print</button>
         <button class="btn bv" onclick="openAddContactModal()">+ Add Contact</button>
       </div>
       <div class="hq-body" id="contacts-body">
@@ -1166,6 +1176,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         </select>
         <div class="tbsep"></div>
         <button class="btn bo" onclick="renderAnalytics()" style="font-size:.62rem">↻ Refresh</button>
+        <button class="btn bo" onclick="printAnalytics()" style="font-size:.62rem">Print</button>
       </div>
       <div class="monthly-scroll" id="analytics-body">
         <div class="empty"><div class="empty-icon">—</div><h3>Loading…</h3></div>
@@ -1186,6 +1197,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         </select>
         <div class="tbsep"></div>
         <button class="btn bo" onclick="loadLogs()" style="font-size:.62rem">↻ Refresh</button>
+        <button class="btn bo" onclick="printLogs()" style="font-size:.62rem">Print</button>
       </div>
       <div class="hq-body" id="logs-body">
         <div class="empty"><div class="empty-icon">—</div><h3>No logs yet</h3><p>Actions like adding and selling phones will appear here</p></div>
@@ -1353,6 +1365,7 @@ let shopModeActive=false;
 let dayState={shop:'456',date:today(),cats:{},expenses:[],purchases:[],transfers:[],carryForward:0};
 let allIMEIStock=[],allIMEISales=[],imeiFilter='in_stock';
 let allDays=[],allShopExp=[],allDispatches=[],allShipments=[],hqStock={items:[]};
+let allLogsData=[],lastCEOSummary=null,lastAnalyticsData=null;
 
 // Pages hidden on phone/shop mode (admin-only desktop pages)
 const ADMIN_ONLY_PAGES=['stock','expenses','history','warehouse','shipments','monthly','backup','saleslog','ceo','contacts','analytics','logs','reports'];
@@ -2615,6 +2628,241 @@ function printShipments(){
   printSection('Shipments', html);
 }
 
+function printIMEIStock(){
+  const q=($('imeiSearch')?.value||'').toLowerCase();
+  const shopLabel=activeShop==='HQ'?'All Shops':'Shop '+activeShop;
+  const filterLabel=imeiFilter==='all'?'All':imeiFilter==='in_stock'?'In Stock':'Sold';
+  let items=allIMEIStock.filter(p=>{
+    if(imeiFilter!=='all'&&p.status!==imeiFilter)return false;
+    if(q)return(p.brand+p.model+p.imei+(p.imei2||'')+p.color+p.storage).toLowerCase().includes(q);
+    return true;
+  });
+  const isAdmin=authRole==='admin';
+  const adminCols=isAdmin?'<th class="right">Cost</th><th class="right">Sold For</th>':'';
+  const rows=items.map(p=>`<tr>
+    <td>${esc((p.brand||'')+' '+(p.model||''))}</td>
+    <td class="num">${esc(p.imei||'')}</td>
+    <td class="num">${esc(p.imei2||'—')}</td>
+    <td>${esc(p.color||'—')}</td>
+    <td>${esc(p.storage||'—')}</td>
+    <td><span class="badge">${p.status==='in_stock'?'In Stock':'Sold'}</span></td>
+    <td>${esc(p.shop||'—')}</td>
+    ${isAdmin?`<td class="right num">${p.buyPrice?pkr(p.buyPrice):'—'}</td><td class="right num ${p.salePrice?'success':''}">${p.salePrice?pkr(p.salePrice):'—'}</td>`:''}
+    <td class="num">${p.addedAt?p.addedAt.slice(0,10):''}</td>
+  </tr>`).join('');
+  const html=`<h1>IMEI Stock — ${shopLabel}</h1>
+  <div class="meta">Filter: ${filterLabel} · ${items.length} phone${items.length!==1?'s':''} · Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <table>
+    <thead><tr><th>Phone</th><th>IMEI 1</th><th>IMEI 2</th><th>Color</th><th>Storage</th><th>Status</th><th>Shop</th>${adminCols}<th>Added</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+  printSection('IMEI Stock', html);
+}
+
+function printExpenses(){
+  const shop=$('exp-shop-filter')?.value||'ALL';
+  const month=$('exp-month-filter')?.value||'';
+  if(!allShopExp.length){showToast('No expenses to print','warn');return;}
+  const byShop={};allShopExp.forEach(e=>{if(!byShop[e.shop])byShop[e.shop]=[];byShop[e.shop].push(e);});
+  const grandTotal=allShopExp.reduce((a,e)=>a+(e.amount||0),0);
+  let shopSummary=Object.entries(byShop).map(([s,rows])=>`<div class="stat"><div class="stat-lbl">Shop ${s}</div><div class="stat-val danger">${pkr(rows.reduce((a,e)=>a+(e.amount||0),0))}</div></div>`).join('');
+  shopSummary+=`<div class="stat"><div class="stat-lbl">Grand Total</div><div class="stat-val danger">${pkr(grandTotal)}</div></div>`;
+  let tables=Object.entries(byShop).map(([s,rows])=>{
+    const tot=rows.reduce((a,e)=>a+(e.amount||0),0);
+    const trows=rows.map(e=>`<tr><td class="num">${e.date||''}</td><td>${esc(e.category||'')}</td><td>${esc(e.description||'')}</td><td class="right num danger">${pkr(e.amount)}</td></tr>`).join('');
+    return `<h2>Shop ${s} — ${pkr(tot)}</h2><table>
+      <thead><tr><th>Date</th><th>Category</th><th>Description</th><th class="right">Amount</th></tr></thead>
+      <tbody>${trows}</tbody>
+      <tfoot><tr style="font-weight:700"><td colspan="3">Total</td><td class="right num danger">${pkr(tot)}</td></tr></tfoot>
+    </table>`;
+  }).join('');
+  const title=`Shop Expenses${shop!=='ALL'?' — Shop '+shop:''}${month?' — '+month:''}`;
+  const html=`<h1>${title}</h1>
+  <div class="meta">${allShopExp.length} expense${allShopExp.length!==1?'s':''} · Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <div class="summary">${shopSummary}</div>
+  ${tables}`;
+  printSection(title, html);
+}
+
+function printHistory(){
+  const shopF=$('hist-shop')?.value||'ALL';
+  if(!allDays.length){showToast('No history to print','warn');return;}
+  const rows=allDays.map(d=>{
+    const tSales=Object.entries(d.cats||{}).reduce((s,[,cv])=>(cv.rows||[]).reduce((a,r)=>a+(r.soldFor||0),s),0);
+    const sold=Object.entries(d.cats||{}).reduce((s,[ck,cv])=>CATS[ck]?.isExtra?s:(cv.rows||[]).reduce((a,r)=>a+(r.out||0),s),0);
+    const expTotal=(d.expenses||[]).reduce((a,e)=>a+(e.amt||0),0);
+    return `<tr><td>${esc(d.shop||'')}</td><td class="num">${d.date||''}</td><td class="right num success">${pkr(tSales)}</td><td class="right">${sold}</td><td class="right num danger">${expTotal?pkr(expTotal):'—'}</td></tr>`;
+  }).join('');
+  const tRev=allDays.reduce((s,d)=>s+Object.entries(d.cats||{}).reduce((a,[,cv])=>a+(cv.rows||[]).reduce((b,r)=>b+(r.soldFor||0),0),0),0);
+  const tExp=allDays.reduce((s,d)=>s+(d.expenses||[]).reduce((a,e)=>a+(e.amt||0),0),0);
+  const title=`Daily History${shopF!=='ALL'?' — Shop '+shopF:''}`;
+  const html=`<h1>${title}</h1>
+  <div class="meta">${allDays.length} day${allDays.length!==1?'s':''} · Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <table>
+    <thead><tr><th>Shop</th><th>Date</th><th class="right">Sales</th><th class="right">Units Sold</th><th class="right">Expenses</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr style="font-weight:700"><td colspan="2">TOTAL</td><td class="right num success">${pkr(tRev)}</td><td></td><td class="right num danger">${pkr(tExp)}</td></tr></tfoot>
+  </table>`;
+  printSection(title, html);
+}
+
+function printWarehouse(){
+  const q=($('wh-search')?.value||'').toLowerCase();
+  const items=(hqStock.items||[]).filter(it=>!q||(it.name+it.cat).toLowerCase().includes(q));
+  if(!items.length){showToast('Warehouse is empty','warn');return;}
+  const byCat={};items.forEach(it=>{if(!byCat[it.cat])byCat[it.cat]=[];byCat[it.cat].push(it);});
+  const totalUnits=items.reduce((s,it)=>s+it.qty,0);
+  const totalValue=items.reduce((s,it)=>s+(it.qty*(it.costPerUnit||0)),0);
+  let tables=Object.entries(byCat).map(([cat,rows])=>{
+    const catUnits=rows.reduce((s,it)=>s+it.qty,0);
+    const catVal=rows.reduce((s,it)=>s+(it.qty*(it.costPerUnit||0)),0);
+    const trows=rows.map(it=>`<tr><td>${esc(it.name||'')}</td><td>${esc(it.cat||'')}</td><td class="right">${it.qty}</td><td class="right num">${it.costPerUnit?pkr(it.costPerUnit):'—'}</td><td class="right num">${it.costPerUnit?pkr(it.qty*it.costPerUnit):'—'}</td></tr>`).join('');
+    return `<h2>${esc(cat)} — ${catUnits} unit${catUnits!==1?'s':''}${catVal?` · ${pkr(catVal)}`:''}</h2><table>
+      <thead><tr><th>Item</th><th>Category</th><th class="right">Qty</th><th class="right">Cost/Unit</th><th class="right">Total Value</th></tr></thead>
+      <tbody>${trows}</tbody>
+    </table>`;
+  }).join('');
+  const html=`<h1>HQ Warehouse Stock</h1>
+  <div class="meta">${items.length} item type${items.length!==1?'s':''} · ${totalUnits} total units · Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <div class="summary">
+    <div class="stat"><div class="stat-lbl">Item Types</div><div class="stat-val">${items.length}</div></div>
+    <div class="stat"><div class="stat-lbl">Total Units</div><div class="stat-val">${totalUnits}</div></div>
+    ${totalValue?`<div class="stat"><div class="stat-lbl">Total Value</div><div class="stat-val">${pkr(totalValue)}</div></div>`:''}
+  </div>
+  ${tables}`;
+  printSection('HQ Warehouse', html);
+}
+
+async function printMonthly(){
+  const month=$('monthly-month')?.value;
+  const shopF=$('monthly-shop')?.value||'ALL';
+  if(!month){showToast('Select a month first','warn');return;}
+  const [days,expenses]=await Promise.all([api('GET',`/api/days?month=${month}`),api('GET',`/api/shopexpenses?month=${month}`)]);
+  const shops=shopF==='ALL'?SHOPS:[shopF];
+  let rows='',grandRev=0,grandNet=0;
+  shops.forEach(sh=>{
+    const shD=days.filter(d=>d.shop===sh),shE=expenses.filter(e=>e.shop===sh);
+    if(!shD.length&&!shE.length)return;
+    let tSales=0,tCost=0,gPL=0,expT=0,sold=0;
+    shD.forEach(d=>{Object.entries(d.cats||{}).forEach(([ck,cv])=>{const r2=cv.rows||[];if(CATS[ck]?.isExtra){tSales+=r2.reduce((a,r)=>a+(r.soldFor||0),0);gPL+=r2.reduce((a,r)=>a+(r.soldFor||0)-(r.boughtFor||0),0);}else{tSales+=r2.reduce((a,r)=>a+(r.soldFor||0),0);const tc=r2.reduce((a,r)=>a+(r.costPerUnit||0)*(r.out||0),0);tCost+=tc;gPL+=r2.reduce((a,r)=>a+(r.soldFor||0),0)-tc;sold+=r2.reduce((a,r)=>a+(r.out||0),0);}});expT+=(d.expenses||[]).reduce((a,e)=>a+(e.amt||0),0);});
+    expT+=shE.reduce((a,e)=>a+(e.amount||0),0);
+    const netPL=gPL-expT;
+    grandRev+=tSales;grandNet+=netPL;
+    rows+=`<tr><td style="font-weight:700">Shop ${esc(sh)}</td><td class="right num success">${pkr(tSales)}</td><td class="right num">${pkr(tCost)}</td><td class="right num ${gPL>=0?'success':'danger'}">${pkr(gPL)}</td><td class="right num danger">${pkr(expT)}</td><td class="right num ${netPL>=0?'success':'danger'}" style="font-weight:700">${pkr(netPL)}</td><td class="right">${sold}</td></tr>`;
+  });
+  if(!rows){showToast('No data for selected month/shop','warn');return;}
+  const title=`Monthly P&L — ${month}${shopF!=='ALL'?' — Shop '+shopF:''}`;
+  const html=`<h1>${title}</h1>
+  <div class="meta">Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <div class="summary">
+    <div class="stat"><div class="stat-lbl">Total Revenue</div><div class="stat-val success">${pkr(grandRev)}</div></div>
+    <div class="stat"><div class="stat-lbl">Net Profit / Loss</div><div class="stat-val ${grandNet>=0?'success':'danger'}">${pkr(grandNet)}</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Shop</th><th class="right">Total Sales</th><th class="right">Cost of Sales</th><th class="right">Gross P/L</th><th class="right">Expenses</th><th class="right">Net P/L</th><th class="right">Units</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+  printSection(title, html);
+}
+
+function printCEO(){
+  if(!lastCEOSummary){showToast('Load the CEO Dashboard first','warn');return;}
+  const d=lastCEOSummary;
+  const month=d.month||'';
+  const net=d.current.netProfit;
+  const VALID_SH=['456','192','G15'];
+  const shopRows=VALID_SH.map(sh=>{
+    const v=d.shopStats[sh]||{revenue:0,profit:0,units:0,expenses:0,cost:0};
+    const n=v.profit-v.expenses;
+    return `<tr><td style="font-weight:700">Shop ${esc(sh)}</td><td class="right num success">${pkr(v.revenue)}</td><td class="right num">${pkr(v.cost)}</td><td class="right num ${v.profit>=0?'success':'danger'}">${pkr(v.profit)}</td><td class="right num danger">${pkr(v.expenses)}</td><td class="right num ${n>=0?'success':'danger'}" style="font-weight:700">${pkr(n)}</td><td class="right">${v.units}</td></tr>`;
+  }).join('');
+  const topModels=d.topModels?.length?`<h2>Top Selling Models</h2><table>
+    <thead><tr><th>#</th><th>Model</th><th class="right">Units</th></tr></thead>
+    <tbody>${d.topModels.map((m,i)=>`<tr><td>${i+1}</td><td>${esc(m.model)}</td><td class="right">${m.count}</td></tr>`).join('')}</tbody>
+  </table>`:'';
+  const bestShop=VALID_SH.reduce((b,sh)=>(d.shopStats[sh]?.revenue||0)>(d.shopStats[b]?.revenue||0)?sh:b,VALID_SH[0]);
+  const html=`<h1>CEO Dashboard — ${month}</h1>
+  <div class="meta">Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <div class="summary">
+    <div class="stat"><div class="stat-lbl">Monthly Revenue</div><div class="stat-val success">${pkr(d.current.revenue)}</div></div>
+    <div class="stat"><div class="stat-lbl">Net Profit / Loss</div><div class="stat-val ${net>=0?'success':'danger'}">${pkr(net)}</div></div>
+    <div class="stat"><div class="stat-lbl">Gross Profit</div><div class="stat-val ${d.current.profit>=0?'success':'danger'}">${pkr(d.current.profit)}</div></div>
+    <div class="stat"><div class="stat-lbl">Total Expenses</div><div class="stat-val danger">${pkr(d.current.expenses)}</div></div>
+    <div class="stat"><div class="stat-lbl">Units Sold</div><div class="stat-val">${d.current.units}</div></div>
+    <div class="stat"><div class="stat-lbl">Inventory (in stock)</div><div class="stat-val">${d.inventoryCount}</div></div>
+  </div>
+  <h2>Shop Performance</h2>
+  <table>
+    <thead><tr><th>Shop</th><th class="right">Revenue</th><th class="right">Cost of Sales</th><th class="right">Gross Profit</th><th class="right">Expenses</th><th class="right">Net P/L</th><th class="right">Units</th></tr></thead>
+    <tbody>${shopRows}</tbody>
+  </table>
+  ${topModels}
+  <p style="margin-top:12px;font-size:9pt;color:#555">Best shop: <b>Shop ${esc(bestShop)}</b> · Inventory value: <b>${pkr(d.inventoryValue)}</b></p>`;
+  printSection(`CEO Dashboard — ${month}`, html);
+}
+
+function printContacts(){
+  if(!allContacts.length){showToast('No contacts to print','warn');return;}
+  const rows=allContacts.map(c=>`<tr>
+    <td style="font-weight:600">${esc(c.name||'')}</td>
+    <td class="num">${esc(c.phone||'—')}</td>
+    <td>${esc(c.email||'—')}</td>
+    <td style="max-width:200px">${esc(c.notes||'')}</td>
+    <td class="num">${fmtDate(c.addedAt)}</td>
+  </tr>`).join('');
+  const html=`<h1>Customer Contacts</h1>
+  <div class="meta">${allContacts.length} contact${allContacts.length!==1?'s':''} · Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <table>
+    <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Notes</th><th>Added</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+  printSection('Customer Contacts', html);
+}
+
+function printAnalytics(){
+  if(!lastAnalyticsData){showToast('Load Analytics first','warn');return;}
+  const d=lastAnalyticsData;
+  const soldRows=d.topSold.length?d.topSold.map((m,i)=>`<tr><td>${i+1}</td><td style="font-weight:600">${esc(m.model)}</td><td class="right">${m.count}</td><td class="right num success">${pkr(m.revenue)}</td><td class="right num ${m.profit>=0?'success':'danger'}">${pkr(m.profit)}</td></tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#999">No sales in this period</td></tr>`;
+  const staleRows=d.stagnating.length?d.stagnating.map((m,i)=>`<tr><td>${i+1}</td><td style="font-weight:600">${esc(m.model)}</td><td class="right">${m.count}</td><td class="right num danger">${pkr(m.totalCost)}</td><td class="right">${m.oldestDays}d</td><td>${esc(m.shops||'')}</td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:#16a34a">✓ No stagnating stock</td></tr>`;
+  const html=`<h1>Model Analytics — Last ${d.days} days</h1>
+  <div class="meta">Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <h2>Top Selling Models</h2>
+  <table>
+    <thead><tr><th>#</th><th>Model</th><th class="right">Units Sold</th><th class="right">Revenue</th><th class="right">Profit</th></tr></thead>
+    <tbody>${soldRows}</tbody>
+  </table>
+  <h2>Stagnating Stock (in stock &gt;30 days)</h2>
+  <table>
+    <thead><tr><th>#</th><th>Model</th><th class="right">Units</th><th class="right">Cost Tied Up</th><th class="right">Oldest</th><th>Shops</th></tr></thead>
+    <tbody>${staleRows}</tbody>
+  </table>`;
+  printSection(`Analytics — Last ${d.days} days`, html);
+}
+
+function printLogs(){
+  const shop=$('log-shop')?.value||'';
+  if(!allLogsData.length){showToast('No activity logs to print','warn');return;}
+  const rows=allLogsData.map(l=>{
+    const label=LOG_LABELS[l.action]||l.action;
+    const det=l.details||{};
+    let detail='';
+    if(l.action==='stock_add')detail=`${det.brand||''} ${det.model||''} · IMEI ${det.imei||''}${det.buyPrice?' · '+pkr(det.buyPrice):''}`;
+    else if(l.action==='stock_sell')detail=`${det.brand||''} ${det.model||''} · IMEI ${det.imei||''} · Sold ${det.salePrice?pkr(det.salePrice):''} · Profit ${det.profit!=null?pkr(det.profit):'—'}${det.buyerName?' · '+esc(det.buyerName):''}`;
+    else if(l.action==='stock_delete')detail=esc(det.brand||'')+' '+esc(det.model||'');
+    const d=new Date(l.ts);
+    const ts=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    return `<tr><td class="num">${ts}</td><td>${esc(label)}</td><td>${l.shop?`<span class="badge">Shop ${esc(l.shop)}</span>`:''}</td><td style="color:#555;font-size:8.5pt">${detail}</td></tr>`;
+  }).join('');
+  const title=`Activity Log${shop?' — Shop '+shop:''}`;
+  const html=`<h1>${title}</h1>
+  <div class="meta">${allLogsData.length} event${allLogsData.length!==1?'s':''} · Printed: ${new Date().toLocaleDateString('en-GB')}</div>
+  <table>
+    <thead><tr><th>Date / Time</th><th>Action</th><th>Shop</th><th>Details</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+  printSection(title, html);
+}
+
 function openNewDayModal(){showModal(`<h3>Start New Day</h3>
   <div class="fc">
     <div class="f2">
@@ -2865,6 +3113,7 @@ async function renderCEO(){
   body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>Loading…</h3></div>`;
   const d=await api('GET',`/api/ceo/summary?month=${month}`);
   if(d.error){body.innerHTML=`<div class="empty"><div class="empty-icon">!</div><h3>${d.error}</h3></div>`;return;}
+  lastCEOSummary={...d,month};
 
   const momRev=d.prev.revenue>0?((d.current.revenue-d.prev.revenue)/d.prev.revenue*100):null;
   const momPL=d.prev.profit>0?((d.current.profit-d.prev.profit)/d.prev.profit*100):null;
@@ -3070,6 +3319,7 @@ async function renderAnalytics(){
   body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>Loading…</h3></div>`;
   const d=await api('GET',`/api/analytics/models?days=${days}`);
   if(d.error){body.innerHTML=`<div class="empty"><div class="empty-icon">!</div><h3>${d.error}</h3></div>`;return;}
+  lastAnalyticsData=d;
 
   const maxSold=d.topSold.length?d.topSold[0].count:1;
   const maxStale=d.stagnating.length?d.stagnating[0].oldestDays:1;
@@ -3134,12 +3384,13 @@ async function loadLogs(){
   const shop=$('log-shop')?.value||'';
   const url=shop?`/api/logs?shop=${shop}`:'/api/logs';
   const data=await api('GET',url);
+  allLogsData=Array.isArray(data)?data:[];
   const body=$('logs-body');
-  if(!Array.isArray(data)||!data.length){
+  if(!allLogsData.length){
     body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No activity yet</h3><p>Actions will appear here once the system is in use</p></div>`;
     return;
   }
-  body.innerHTML=`<div>${data.map(l=>{
+  body.innerHTML=`<div>${allLogsData.map(l=>{
     const dotCls=LOG_DOT[l.action]||'other';
     const label=LOG_LABELS[l.action]||l.action;
     const det=l.details||{};
