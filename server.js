@@ -32,10 +32,55 @@ app.use(express.static('public'));
 // Rate limiting — 300 requests per minute per IP
 app.use('/api/', rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true, legacyHeaders: false }));
 
+// Return 503 immediately when MongoDB is not ready (prevents 10 s buffer timeout)
+app.use('/api/', (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ error: 'Database not ready, please try again shortly.' });
+  }
+  next();
+});
+
 // ── MongoDB Connection ─────────────────────────
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.error(err));
+const MONGO_OPTS = {
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 30000,
+  heartbeatFrequencyMS: 10000,
+};
+const MONGO_BASE_DELAY_MS = 1000;
+const MONGO_MAX_DELAY_MS = 30000;
+
+let reconnectAttempts = 0;
+let reconnecting = false;
+
+function connectMongo() {
+  if (reconnecting) return;
+  reconnecting = true;
+  return mongoose.connect(process.env.MONGO_URI, MONGO_OPTS)
+    .then(() => {
+      console.log("✅ MongoDB connected");
+      reconnectAttempts = 0;
+      reconnecting = false;
+    })
+    .catch(err => {
+      reconnecting = false;
+      reconnectAttempts++;
+      const delay = Math.min(MONGO_BASE_DELAY_MS * 2 ** reconnectAttempts, MONGO_MAX_DELAY_MS);
+      console.error(`❌ MongoDB connection error (attempt ${reconnectAttempts}), retrying in ${delay}ms:`, err.message);
+      setTimeout(connectMongo, delay);
+    });
+}
+
+mongoose.connection.on('disconnected', () => {
+  console.warn("⚠️  MongoDB disconnected – reconnecting…");
+  connectMongo();
+});
+
+mongoose.connection.on('error', err => {
+  console.error("❌ MongoDB error:", err.message);
+});
+
+connectMongo();
 
 // ── Schemas ────────────────────────────────────
 const PhoneSchema = new mongoose.Schema({
