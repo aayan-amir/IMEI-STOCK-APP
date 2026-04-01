@@ -111,6 +111,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   padding:.65rem .9rem;font-size:.65rem;
   border-top:1px solid rgba(255,255,255,.07);margin-top:auto;
 }
+.sb-logout{
+  display:block;width:calc(100% - 1.8rem);margin:.5rem .9rem .65rem;
+  padding:.42rem .6rem;font-size:.65rem;font-weight:600;
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);
+  color:rgba(239,68,68,.85);border-radius:7px;cursor:pointer;
+  text-align:center;transition:background .15s,color .15s;
+}
+.sb-logout:hover{background:rgba(239,68,68,.22);color:#fca5a5;}
 .sr{display:flex;justify-content:space-between;padding:3px 0;color:rgba(255,255,255,.38);}
 .sv{font-weight:600;color:rgba(255,255,255,.65);}
 .sr.hi .sv{color:var(--a5);}
@@ -777,6 +785,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
       <div class="sr gr"><span>Sold</span><span class="sv" id="sb-sa">—</span></div>
       <div class="sr hi"><span>Revenue</span><span class="sv" id="sb-rv">—</span></div>
     </div>
+    <button class="sb-logout" onclick="logout()">Sign Out</button>
   </div>
 
   <div id="main">
@@ -869,8 +878,10 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="scan-section" id="sellForm" style="display:none">
           <h2>Record Sale</h2>
           <div id="sellPhoneInfo" style="margin-bottom:12px"></div>
+          <div id="crossShopWarning" style="display:none;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.35);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:.72rem;color:#ca8a04;line-height:1.5"></div>
           <div class="form-grid">
             <div class="form-group"><label>Sale Price (PKR)</label><input type="number" id="fSalePrice" placeholder="Selling price"></div>
+            <div class="form-group"><label>Sold by Shop</label><select id="fSoldByShop"><option value="456">456</option><option value="192">192</option><option value="G15">G15</option></select></div>
             <div class="form-group"><label>Buyer Name</label><input type="text" id="fBuyerName" placeholder="Customer name (optional)"></div>
             <div class="form-group"><label>Buyer Phone</label><input type="text" id="fBuyerPhone" placeholder="+92 300 1234567" inputmode="tel"></div>
             <div class="form-group full"><label>Notes</label><textarea id="fSaleNotes" placeholder="Any notes about this sale…"></textarea></div>
@@ -1650,6 +1661,26 @@ function showSellForm(phone){
       </div>
     </div>
     ${phone.buyPrice&&authRole==='admin'?`<div id="profitPreview" style="font-size:.72rem;color:var(--text2);margin-top:8px;font-family:var(--mono)">Enter sale price to see profit</div>`:''}`;
+
+  // Pre-fill "Sold by Shop" dropdown with the active shop
+  const soldByShopEl=$('fSoldByShop');
+  const defaultShop=(activeShop==='HQ'?(SHOPS.length?SHOPS[0]:null):activeShop)||null;
+  soldByShopEl.value=defaultShop;
+
+  // Cross-shop warning helper
+  function updateCrossShopWarning(){
+    const sel=soldByShopEl.value;
+    const warn=$('crossShopWarning');
+    if(phone.shop && sel && sel!==phone.shop){
+      warn.style.display='block';
+      warn.textContent=`⚠ This phone is from Shop ${phone.shop}'s stock. You are recording this sale under Shop ${sel}.`;
+    } else {
+      warn.style.display='none';
+    }
+  }
+  soldByShopEl.onchange=updateCrossShopWarning;
+  updateCrossShopWarning();
+
   $('sellForm').style.display='block';
   $('sellForm').scrollIntoView({behavior:'smooth',block:'nearest'});
   // Wire up profit preview (admin only)
@@ -1711,7 +1742,7 @@ async function submitSell(){
     buyerName:$('fBuyerName').value.trim(),
     buyerPhone:$('fBuyerPhone').value.trim(),
     notes:$('fSaleNotes').value.trim(),
-    shop:activeShop==='HQ'?null:activeShop
+    soldByShop:$('fSoldByShop').value||undefined
   });
   if(d.error){showToast(d.error,'error');return;}
   const profit=d.sale?.profit;
@@ -3690,6 +3721,14 @@ async function enterShopMode(shop){
   await bootApp();
 }
 
+function logout(){
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('authRole');
+  sessionStorage.removeItem('authShop');
+  authRole=null;authShop=null;
+  location.reload();
+}
+
 function applyShopMode(shop){
   shopModeActive=true;
   // Only show the selected shop's tab
@@ -3712,8 +3751,6 @@ function applyShopMode(shop){
       }
     }
   });
-  // Hide Batch Add mode button — shop staff only add one phone at a time
-  const mb=$('modeBatch');if(mb)mb.style.display='none';
   // Lock nav to allowed pages (flag-based, not function override)
   const _nav=nav;
   window.nav=function(page){

@@ -94,6 +94,7 @@ const PhoneSchema = new mongoose.Schema({
   salePrice: Number,
   status: { type: String, default: 'in_stock' },
   shop: String,
+  soldByShop: String,
   cat: String,
   notes: String,
   addedAt: String,
@@ -108,6 +109,7 @@ const SaleSchema = new mongoose.Schema({
   salePrice: Number,
   profit: Number,
   shop: String,
+  soldByShop: String,
   buyerName: String,
   buyerPhone: String,
   notes: String,
@@ -342,10 +344,10 @@ app.post('/api/stock/add', anyAuth, async (req, res) => {
   res.json({ success: true, phone });
 });
 
-// Sell phone — shop users can only sell phones that belong to their shop
+// Sell phone — any authenticated user can sell any in-stock phone
 app.post('/api/stock/sell', anyAuth, async (req, res) => {
   try {
-    const { imei, salePrice, buyerName, buyerPhone, notes, shop } = req.body;
+    const { imei, salePrice, buyerName, buyerPhone, notes, soldByShop } = req.body;
 
     if (!imei) return res.status(400).json({ error: 'IMEI required' });
     if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
@@ -358,13 +360,13 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
     if (!phone) return res.status(404).json({ error: 'Not found' });
     if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
 
-    // Shop users may only sell phones assigned to their shop
-    if (req.authRole === 'shop' && phone.shop !== req.authShop) {
-      return res.status(403).json({ error: 'Phone not assigned to your shop' });
-    }
-
     const sp = Number(salePrice);
     if (Number.isNaN(sp) || sp <= 0) return res.status(400).json({ error: 'Sale price must be greater than zero' });
+
+    // Determine the selling shop: explicit value from body, or the authenticated shop, or the stock-owning shop
+    const effectiveSoldByShop = (soldByShop && VALID_SHOPS.includes(soldByShop))
+      ? soldByShop
+      : (req.authShop || phone.shop);
 
     const bp = Number(phone.buyPrice) || 0;
     const profit = sp - bp;
@@ -372,8 +374,8 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
     phone.status = 'sold';
     phone.salePrice = sp;
     phone.soldAt = new Date().toISOString();
-    // Shop users cannot reassign the phone's shop
-    if (req.authRole === 'admin' && shop !== undefined) phone.shop = shop;
+    phone.soldByShop = effectiveSoldByShop;
+    // phone.shop intentionally not changed — keeps the stock-owning shop for audit
 
     await phone.save();
 
@@ -385,6 +387,7 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       salePrice: sp,
       profit: profit,
       shop: phone.shop,
+      soldByShop: effectiveSoldByShop,
       buyerName: buyerName || null,
       buyerPhone: buyerPhone || null,
       notes: notes || null,
@@ -426,7 +429,7 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       }
     }
 
-    logAction('stock_sell', phone.shop || null, req.authRole, { imei: phone.imei, brand: phone.brand, model: phone.model, salePrice: sp, profit, buyerName: buyerName || null });
+    logAction('stock_sell', effectiveSoldByShop || phone.shop || null, req.authRole, { imei: phone.imei, brand: phone.brand, model: phone.model, salePrice: sp, profit, buyerName: buyerName || null, stockShop: phone.shop || null, soldByShop: effectiveSoldByShop });
     res.json({ success: true, sale });
   } catch (err) {
     console.error('Sell endpoint error:', err);
@@ -811,7 +814,8 @@ app.get('/api/ceo/summary', adminOnly, async (req, res) => {
     VALID_SHOPS.forEach(s => { shopStats[s] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 }; });
 
     currentSales.forEach(s => {
-      const sh = s.shop;
+      // Revenue and profit attributed to the shop that made the sale (soldByShop), falling back to stock-owning shop
+      const sh = s.soldByShop || s.shop;
       if (!sh) return;
       if (!shopStats[sh]) shopStats[sh] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 };
       shopStats[sh].revenue += s.salePrice || 0;
