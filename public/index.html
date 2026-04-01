@@ -878,8 +878,10 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="scan-section" id="sellForm" style="display:none">
           <h2>Record Sale</h2>
           <div id="sellPhoneInfo" style="margin-bottom:12px"></div>
+          <div id="crossShopWarning" style="display:none;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.35);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:.72rem;color:#ca8a04;line-height:1.5"></div>
           <div class="form-grid">
             <div class="form-group"><label>Sale Price (PKR)</label><input type="number" id="fSalePrice" placeholder="Selling price"></div>
+            <div class="form-group"><label>Sold by Shop</label><select id="fSoldByShop"><option value="456">456</option><option value="192">192</option><option value="G15">G15</option></select></div>
             <div class="form-group"><label>Buyer Name</label><input type="text" id="fBuyerName" placeholder="Customer name (optional)"></div>
             <div class="form-group"><label>Buyer Phone</label><input type="text" id="fBuyerPhone" placeholder="+92 300 1234567" inputmode="tel"></div>
             <div class="form-group full"><label>Notes</label><textarea id="fSaleNotes" placeholder="Any notes about this sale…"></textarea></div>
@@ -1659,6 +1661,26 @@ function showSellForm(phone){
       </div>
     </div>
     ${phone.buyPrice&&authRole==='admin'?`<div id="profitPreview" style="font-size:.72rem;color:var(--text2);margin-top:8px;font-family:var(--mono)">Enter sale price to see profit</div>`:''}`;
+
+  // Pre-fill "Sold by Shop" dropdown with the active shop
+  const soldByShopEl=$('fSoldByShop');
+  const defaultShop=(activeShop==='HQ'?(SHOPS.length?SHOPS[0]:null):activeShop)||null;
+  soldByShopEl.value=defaultShop;
+
+  // Cross-shop warning helper
+  function updateCrossShopWarning(){
+    const sel=soldByShopEl.value;
+    const warn=$('crossShopWarning');
+    if(phone.shop && sel && sel!==phone.shop){
+      warn.style.display='block';
+      warn.textContent=`⚠ This phone is from Shop ${phone.shop}'s stock. You are recording this sale under Shop ${sel}.`;
+    } else {
+      warn.style.display='none';
+    }
+  }
+  soldByShopEl.onchange=updateCrossShopWarning;
+  updateCrossShopWarning();
+
   $('sellForm').style.display='block';
   $('sellForm').scrollIntoView({behavior:'smooth',block:'nearest'});
   // Wire up profit preview (admin only)
@@ -1720,7 +1742,7 @@ async function submitSell(){
     buyerName:$('fBuyerName').value.trim(),
     buyerPhone:$('fBuyerPhone').value.trim(),
     notes:$('fSaleNotes').value.trim(),
-    shop:activeShop==='HQ'?null:activeShop
+    soldByShop:$('fSoldByShop').value||undefined
   });
   if(d.error){showToast(d.error,'error');return;}
   const profit=d.sale?.profit;
