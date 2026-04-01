@@ -1325,6 +1325,8 @@ const IS_PHONE = ROLE === 'phone';
 // Phone mode: hide desktop-only nav items and show a phone banner
 function applyPhoneMode(){
   if(!IS_PHONE) return;
+  // Admins keep full access even on phone
+  if(authRole==='admin') return;
   // Hide pages phones shouldn't access
   ADMIN_ONLY_PAGES.map(p=>'ni-'+p)
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
@@ -1397,8 +1399,8 @@ setInterval(tickClock,30000);tickClock();
 
 // Nav
 function nav(page){
-  // Block desktop-only pages on phone
-  if(IS_PHONE && ADMIN_ONLY_PAGES.includes(page)){ showToast('Not available on phone mode','warn'); return; }
+  // Block desktop-only pages on phone (non-admin only)
+  if(IS_PHONE && authRole!=='admin' && ADMIN_ONLY_PAGES.includes(page)){ showToast('Not available on phone mode','warn'); return; }
   closeSidebar(); // close mobile sidebar overlay on navigation
   activePage=page;
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
