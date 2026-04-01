@@ -437,20 +437,31 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
   }
 });
 
+// Build a MongoDB query that matches sales for a given shop.
+// Filters by soldByShop (the shop that performed the sale) with a backward-compat fallback
+// to the shop field for older records that pre-date the soldByShop field.
+function buildSalesByShopQuery(shop) {
+  if (!shop || typeof shop !== 'string') return {};
+  return { $or: [{ soldByShop: shop }, { soldByShop: { $exists: false }, shop }, { soldByShop: null, shop }] };
+}
+
 // Get sales — admin only
 app.get('/api/sales', adminOnly, async (req, res) => {
   const shop = req.query.shop;
-  const query = shop ? { shop } : {};
+  const query = buildSalesByShopQuery(shop);
   const sales = await Sale.find(query);
   res.json(sales);
 });
 
 // Stats — shop users are scoped to their own shop
 app.get('/api/stats', anyAuth, async (req, res) => {
-  const shop = req.authShop || req.query.shop;
-  const query = shop ? { shop } : {};
-  const stock = await Phone.find(query);
-  const sales = await Sale.find(query);
+  const rawShop = req.query.shop;
+  const shop = req.authShop || (typeof rawShop === 'string' && VALID_SHOPS.includes(rawShop) ? rawShop : undefined);
+  const stockQuery = shop ? { shop } : {};
+  // Sales are attributed to the shop that performed the sale (soldByShop); fall back to shop field for older records
+  const salesQuery = buildSalesByShopQuery(shop);
+  const stock = await Phone.find(stockQuery);
+  const sales = await Sale.find(salesQuery);
 
   res.json({
     inStock: stock.filter(p => p.status === 'in_stock').length,
@@ -646,7 +657,8 @@ app.get('/api/dispatches', adminOnly, async (req, res) => {
 app.delete('/api/sales', adminOnly, async (req, res) => {
   try {
     const { shop } = req.query;
-    const query = shop ? { shop } : {};
+    // Filter by soldByShop (the shop that performed the sale); fall back to shop field for older records
+    const query = buildSalesByShopQuery(shop);
     const sales = await Sale.find(query);
     if (sales.length === 0) return res.json({ success: true, deleted: 0 });
 
@@ -893,7 +905,7 @@ app.post('/api/reports/generate', adminOnly, async (req, res) => {
     let data = {};
 
     if (type === 'daily') {
-      const shopQ = shop === 'ALL' ? {} : { shop };
+      const shopQ = shop === 'ALL' ? {} : buildSalesByShopQuery(shop);
       const [sales, day] = await Promise.all([
         Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
         shop === 'ALL' ? Promise.resolve(null) : Day.findOne({ shop, date: period }),
@@ -917,7 +929,7 @@ app.post('/api/reports/generate', adminOnly, async (req, res) => {
         })),
       };
     } else if (type === 'monthly') {
-      const shopQ = shop === 'ALL' ? {} : { shop };
+      const shopQ = shop === 'ALL' ? {} : buildSalesByShopQuery(shop);
       const [sales, expenses] = await Promise.all([
         Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
         ShopExpense.find(shop === 'ALL' ? { month: period } : { shop, month: period }),
