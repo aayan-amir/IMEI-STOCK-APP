@@ -111,6 +111,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   padding:.65rem .9rem;font-size:.65rem;
   border-top:1px solid rgba(255,255,255,.07);margin-top:auto;
 }
+.sb-logout{
+  display:block;width:calc(100% - 1.8rem);margin:.5rem .9rem .65rem;
+  padding:.42rem .6rem;font-size:.65rem;font-weight:600;
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);
+  color:rgba(239,68,68,.85);border-radius:7px;cursor:pointer;
+  text-align:center;transition:background .15s,color .15s;
+}
+.sb-logout:hover{background:rgba(239,68,68,.22);color:#fca5a5;}
 .sr{display:flex;justify-content:space-between;padding:3px 0;color:rgba(255,255,255,.38);}
 .sv{font-weight:600;color:rgba(255,255,255,.65);}
 .sr.hi .sv{color:var(--a5);}
@@ -777,6 +785,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
       <div class="sr gr"><span>Sold</span><span class="sv" id="sb-sa">—</span></div>
       <div class="sr hi"><span>Revenue</span><span class="sv" id="sb-rv">—</span></div>
     </div>
+    <button class="sb-logout" onclick="logout()">Sign Out</button>
   </div>
 
   <div id="main">
@@ -3690,6 +3699,14 @@ async function enterShopMode(shop){
   await bootApp();
 }
 
+function logout(){
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('authRole');
+  sessionStorage.removeItem('authShop');
+  authRole=null;authShop=null;
+  location.reload();
+}
+
 function applyShopMode(shop){
   shopModeActive=true;
   // Only show the selected shop's tab
@@ -3712,8 +3729,6 @@ function applyShopMode(shop){
       }
     }
   });
-  // Hide Batch Add mode button — shop staff only add one phone at a time
-  const mb=$('modeBatch');if(mb)mb.style.display='none';
   // Lock nav to allowed pages (flag-based, not function override)
   const _nav=nav;
   window.nav=function(page){
