@@ -2326,7 +2326,7 @@ function renderSalesLog(){
           <tbody>${daySales.map(s=>`<tr style="border-top:1px solid var(--border2)">
             <td style="padding:.3rem .7rem;color:var(--white);font-weight:600">${esc(s.brand||'')} ${esc(s.model||'')}</td>
             <td style="padding:.3rem .7rem;font-family:var(--mono);font-size:.62rem;color:var(--text2)">${s.imei||''}</td>
-            <td style="padding:.3rem .7rem"><span style="background:rgba(${SHOP_RGBA[s.shop]||'22,163,74'},.15);color:${SHOP_COLOR[s.shop]||'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[s.shop]||'22,163,74'},.3);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:600">${s.shop||'—'}</span></td>
+            <td style="padding:.3rem .7rem"><span style="background:rgba(${SHOP_RGBA[s.soldByShop||s.shop]||'22,163,74'},.15);color:${SHOP_COLOR[s.soldByShop||s.shop]||'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[s.soldByShop||s.shop]||'22,163,74'},.3);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:600">${s.soldByShop||s.shop||'—'}</span></td>
             <td style="padding:.3rem .7rem;color:var(--text2)">${esc(s.buyerName||'—')}${s.buyerPhone?`<div style="font-size:.6rem;font-family:var(--mono);color:var(--text3)">${esc(s.buyerPhone)}</div>`:''}</td>
             <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--text2)">${s.buyPrice?pkr(s.buyPrice):'—'}</td>
             <td style="padding:.3rem .7rem;text-align:right;font-family:var(--mono);color:var(--success)">${pkr(s.salePrice)}</td>
@@ -2367,7 +2367,7 @@ function exportSalesLogCSV(){
   sales.sort((a,b)=>(b.soldAt||'').localeCompare(a.soldAt||''));
   const h='Date,Shop,Brand,Model,IMEI,Buyer,Cost,Sold For,Profit,Notes\n';
   const rows=sales.map(s=>[
-    s.soldAt?s.soldAt.slice(0,10):'',s.shop||'',s.brand||'',s.model||'',
+    s.soldAt?s.soldAt.slice(0,10):'',s.soldByShop||s.shop||'',s.brand||'',s.model||'',
     s.imei||'',s.buyerName||'',s.buyPrice||'',s.salePrice||'',
     s.profit!=null?s.profit:'',s.notes||''
   ].join(','));
@@ -2422,14 +2422,17 @@ async function loadDay(){
 
   // Always fetch fresh stock to recalculate OUT/OP (so sold phones reflect immediately)
   const stockUrl = shop ? `/api/stock?shop=${shop}&all=true` : '/api/stock?all=true';
-  const [saved, stockItems] = await Promise.all([
+  // Also fetch phones from other shops' stock sold by this shop (cross-shop sales)
+  const crossShopUrl = `/api/stock?soldByShop=${shop}&all=true`;
+  const [saved, stockItems, crossShopItems] = await Promise.all([
     api('GET',`/api/days/${shop}/${date}`),
-    api('GET', stockUrl)
+    api('GET', stockUrl),
+    api('GET', crossShopUrl)
   ]);
 
   // Group IMEI stock by category → model, computing OP, sold today, IN
-  // OP = phones in stock at start of day (in_stock + sold today)
-  // OUT = phones sold (status=sold AND soldAt is today)
+  // OP = phones in stock at start of day (in_stock + sold today BY this shop)
+  // OUT = phones sold BY this shop today (from own stock or other shops' stock)
   const todayStr = date;
   const grouped = {}; // key: cat|model|color|storage
 
@@ -2439,13 +2442,32 @@ async function loadDay(){
     const key = `${cat}|${name}|${p.storage||''}`;
     if(!grouped[key]) grouped[key]={cat, name, storage:p.storage||'', costPerUnit:p.buyPrice||0, inStockCount:0, out:0, soldFor:0, imeis:[]};
     const g = grouped[key];
-    const soldToday = p.status==='sold' && p.soldAt && p.soldAt.slice(0,10)===todayStr;
+    // Only count as OUT if this shop sold the phone.
+    // Backward compat: records created before soldByShop was introduced have no soldByShop field,
+    // meaning the sale was always made by the stock-owning shop (cross-shop sales weren't possible then).
+    const soldToday = p.status==='sold' && p.soldAt && p.soldAt.slice(0,10)===todayStr
+      && (!p.soldByShop || p.soldByShop===shop);
     if(p.status==='in_stock') g.inStockCount++; // count only phones currently in stock
     g.imeis.push(p.imei);
     if(soldToday){
       g.out++;
       g.soldFor += p.salePrice||0;
     }
+  });
+
+  // Add cross-shop sales: phones from other shops' stock sold by this shop today
+  (Array.isArray(crossShopItems)?crossShopItems:[]).forEach(p=>{
+    // The API query returns phones where soldByShop===shop across all stock owners.
+    // Skip any that belong to this shop's own stock — they're already counted in stockItems above.
+    if(p.shop===shop) return;
+    if(!(p.status==='sold' && p.soldAt && p.soldAt.slice(0,10)===todayStr)) return;
+    const cat = guessCat(p.brand, p.model, p.cat);
+    const name = [p.brand, p.model].filter(Boolean).join(' ') || 'Unknown';
+    const key = `${cat}|${name}|${p.storage||''}`;
+    if(!grouped[key]) grouped[key]={cat, name, storage:p.storage||'', costPerUnit:p.buyPrice||0, inStockCount:0, out:0, soldFor:0, imeis:[]};
+    const g = grouped[key];
+    g.out++;
+    g.soldFor += p.salePrice||0;
   });
 
   if(saved && saved.cats){
@@ -2636,7 +2658,7 @@ function printSalesLog(){
     <td class="num">${s.soldAt?s.soldAt.slice(0,10):''}</td>
     <td>${esc((s.brand||'')+' '+(s.model||''))}</td>
     <td class="num">${s.imei||''}</td>
-    <td><span class="badge">${s.shop||'—'}</span></td>
+    <td><span class="badge">${s.soldByShop||s.shop||'—'}</span></td>
     <td>${esc(s.buyerName||'—')}</td>
     <td class="right num">${s.buyPrice?pkr(s.buyPrice):'—'}</td>
     <td class="right num success">${pkr(s.salePrice)}</td>
