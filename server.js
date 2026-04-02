@@ -319,9 +319,17 @@ app.get('/api/lookup/:imei', anyAuth, async (req, res) => {
 
 // Get stock — shop users are scoped to their own shop
 app.get('/api/stock', anyAuth, async (req, res) => {
-  const shop = req.authShop || req.query.shop;
+  const shop = req.authShop || (typeof req.query.shop === 'string' && VALID_SHOPS.includes(req.query.shop) ? req.query.shop : undefined);
   const query = shop ? { shop } : {};
   if (req.query.all !== 'true') query.status = 'in_stock';
+  // Support querying phones by the shop that sold them (for cross-shop sale tracking in the daily sheet)
+  if (req.query.soldByShop && typeof req.query.soldByShop === 'string' && VALID_SHOPS.includes(req.query.soldByShop)) {
+    if (req.authRole !== 'admin' && req.query.soldByShop !== req.authShop) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    delete query.shop; // query across all shops' stock, not just the requesting shop's
+    query.soldByShop = req.query.soldByShop;
+  }
   const items = await Phone.find(query);
   res.json(items);
 });
