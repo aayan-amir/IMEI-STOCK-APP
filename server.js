@@ -687,6 +687,25 @@ app.delete('/api/sales', adminOnly, async (req, res) => {
   }
 });
 
+// ── DELETE SALE BY IMEI ──────────────────────────
+app.delete('/api/sales/by-imei/:imei', adminOnly, async (req, res) => {
+  try {
+    const sale = await Sale.findOne({ imei: req.params.imei });
+    if (!sale) return res.status(404).json({ error: 'Sale not found' });
+
+    await Phone.findOneAndUpdate(
+      { imei: sale.imei },
+      { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
+    );
+
+    await Sale.findByIdAndDelete(sale._id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete sale by IMEI error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ── DELETE SALE ─────────────────────────────────
 app.delete('/api/sales/:id', adminOnly, async (req, res) => {
   try {

@@ -2163,6 +2163,7 @@ function phoneCardHTML(p, standalone=true){
     <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
       ${!IS_PHONE?`<button class="btn bo" onclick="openEditPhone('${p.id}')" style="font-size:.62rem;padding:.22rem .5rem;">Edit</button>`:''}
       ${p.status==='in_stock'?`<button class="del-btn" onclick="deletePhone('${p.id}')" title="Remove" aria-label="Delete phone">×</button>`:''}
+      ${p.status==='sold'&&authRole==='admin'?`<button class="del-btn" onclick="deleteSaleByIMEI('${esc(p.imei)}')" title="Delete sale" aria-label="Delete sale">×</button>`:''}
     </div>
   </div>`;
 }
@@ -2356,6 +2357,17 @@ async function deleteSale(id){
   await loadSalesLog();
   loadSidebarStats();
   loadIMEIData();
+  if(activePage==='stock') loadDay();
+}
+
+async function deleteSaleByIMEI(imei){
+  if(!confirm('Delete this sale? The phone will be returned to stock.'))return;
+  const d=await api('DELETE',`/api/sales/by-imei/${encodeURIComponent(imei)}`);
+  if(d.error){showToast(d.error,'error');return;}
+  showToast('Sale deleted — phone returned to stock','warn');
+  await loadIMEIData();
+  loadSidebarStats();
+  if(activePage==='saleslog') loadSalesLog();
   if(activePage==='stock') loadDay();
 }
 
