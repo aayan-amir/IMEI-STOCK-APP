@@ -1559,15 +1559,19 @@ async function submitBatch(){
   const color=$('bColor').value.trim();
   const storage=$('bStorage').value;
   const buyPriceRaw=$('bBuyPrice').value.trim();
-  const buyPrice = buyPriceRaw !== '' ? Number(buyPriceRaw) : undefined;
+  let buyPrice=undefined;
   const cat=$('bCat').value;
   const shop=activeShop==='HQ'?null:activeShop;
 
   if(!brand&&!model){showToast('Enter at least Brand or Model','error');return;}
-  if (buyPriceRaw !== '' && !Number.isFinite(buyPrice)) {
-    showToast('Buy price must be a valid number','error');
-    $('bBuyPrice')?.focus();
-    return;
+  if (buyPriceRaw !== '') {
+    const parsedBuyPrice = Number(buyPriceRaw);
+    if (!Number.isFinite(parsedBuyPrice)) {
+      showToast('Buy price must be a valid number','error');
+      $('bBuyPrice')?.focus();
+      return;
+    }
+    buyPrice = parsedBuyPrice;
   }
 
   const saveBtn=$('batchSaveBtn');
@@ -1582,7 +1586,7 @@ async function submitBatch(){
         cat, brand, model, color, storage, buyPrice, shop
       });
       if(d.success) saved++;
-      else failed.push(`${entry.imei1}: ${d.error || 'request failed'}`);
+      else failed.push(`${entry.imei1}: ${d.error || 'operation failed without error details'}`);
     }catch(e){
       failed.push(`${entry.imei1}: network error`);
     }
