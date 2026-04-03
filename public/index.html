@@ -1558,7 +1558,8 @@ async function submitBatch(){
   const model=$('bModel').value.trim();
   const color=$('bColor').value.trim();
   const storage=$('bStorage').value;
-  const buyPrice=$('bBuyPrice').value;
+  const buyPriceRaw=$('bBuyPrice').value;
+  const buyPrice=buyPriceRaw!==''?Number(buyPriceRaw):undefined;
   const cat=$('bCat').value;
   const shop=activeShop==='HQ'?null:activeShop;
 
@@ -1575,8 +1576,8 @@ async function submitBatch(){
         imei:entry.imei1, imei2:entry.imei2||'',
         cat, brand, model, color, storage, buyPrice, shop
       });
-      if(d.error) failed.push(`${entry.imei1}: ${d.error}`);
-      else saved++;
+      if(d.success) saved++;
+      else failed.push(`${entry.imei1}: ${d.error||'unknown error'}`);
     }catch(e){
       failed.push(`${entry.imei1}: network error`);
     }
