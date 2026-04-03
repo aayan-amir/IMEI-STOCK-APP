@@ -1558,7 +1558,7 @@ async function submitBatch(){
   const model=$('bModel').value.trim();
   const color=$('bColor').value.trim();
   const storage=$('bStorage').value;
-  const buyPriceRaw=$('bBuyPrice').value;
+  const buyPriceRaw=$('bBuyPrice').value.trim();
   const buyPrice = buyPriceRaw !== '' ? Number(buyPriceRaw) : undefined;
   const cat=$('bCat').value;
   const shop=activeShop==='HQ'?null:activeShop;
