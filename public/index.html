@@ -1564,6 +1564,11 @@ async function submitBatch(){
   const shop=activeShop==='HQ'?null:activeShop;
 
   if(!brand&&!model){showToast('Enter at least Brand or Model','error');return;}
+  if(buyPriceRaw!=='' && !Number.isFinite(buyPrice)){
+    showToast('Buy price must be a valid number','error');
+    $('bBuyPrice')?.focus();
+    return;
+  }
 
   const saveBtn=$('batchSaveBtn');
   saveBtn.disabled=true;
@@ -1577,7 +1582,7 @@ async function submitBatch(){
         cat, brand, model, color, storage, buyPrice, shop
       });
       if(d.success) saved++;
-      else failed.push(`${entry.imei1}: ${d.error||'unknown error'}`);
+      else failed.push(`${entry.imei1}: ${d.error||'request failed'}`);
     }catch(e){
       failed.push(`${entry.imei1}: network error`);
     }
