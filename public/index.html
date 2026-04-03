@@ -2415,6 +2415,7 @@ function guessCat(brand,model,cat){
 
 function autoSelectCat(brandVal, selectId){
   const sel=$(selectId); if(!sel) return;
+  if(sel.value==='BOX' || sel.value==='EXTRA') return;
   const cat = guessCat(brandVal,'',null);
   if(cat) sel.value = cat;
 }
