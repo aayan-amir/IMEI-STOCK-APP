@@ -2122,6 +2122,7 @@ async function startScanning(){
 // ── IMEI STOCK LIST ──
 let groupedView = true; // default: grouped by model
 let groupedStockMap = {};
+let groupOpenState = {};
 async function loadIMEIData(){
   const sh=activeShop==='HQ'?null:activeShop;
   let [stock,sales]=await Promise.all([
@@ -2172,12 +2173,14 @@ function renderIMEIStock(){
     const inStockCount=g.phones.filter(p=>p.status==='in_stock').length;
     const soldCount=g.phones.filter(p=>p.status==='sold').length;
     const uid = `g${idx}`;
+    const isOpen = count===1 ? true : !!groupOpenState[uid];
     groupedStockMap[uid]=g.phones.map(p=>p.id).filter(Boolean);
+    groupOpenState[uid]=isOpen;
     // Always show group header — never silently hide phones
     return `
       <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;transition:background .15s;"
-          onclick="toggleGroup('grp-${uid}')" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background=''">
+        <div id="grp-head-${uid}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;transition:background .15s;background:${isOpen?'rgba(22,163,74,.08)':'var(--s1)'};"
+          onclick="toggleGroup('grp-${uid}')">
           <div class="phone-icon">${(g.brand||'?')[0].toUpperCase()}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:.9rem;color:var(--white);">${fmtPhoneName(g.brand,g.model)}</div>
@@ -2185,6 +2188,7 @@ function renderIMEIStock(){
               <span style="font-family:var(--mono);font-size:.7rem;font-weight:700;background:rgba(22,163,74,.15);color:var(--a1);border:1px solid rgba(22,163,74,.3);padding:2px 9px;border-radius:20px;">${count} unit${count!==1?'s':''}</span>
               ${inStockCount?`<span class="badge badge-green">${inStockCount} in stock</span>`:''}
               ${soldCount?`<span class="badge badge-red">${soldCount} sold</span>`:''}
+              <span class="badge ${isOpen?'badge-green':'badge-gray'}" id="grp-state-${uid}">${isOpen?'Open':'Closed'}</span>
               ${(g.colors&&g.colors.size===1)?`<span class="badge badge-gray">${esc(titleCase([...g.colors][0]))}</span>`:(g.colors&&g.colors.size>1?`<span class="badge badge-gray">Multiple Colors</span>`:'')}
               ${g.storage?`<span class="badge badge-purple">${g.storage}</span>`:''}
             </div>
@@ -2193,9 +2197,9 @@ function renderIMEIStock(){
             ${authRole==='admin'&&g.buyPrice?`<div style="font-family:var(--mono);font-size:.82rem;color:var(--a5)">${pkr(g.buyPrice)}</div><div style="font-size:.6rem;color:var(--text2)">ea.</div>`:''}
             ${authRole==='admin'&&count>1?`<button class="btn bg" style="margin-top:6px;font-size:.62rem;padding:.2rem .45rem;" onclick="event.stopPropagation();openGroupBatchEdit('${uid}')">Batch Edit Group</button>`:''}
           </div>
-          <div style="color:var(--text2);font-size:.75rem;margin-left:4px;" id="grp-arr-${uid}">${count===1?'':'▶'}</div>
+          <div style="color:${isOpen?'var(--a1)':'var(--text2)'};font-size:.75rem;margin-left:4px;" id="grp-arr-${uid}">${count===1?'':'▶'}</div>
         </div>
-        <div id="grp-${uid}" style="display:${count===1?'block':'none'};border-top:1px solid var(--border);">
+        <div id="grp-${uid}" style="display:${isOpen?'block':'none'};border-top:1px solid var(--border);">
           ${g.phones.map(p=>phoneCardHTML(p,false)).join('')}
         </div>
       </div>`;
@@ -2256,8 +2260,19 @@ function toggleGroup(id){
   const open=el.style.display!=='none';
   el.style.display=open?'none':'block';
   const uid=id.replace('grp-','');
+  groupOpenState[uid]=!open;
   const arr=$('grp-arr-'+uid);
-  if(arr) arr.textContent=open?'▶':'▼';
+  if(arr){
+    arr.textContent=open?'▶':'▼';
+    arr.style.color=open?'var(--text2)':'var(--a1)';
+  }
+  const head=$('grp-head-'+uid);
+  if(head) head.style.background=open?'var(--s1)':'rgba(22,163,74,.08)';
+  const state=$('grp-state-'+uid);
+  if(state){
+    state.textContent=open?'Closed':'Open';
+    state.className=`badge ${open?'badge-gray':'badge-green'}`;
+  }
 }
 
 function phoneCardHTML(p, standalone=true){
@@ -2688,35 +2703,26 @@ async function loadDay(){
   });
 
   if(saved && saved.cats){
-    // Load saved state (preserves inQty, boughtFor, expenses, purchases, etc.)
+    // Preserve non-stock fields, but rebuild stock rows from live IMEI stock.
     dayState={...dayState,...saved};
     Object.keys(CATS).forEach(k=>{if(!dayState.cats[k])dayState.cats[k]={rows:[]};});
-    // Overwrite OUT/OP/soldFor in each row with fresh stock values so sold phones reflect immediately
-    Object.values(grouped).forEach(g=>{
-      const ck = g.cat;
-      const rowName = g.name + (g.storage?` ${g.storage}`:'');
-      const rows = dayState.cats[ck]?.rows;
-      if(rows){
-        const row = rows.find(r=>r.name===rowName);
-        if(row){ row.out=g.out; row.soldFor=g.soldFor; row.op=g.inStockCount+g.out; }
-      }
-    });
-  } else {
-    // No saved day — build from scratch
-    Object.values(grouped).forEach(g=>{
-      const ck = g.cat;
-      if(!dayState.cats[ck]) dayState.cats[ck]={rows:[]};
-      dayState.cats[ck].rows.push({
-        name: g.name + (g.storage?` ${g.storage}`:''),
-        op: g.inStockCount + g.out, // opening = current in-stock + sold today = phones at start of day
-        inQty: 0,
-        out: g.out,
-        soldFor: g.soldFor,
-        costPerUnit: g.costPerUnit,
-        boughtFor: 0,
-      });
-    });
   }
+
+  // Rebuild all non-EXTRA stock rows from live IMEI stock so prices/qty stay in sync.
+  Object.entries(CATS).forEach(([ck,cv])=>{ if(!cv.isExtra) dayState.cats[ck]={rows:[]}; });
+  Object.values(grouped).forEach(g=>{
+    const ck = g.cat;
+    if(!dayState.cats[ck]) dayState.cats[ck]={rows:[]};
+    dayState.cats[ck].rows.push({
+      name: g.name + (g.storage?` ${g.storage}`:''),
+      op: g.inStockCount + g.out, // opening = current in-stock + sold today = phones at start of day
+      inQty: 0,
+      out: g.out,
+      soldFor: g.soldFor,
+      costPerUnit: g.costPerUnit,
+      boughtFor: 0,
+    });
+  });
 
   renderStock();renderExpenses();renderPurchases();renderTransfers();
   $('cf-carry').value=dayState.carryForward||'';recalc();
@@ -2724,7 +2730,6 @@ async function loadDay(){
 
 function renderStock(){
   const wrap=$('stock-wrap');let html='';
-  // Safe function for input value attributes — escapes quotes but not other HTML
   const val=(s)=>String(s||'').replace(/"/g,'&quot;');
   Object.entries(CATS).forEach(([ck,cv])=>{
     const rows=dayState.cats[ck]?.rows||[];const isExtra=cv.isExtra;
@@ -2742,7 +2747,7 @@ function renderStock(){
       html+=`</tbody></table>`;
     }else{
       html+=`<table class="t"><thead><tr><th class="l">DESCRIPTION</th><th>OP</th><th>IN</th><th>OUT</th><th>BAL</th><th>COST/UNIT</th><th>COST(SOLD)</th><th>SOLD FOR</th><th>SALE AMT</th><th>P/L</th><th></th></tr></thead><tbody>`;
-      if(!rows.length)html+=`<tr><td colspan="11" style="color:var(--text3);font-size:.65rem;padding:.5rem">No items — click + ADD ROW</td></tr>`;
+      if(!rows.length)html+=`<tr><td colspan="11" style="color:var(--text3);font-size:.65rem;padding:.5rem">No items</td></tr>`;
       let tOP=0,tIN=0,tOUT=0,tBAL=0,tTC=0,tSA=0,tPL=0;
       rows.forEach((r,i)=>{
         const op=r.op||0,inQ=r.inQty||0,out=r.out||0,bal=op+inQ-out;
@@ -2750,22 +2755,22 @@ function renderStock(){
         const tc=(r.costPerUnit||0)*out,sa=r.soldFor||0,pl=sa-tc;
         tOP+=op;tIN+=inQ;tOUT+=out;tBAL+=bal;tTC+=tc;tSA+=sa;tPL+=pl;
         html+=`<tr class="${out>0?'sold':''}">
-          <td class="l"><input type="text" value="${val(r.name)}" oninput="onRC('${ck}',${i},'name',this.value)"></td>
+          <td class="l">${esc(r.name||'—')}</td>
           <td class="op-cell">${op}</td>
-          <td><input type="number" value="${inQ}" min="0" oninput="onRC('${ck}',${i},'inQty',+this.value)"></td>
-          <td><input type="number" value="${out}" min="0" oninput="onRC('${ck}',${i},'out',+this.value)"></td>
+          <td>${inQ}</td>
+          <td>${out}</td>
           <td class="${bal===0?'nz':''}" id="d-${ck}-${i}-b">${bal}</td>
-          <td><input type="number" value="${r.costPerUnit||0}" min="0" oninput="onRC('${ck}',${i},'costPerUnit',+this.value)"></td>
+          <td>${(r.costPerUnit||0).toLocaleString()}</td>
           <td class="ngd" id="d-${ck}-${i}-tc">${tc?tc.toLocaleString():'-'}</td>
-          <td><input type="number" value="${sa||''}" min="0" placeholder="0" oninput="onRC('${ck}',${i},'soldFor',+this.value)"></td>
+          <td>—</td>
           <td class="${sa?'nb':'nz'}" id="d-${ck}-${i}-sa">${sa?sa.toLocaleString():'0'}</td>
           <td class="${pl>0?'ng':pl<0?'nr':'nz'}" id="d-${ck}-${i}-pl">${pl?pl.toLocaleString():'-'}</td>
-          <td><button class="bx" onclick="removeRow('${ck}',${i})">✕</button></td></tr>`;
+          <td></td></tr>`;
       });
       html+=`<tr><td><b>TOTAL</b></td><td>${tOP}</td><td>${tIN}</td><td>${tOUT}</td><td>${tBAL}</td><td>—</td><td>${tTC.toLocaleString()}</td><td>—</td><td>${tSA.toLocaleString()}</td><td class="${tPL>0?'ng':'nr'}">${tPL.toLocaleString()}</td><td></td></tr>`;
       html+=`</tbody></table>`;
     }
-    html+=`<button class="add-row" onclick="addRow('${ck}')">+ ADD ROW</button></div>`;
+    html+=`${isExtra?`<button class="add-row" onclick="addRow('${ck}')">+ ADD ROW</button>`:''}</div>`;
   });
   wrap.innerHTML=html;updateCatTotals();
 }
