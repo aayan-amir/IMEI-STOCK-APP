@@ -313,6 +313,20 @@ table.t{width:100%;border-collapse:collapse;font-size:.67rem;}
   transition:border-color .2s,background .2s;
 }
 .phone-card:hover{border-color:var(--a1);background:var(--s2);}
+.phone-card.selected{border:1px solid var(--a1)!important;background:var(--s2);box-shadow:0 0 0 1px rgba(22,163,74,.45);}
+.bulk-check{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bulk-check input{
+  appearance:none;width:18px;height:18px;border:1.5px solid var(--border);
+  border-radius:6px;background:var(--s2);cursor:pointer;transition:all .15s;
+}
+.bulk-check input:checked{background:var(--a1);border-color:var(--a1);box-shadow:0 0 0 3px rgba(22,163,74,.2);}
+.bulk-check input:focus{outline:none;box-shadow:0 0 0 3px rgba(22,163,74,.25);}
+.bulk-bar{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--s2);border:1px solid var(--border);border-radius:10px;
+  margin:8px 0 6px;
+}
+.bulk-pill{font-family:var(--mono);font-weight:700;font-size:.78rem;color:var(--a1);}
 .phone-icon{
   width:38px;height:38px;border-radius:9px;
   background:var(--s2);border:1px solid var(--border);
@@ -979,6 +993,13 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
           <div class="filter-chip active" onclick="setIMEIFilter('in_stock',this)">In Stock</div>
           <div class="filter-chip sell-chip" onclick="setIMEIFilter('sold',this)">Sold</div>
         </div>
+        <div id="bulkActions" class="bulk-bar" style="display:none;">
+          <div class="bulk-pill" id="bulkSelectionLabel">0 selected</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn bg" id="bulkEditBtn" onclick="openBatchEditModal()" style="font-size:.7rem;">Batch Edit</button>
+            <button class="btn bo" id="bulkClearBtn" onclick="clearPhoneSelection(true)" style="font-size:.7rem;">Clear</button>
+          </div>
+        </div>
         <div class="section-title"><span id="imeiCount">0 phones</span></div>
         <div id="imeiList"></div>
       </div>
@@ -1375,6 +1396,7 @@ let activeShop='456',activePage='scan',scanMode='add',pendingIMEI='',camStream=n
 let shopModeActive=false;
 let dayState={shop:'456',date:today(),cats:{},expenses:[],purchases:[],transfers:[],carryForward:0};
 let allIMEIStock=[],allIMEISales=[],imeiFilter='in_stock';
+const selectedPhoneIds=new Set();
 let allDays=[],allShopExp=[],allDispatches=[],allShipments=[],hqStock={items:[]};
 let allLogsData=[],lastCEOSummary=null,lastAnalyticsData=null;
 
@@ -1397,6 +1419,8 @@ function ym(d){return d?d.slice(0,7):'';}
 function pkr(n){return 'Rs '+(Number(n)||0).toLocaleString('en-PK');}
 function fmtDate(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'});}
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function titleCase(s){return (s||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());}
+function fmtPhoneName(brand,model){const b=titleCase(brand||'Unknown');const m=titleCase(model||'');return esc((b+' '+m).trim());}
 function showToast(msg,type='success'){const t=$('toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
 async function api(method,url,body){
   const opts={method,headers:{'Content-Type':'application/json'}};
@@ -1453,6 +1477,7 @@ function nav(page){
 function switchShop(s){
   if(shopModeActive)return; // locked in shop mode
   activeShop=s;
+  clearPhoneSelection();
   document.querySelectorAll('.stab').forEach(t=>t.classList.toggle('on',t.dataset.s===s));
   const c=SHOP_COLOR[s]||'var(--a5)';const r=SHOP_RGBA[s]||'22,163,74';
   const label=s==='HQ'?'Head Office':'Shop '+s;
@@ -2089,7 +2114,11 @@ async function loadIMEIData(){
   ]);
   allIMEIStock=Array.isArray(stock)?[...stock].reverse():[];
   allIMEISales=Array.isArray(sales)?sales:[];
+  // Drop selections that are no longer in the refreshed list
+  const validIds=new Set(allIMEIStock.map(p=>p.id));
+  selectedPhoneIds.forEach(id=>{if(!validIds.has(id))selectedPhoneIds.delete(id);});
   renderIMEIStock();
+  updateBulkActions();
 }
 function setIMEIFilter(f,el){imeiFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderIMEIStock();}
 function toggleGrouped(){groupedView=!groupedView;$('groupBtn').textContent=groupedView?'Flat List':'Group by Model';renderIMEIStock();}
@@ -2102,6 +2131,7 @@ function renderIMEIStock(){
     return true;
   });
   $('imeiCount').textContent=`${items.length} phone${items.length!==1?'s':''}`;
+  updateBulkActions();
   const list=$('imeiList');
   if(!items.length){list.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No phones found</h3></div>`;return;}
 
@@ -2113,9 +2143,11 @@ function renderIMEIStock(){
   // Group by brand+model+color+storage only (NOT status)
   const groups={};
   items.forEach(p=>{
-    const key=`${(p.brand||'').toLowerCase()}|${(p.model||'').toLowerCase()}|${(p.color||'').toLowerCase()}|${(p.storage||'').toLowerCase()}`;
-    if(!groups[key]) groups[key]={phones:[],brand:p.brand,model:p.model,color:p.color,storage:p.storage,buyPrice:p.buyPrice};
+    const key=`${(p.brand||'').toLowerCase()}|${(p.model||'').toLowerCase()}|${(p.storage||'').toLowerCase()}`;
+    if(!groups[key]) groups[key]={phones:[],brand:p.brand,model:p.model,storage:p.storage,buyPrice:p.buyPrice,colors:new Set()};
     groups[key].phones.push(p);
+    const clr=(p.color||'').trim();
+    if(clr) groups[key].colors.add(clr.toLowerCase());
   });
 
   list.innerHTML=Object.entries(groups).map(([key,g], idx)=>{
@@ -2130,12 +2162,12 @@ function renderIMEIStock(){
           onclick="toggleGroup('grp-${uid}')" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background=''">
           <div class="phone-icon">${(g.brand||'?')[0].toUpperCase()}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:.9rem;color:var(--white);">${g.brand||'Unknown'} ${g.model||''}</div>
+            <div style="font-weight:700;font-size:.9rem;color:var(--white);">${fmtPhoneName(g.brand,g.model)}</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">
               <span style="font-family:var(--mono);font-size:.7rem;font-weight:700;background:rgba(22,163,74,.15);color:var(--a1);border:1px solid rgba(22,163,74,.3);padding:2px 9px;border-radius:20px;">${count} unit${count!==1?'s':''}</span>
               ${inStockCount?`<span class="badge badge-green">${inStockCount} in stock</span>`:''}
               ${soldCount?`<span class="badge badge-red">${soldCount} sold</span>`:''}
-              ${g.color?`<span class="badge badge-gray">${g.color}</span>`:''}
+              ${(g.colors&&g.colors.size===1)?`<span class="badge badge-gray">${esc(titleCase([...g.colors][0]))}</span>`:(g.colors&&g.colors.size>1?`<span class="badge badge-gray">Multiple Colors</span>`:'')}
               ${g.storage?`<span class="badge badge-purple">${g.storage}</span>`:''}
             </div>
           </div>
@@ -2151,6 +2183,44 @@ function renderIMEIStock(){
   }).join('');
 }
 
+function updateBulkActions(){
+  const bar=$('bulkActions'); if(!bar)return;
+  if(authRole!=='admin'){bar.style.display='none';return;}
+  const count=selectedPhoneIds.size;
+  bar.style.display=count>0?'flex':'none';
+  const lbl=$('bulkSelectionLabel'); if(lbl) lbl.textContent=`${count} selected`;
+  const btn=$('bulkEditBtn'); if(btn) btn.disabled=count===0;
+  const clr=$('bulkClearBtn'); if(clr) clr.disabled=count===0;
+}
+
+function togglePhoneSelection(id,checked){
+  if(checked)selectedPhoneIds.add(id); else selectedPhoneIds.delete(id);
+  const card=$('card-'+id);
+  if(card) card.classList.toggle('selected',checked);
+  updateBulkActions();
+}
+
+function clearPhoneSelection(rerender=false){
+  if(!selectedPhoneIds.size){updateBulkActions();return;}
+  const ids=[...selectedPhoneIds];
+  selectedPhoneIds.clear();
+  ids.forEach(pid=>{
+    const card=$('card-'+pid);
+    if(card){
+      card.classList.remove('selected');
+      const cb=card.querySelector('.bulk-check input');
+      if(cb) cb.checked=false;
+    }
+  });
+  if(rerender) renderIMEIStock();
+  updateBulkActions();
+}
+
+function getSelectedPhones(){
+  const map=new Map(allIMEIStock.map(p=>[p.id,p]));
+  return Array.from(selectedPhoneIds).map(id=>map.get(id)).filter(Boolean);
+}
+
 function toggleGroup(id){
   const el=$(id); if(!el)return;
   const open=el.style.display!=='none';
@@ -2163,11 +2233,15 @@ function toggleGroup(id){
 function phoneCardHTML(p, standalone=true){
   const imei2line=p.imei2?`<div class="phone-imei2">IMEI 2: ${esc(p.imei2)}</div>`:'';
   const profitTag=authRole==='admin'&&p.salePrice&&p.buyPrice?`<span class="badge ${p.salePrice-p.buyPrice>=0?'badge-green':'badge-red'}">${p.salePrice-p.buyPrice>=0?'+':''}${pkr(p.salePrice-p.buyPrice)}</span>`:'';
-  const border=standalone?'border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;':'border-top:1px solid var(--border2);border-radius:0;margin-bottom:0;';
-  return `<div class="phone-card" id="card-${p.id}" style="background:var(--s1);${border}">
+  const border=standalone?'border-radius:var(--radius);margin-bottom:8px;':'border-top:1px solid var(--border2);border-radius:0;margin-bottom:0;';
+  const selected=selectedPhoneIds.has(p.id);
+  return `<div class="phone-card${selected?' selected':''}" id="card-${p.id}" style="${border}">
+    ${authRole==='admin'?`<label class="bulk-check" aria-label="Select phone">
+      <input type="checkbox" ${selected?'checked':''} onchange="togglePhoneSelection('${p.id}',this.checked)">
+    </label>`:''}
     <div class="phone-icon">${esc((p.brand||'?')[0].toUpperCase())}</div>
     <div class="phone-info">
-      <div class="phone-name">${esc(p.brand||'Unknown')} ${esc(p.model||'')}</div>
+      <div class="phone-name">${fmtPhoneName(p.brand,p.model)}</div>
       <div class="phone-imei">IMEI 1: ${esc(p.imei)}</div>
       ${imei2line}
       <div class="phone-meta">
@@ -2268,12 +2342,88 @@ async function saveEditPhone(id){
   await loadIMEIData();
 }
 
+function openBatchEditModal(){
+  if(authRole!=='admin'){showToast('Admin only','error');return;}
+  const selected=getSelectedPhones();
+  if(!selected.length){showToast('Select phones to edit','warn');return;}
+  const sample=selected.slice(0,3).map(p=>((p.brand||'Unknown')+' '+(p.model||'')).trim()).filter(Boolean).join(', ');
+  const extra=selected.length>3?` +${selected.length-3} more`:'';
+  showModal(`<h3>Batch Edit (${selected.length} phone${selected.length!==1?'s':''})</h3>
+    <p style="color:var(--text2);font-size:.8rem;line-height:1.45;margin-bottom:10px;">
+      Only fields you fill will be updated. Leave others blank to keep existing values.
+      ${sample?`<br><span style="display:inline-block;margin-top:6px;font-family:var(--mono);color:var(--text3);">Examples: ${esc(sample)}${extra}</span>`:''}
+    </p>
+    <div class="fc">
+      <div class="f2">
+        <div class="fi"><label>Category</label>
+          <select id="be-cat">
+            <option value="">— Leave unchanged —</option>
+            <option value="IPHONE">iPhone</option>
+            <option value="SAMSUNG">Samsung</option>
+            <option value="GOOGLE">Google Pixel</option>
+            <option value="OTHER">Other</option>
+            <option value="BOX">Box / Sealed</option>
+            <option value="EXTRA">Extra / Misc</option>
+          </select>
+        </div>
+        <div class="fi"><label>Brand</label><input type="text" id="be-brand" placeholder="Keep existing"></div>
+      </div>
+      <div class="f2">
+        <div class="fi"><label>Model</label><input type="text" id="be-model" placeholder="Keep existing"></div>
+        <div class="fi"><label>Color</label><input type="text" id="be-color" placeholder="Keep existing"></div>
+      </div>
+      <div class="f2">
+        <div class="fi"><label>Storage</label>
+          <select id="be-storage">
+            <option value="">— Leave unchanged —</option>
+            ${['64GB','128GB','256GB','512GB','1TB'].map(s=>`<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fi"><label>Buy Price (PKR)</label><input type="number" id="be-price" placeholder="Only if changing"></div>
+      </div>
+      <div class="fi"><label>IMEI 2</label><input type="text" id="be-imei2" placeholder="Only if updating" inputmode="numeric"></div>
+      <div class="fi"><label>Notes</label><input type="text" id="be-notes" placeholder="Only if updating notes"></div>
+    </div>
+    <div class="mf">
+      <button class="btn bo" onclick="closeModal()">Cancel</button>
+      <button class="btn bg" onclick="saveBatchEdit()">Update Phones</button>
+    </div>`, true);
+}
+
+async function saveBatchEdit(){
+  const ids=[...selectedPhoneIds];
+  if(!ids.length){closeModal();showToast('Select phones first','warn');return;}
+  const payload={ids};
+  const brand=$('be-brand').value.trim(); if(brand)payload.brand=brand;
+  const model=$('be-model').value.trim(); if(model)payload.model=model;
+  const color=$('be-color').value.trim(); if(color)payload.color=color;
+  const storage=$('be-storage').value; if(storage)payload.storage=storage;
+  const cat=$('be-cat').value; if(cat)payload.cat=cat;
+  const imei2=$('be-imei2').value.trim().replace(/\D/g,''); if(imei2)payload.imei2=imei2;
+  const notes=$('be-notes').value.trim(); if(notes)payload.notes=notes;
+  const bpVal=$('be-price').value;
+  if(bpVal!==''){
+    const bp=Number(bpVal);
+    if(Number.isNaN(bp)||bp<0){showToast('Enter a valid buy price','error');return;}
+    payload.buyPrice=bp;
+  }
+  if(Object.keys(payload).length===1){showToast('Fill at least one field to update','warn');return;}
+  const d=await api('PUT','/api/stock/batch',payload);
+  if(d.error){showToast(d.error,'error');return;}
+  closeModal();
+  showToast(`Updated ${d.modified||ids.length} phone${(d.modified||ids.length)!==1?'s':''}`);
+  clearPhoneSelection();
+  await loadIMEIData();
+}
+
 async function deletePhone(id){
   if(!id||id==='undefined'){showToast('Invalid phone id','error');return;}
   if(!confirm('Remove this phone from stock?'))return;
   // Optimistically hide the card immediately for instant feedback
   const card=document.getElementById('card-'+id);
   if(card) card.style.display='none';
+  selectedPhoneIds.delete(id);
+  updateBulkActions();
   const d=await api('DELETE',`/api/stock/${id}`);
   if(d && d.error){
     // Revert the card visibility on failure
@@ -2730,7 +2880,7 @@ function printIMEIStock(){
   const isAdmin=authRole==='admin';
   const adminCols=isAdmin?'<th class="right">Cost</th><th class="right">Sold For</th>':'';
   const rows=items.map(p=>`<tr>
-    <td>${esc((p.brand||'')+' '+(p.model||''))}</td>
+    <td>${fmtPhoneName(p.brand,p.model)}</td>
     <td class="num">${esc(p.imei||'')}</td>
     <td class="num">${esc(p.imei2||'—')}</td>
     <td>${esc(p.color||'—')}</td>

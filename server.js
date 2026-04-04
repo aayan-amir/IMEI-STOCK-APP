@@ -480,6 +480,56 @@ app.get('/api/stats', anyAuth, async (req, res) => {
   });
 });
 
+// Batch edit phones — admin only
+app.put('/api/stock/batch', adminOnly, async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids required' });
+    }
+    const validIds = ids.filter(id => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length !== ids.length) {
+      return res.status(400).json({ error: 'Invalid phone ids' });
+    }
+
+    const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body || {};
+    const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
+    Object.keys(allowed).forEach(k => {
+      if (allowed[k] === undefined) delete allowed[k];
+    });
+    if (allowed.buyPrice !== undefined) {
+      const bp = Number(allowed.buyPrice);
+      if (Number.isNaN(bp) || bp < 0) return res.status(400).json({ error: 'Invalid buy price' });
+      allowed.buyPrice = bp;
+    }
+    if (allowed.imei2 !== undefined) {
+      allowed.imei2 = String(allowed.imei2 || '').replace(/\D/g, '');
+      if (!allowed.imei2) delete allowed.imei2;
+    }
+    ['brand', 'model', 'color', 'storage', 'notes', 'cat', 'shop'].forEach(k => {
+      if (typeof allowed[k] === 'string') {
+        const v = allowed[k].trim();
+        if (v) allowed[k] = v; else delete allowed[k];
+      }
+    });
+
+    if (Object.keys(allowed).length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    const result = await Phone.updateMany({ _id: { $in: validIds } }, { $set: allowed });
+    const updated = await Phone.find({ _id: { $in: validIds } });
+    res.json({
+      success: true,
+      matched: result.matchedCount ?? updated.length,
+      modified: result.modifiedCount ?? result.nModified ?? 0,
+      phones: updated
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Edit phone — admin only
 app.put('/api/stock/:id', adminOnly, async (req, res) => {
   try {
