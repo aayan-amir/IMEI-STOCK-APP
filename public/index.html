@@ -1568,17 +1568,24 @@ async function submitBatch(){
   saveBtn.disabled=true;
   saveBtn.textContent=`Saving 0/${batchQueue.length}…`;
 
-  let saved=0, failed=[];
+  let saved=0;
+  const failed=[];
+  const failedEntries=[];
   for(const entry of batchQueue){
     try{
       const d=await api('POST','/api/stock/add',{
         imei:entry.imei1, imei2:entry.imei2||'',
         cat, brand, model, color, storage, buyPrice, shop
       });
-      if(d.error) failed.push(`${entry.imei1}: ${d.error}`);
-      else saved++;
+      if(d.error){
+        failed.push({ entry, reason: d.error });
+        failedEntries.push(entry);
+      } else {
+        saved++;
+      }
     }catch(e){
-      failed.push(`${entry.imei1}: network error`);
+      failed.push({ entry, reason: 'network error' });
+      failedEntries.push(entry);
     }
     saveBtn.textContent=`Saving ${saved+failed.length}/${batchQueue.length}…`;
   }
@@ -1588,7 +1595,24 @@ async function submitBatch(){
 
   if(failed.length){
     showToast(`⚠ ${saved} saved, ${failed.length} failed`,'warn');
-    console.warn('Batch failures:', failed);
+    const failureList=failed.map(f=>{
+      const { imei1, imei2 }=f.entry;
+      const imeiLabel=imei2?`${esc(imei1)} · ${esc(imei2)}`:esc(imei1);
+      return `<li style="padding:6px 0;border-bottom:1px solid var(--border2);display:flex;gap:8px;align-items:flex-start;">
+        <span style="font-family:var(--mono);color:var(--white);">${imeiLabel}</span>
+        <span style="color:var(--danger);font-size:.86rem;">${esc(f.reason||'unknown error')}</span>
+      </li>`;
+    }).join('');
+    showModal(`<h3>Some phones failed to save</h3>
+      <p style="color:var(--text2);font-size:.9rem;margin:4px 0 10px;">${saved} saved, ${failed.length} failed. The failed ones are kept in the queue — fix the issues and retry.</p>
+      <div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--s2);">
+        <ul style="list-style:none;padding:0;margin:0;">${failureList}</ul>
+      </div>
+      <div class="mf" style="margin-top:12px;"><button class="btn bo" onclick="closeModal()">Close</button></div>`);
+    if(saved>0) loadSidebarStats();
+    batchQueue=failedEntries;
+    renderBatchQueue();
+    return;
   } else {
     showToast(`${saved} phones added to stock!`,'success');
   }
