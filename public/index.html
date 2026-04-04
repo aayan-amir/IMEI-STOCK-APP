@@ -2161,9 +2161,9 @@ function renderIMEIStock(){
   const groups={};
   groupedStockMap = {};
   items.forEach(p=>{
-    const cat=guessCat(p.brand,p.model,p.cat);
-    const key=`${cat}|${(p.brand||'').toLowerCase()}|${(p.model||'').toLowerCase()}|${(p.storage||'').toLowerCase()}`;
-    if(!groups[key]) groups[key]={phones:[],cat,brand:p.brand,model:p.model,storage:p.storage,buyPrice:p.buyPrice,colors:new Set()};
+    const category=guessCat(p.brand,p.model,p.cat);
+    const key=`${category}|${(p.brand||'').toLowerCase()}|${(p.model||'').toLowerCase()}|${(p.storage||'').toLowerCase()}`;
+    if(!groups[key]) groups[key]={phones:[],cat:category,brand:p.brand,model:p.model,storage:p.storage,buyPrice:p.buyPrice,colors:new Set()};
     groups[key].phones.push(p);
     const clr=(p.color||'').trim();
     if(clr) groups[key].colors.add(clr.toLowerCase());
