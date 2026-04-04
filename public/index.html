@@ -908,7 +908,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <!-- BATCH ADD FORM -->
         <div class="scan-section" id="batchForm" style="display:none">
           <h2>Batch Add Phones</h2>
-          <p style="font-size:.68rem;color:var(--text2);margin-bottom:12px;line-height:1.5">Set the model details once, then scan IMEI pairs one by one. All phones will share the same brand/model/price.</p>
+          <p style="font-size:.68rem;color:var(--text2);margin-bottom:12px;line-height:1.5">Set shared details once, then scan IMEI pairs one by one. You can set a different color for each phone in the queue.</p>
 
           <!-- Shared details — set once -->
           <div class="form-grid" style="margin-bottom:14px;">
@@ -954,6 +954,10 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
                   <button class="btn bo" onclick="openCamera('batch')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">Cam</button>
                 </div>
               </div>
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <label>This phone color (optional)</label>
+              <input type="text" id="bEntryColor" placeholder="Overrides shared color for this phone only">
             </div>
             <button class="btn bb" onclick="addToBatchQueue()" style="width:100%;font-size:.75rem;">+ Add This Phone to Queue</button>
           </div>
@@ -1522,20 +1526,30 @@ function setMode(m){
 }
 
 // ── BATCH ADD ──────────────────────────────────────────────────────
-let batchQueue = []; // [{imei1, imei2}]
+let batchQueue = []; // [{imei1, imei2, color}]
 
 function addToBatchQueue(){
   const imei1 = $('bImei1').value.trim().replace(/\D/g,'');
   const imei2 = $('bImei2').value.trim().replace(/\D/g,'');
+  const entryColor = $('bEntryColor').value.trim();
+  const sharedColor = $('bColor').value.trim();
   if(!imei1){ showToast('IMEI 1 is required','error'); $('bImei1').focus(); return; }
   if(imei1.length!==15){ showToast('IMEI 1 must be exactly 15 digits','error'); return; }
+  if(imei2 && imei2.length!==15){ showToast('IMEI 2 must be exactly 15 digits','error'); return; }
+  if(!entryColor && !sharedColor){ showToast('Set color for this phone (or set a shared color)','error'); $('bEntryColor').focus(); return; }
   // Check for duplicates in queue
-  if(batchQueue.find(e=>e.imei1===imei1||e.imei2===imei1)){
+  const dup=batchQueue.find(e=>
+    e.imei1===imei1 ||
+    e.imei2===imei1 ||
+    (imei2 && (e.imei1===imei2 || e.imei2===imei2))
+  );
+  if(dup){
     showToast('This IMEI is already in the queue','warn'); return;
   }
-  batchQueue.push({imei1, imei2});
+  batchQueue.push({imei1, imei2, color: entryColor || sharedColor});
   $('bImei1').value='';
   $('bImei2').value='';
+  $('bEntryColor').value='';
   $('bImei1').focus();
   renderBatchQueue();
   showToast(`Phone ${batchQueue.length} added to queue`,'success');
@@ -1559,6 +1573,7 @@ function renderBatchQueue(){
       <span style="color:var(--a1);font-weight:700;min-width:20px;">#${i+1}</span>
       <div style="flex:1;min-width:0;">
         <div style="color:var(--white);">IMEI 1: ${esc(e.imei1)}</div>
+        <div style="color:var(--text2);font-size:.62rem;margin-top:2px;">Color: ${esc(titleCase(e.color||'—'))}</div>
         <div style="display:flex;gap:4px;margin-top:2px">
           ${e.imei2?`<span style="font-size:.58rem;background:rgba(22,163,74,.15);color:var(--a1);border:1px solid rgba(22,163,74,.3);padding:1px 5px;border-radius:10px;">2 IMEIs</span>`:`<span style="font-size:.58rem;background:var(--s3);color:var(--text2);border:1px solid var(--border);padding:1px 5px;border-radius:10px;">1 IMEI</span>`}
         </div>
@@ -1598,10 +1613,10 @@ async function submitBatch(){
   const failedEntries=[];
   for(const entry of batchQueue){
     try{
-      const d=await api('POST','/api/stock/add',{
-        imei:entry.imei1, imei2:entry.imei2||'',
-        cat, brand, model, color, storage, buyPrice, shop
-      });
+        const d=await api('POST','/api/stock/add',{
+          imei:entry.imei1, imei2:entry.imei2||'',
+          cat, brand, model, color: (entry.color||color||'').trim(), storage, buyPrice, shop
+        });
       if(d.error){
         failed.push({ entry, reason: d.error });
         failedEntries.push(entry);
@@ -1644,7 +1659,7 @@ async function submitBatch(){
 
   batchQueue=[];
   renderBatchQueue();
-  $('bImei1').value=''; $('bImei2').value='';
+  $('bImei1').value=''; $('bImei2').value=''; $('bEntryColor').value='';
   loadSidebarStats();
   setTimeout(()=>$('bImei1')?.focus(),100);
 }
@@ -2106,6 +2121,7 @@ async function startScanning(){
 }
 // ── IMEI STOCK LIST ──
 let groupedView = true; // default: grouped by model
+let groupedStockMap = {};
 async function loadIMEIData(){
   const sh=activeShop==='HQ'?null:activeShop;
   let [stock,sales]=await Promise.all([
@@ -2142,6 +2158,7 @@ function renderIMEIStock(){
 
   // Group by brand+model+color+storage only (NOT status)
   const groups={};
+  groupedStockMap = {};
   items.forEach(p=>{
     const key=`${(p.brand||'').toLowerCase()}|${(p.model||'').toLowerCase()}|${(p.storage||'').toLowerCase()}`;
     if(!groups[key]) groups[key]={phones:[],brand:p.brand,model:p.model,storage:p.storage,buyPrice:p.buyPrice,colors:new Set()};
@@ -2155,6 +2172,7 @@ function renderIMEIStock(){
     const inStockCount=g.phones.filter(p=>p.status==='in_stock').length;
     const soldCount=g.phones.filter(p=>p.status==='sold').length;
     const uid = `g${idx}`;
+    groupedStockMap[uid]=g.phones.map(p=>p.id).filter(Boolean);
     // Always show group header — never silently hide phones
     return `
       <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;">
@@ -2173,6 +2191,7 @@ function renderIMEIStock(){
           </div>
           <div style="text-align:right;flex-shrink:0;">
             ${authRole==='admin'&&g.buyPrice?`<div style="font-family:var(--mono);font-size:.82rem;color:var(--a5)">${pkr(g.buyPrice)}</div><div style="font-size:.6rem;color:var(--text2)">ea.</div>`:''}
+            ${authRole==='admin'&&count>1?`<button class="btn bg" style="margin-top:6px;font-size:.62rem;padding:.2rem .45rem;" onclick="event.stopPropagation();openGroupBatchEdit('${uid}')">Batch Edit Group</button>`:''}
           </div>
           <div style="color:var(--text2);font-size:.75rem;margin-left:4px;" id="grp-arr-${uid}">${count===1?'':'▶'}</div>
         </div>
@@ -2219,6 +2238,17 @@ function clearPhoneSelection(rerender=false){
 function getSelectedPhones(){
   const map=new Map(allIMEIStock.map(p=>[p.id,p]));
   return Array.from(selectedPhoneIds).map(id=>map.get(id)).filter(Boolean);
+}
+
+function openGroupBatchEdit(uid){
+  if(authRole!=='admin'){showToast('Admin only','error');return;}
+  const ids=(groupedStockMap[uid]||[]).filter(Boolean);
+  if(!ids.length){showToast('No phones in this group','warn');return;}
+  selectedPhoneIds.clear();
+  ids.forEach(id=>selectedPhoneIds.add(id));
+  renderIMEIStock();
+  updateBulkActions();
+  openBatchEditModal();
 }
 
 function toggleGroup(id){
@@ -2346,7 +2376,7 @@ function openBatchEditModal(){
   if(authRole!=='admin'){showToast('Admin only','error');return;}
   const selected=getSelectedPhones();
   if(!selected.length){showToast('Select phones to edit','warn');return;}
-  const sample=selected.slice(0,3).map(p=>((p.brand||'Unknown')+' '+(p.model||'')).trim()).filter(Boolean).join(', ');
+  const sample=selected.slice(0,3).map(p=>titleCase(((p.brand||'Unknown')+' '+(p.model||'')).trim())).filter(Boolean).join(', ');
   const extra=selected.length>3?` +${selected.length-3} more`:'';
   showModal(`<h3>Batch Edit (${selected.length} phone${selected.length!==1?'s':''})</h3>
     <p style="color:var(--text2);font-size:.8rem;line-height:1.45;margin-bottom:10px;">
