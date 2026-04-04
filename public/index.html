@@ -2755,14 +2755,14 @@ function renderStock(){
         const tc=(r.costPerUnit||0)*out,sa=r.soldFor||0,pl=sa-tc;
         tOP+=op;tIN+=inQ;tOUT+=out;tBAL+=bal;tTC+=tc;tSA+=sa;tPL+=pl;
         html+=`<tr class="${out>0?'sold':''}">
-          <td class="l">${esc(r.name||'—')}</td>
+          <td class="l">${esc(r.name||'(none)')}</td>
           <td class="op-cell">${op}</td>
           <td>${inQ}</td>
           <td>${out}</td>
           <td class="${bal===0?'nz':''}" id="d-${ck}-${i}-b">${bal}</td>
           <td>${(r.costPerUnit||0).toLocaleString()}</td>
           <td class="ngd" id="d-${ck}-${i}-tc">${tc?tc.toLocaleString():'-'}</td>
-          <td>—</td>
+          <td>(none)</td>
           <td class="${sa?'nb':'nz'}" id="d-${ck}-${i}-sa">${sa?sa.toLocaleString():'0'}</td>
           <td class="${pl>0?'ng':pl<0?'nr':'nz'}" id="d-${ck}-${i}-pl">${pl?pl.toLocaleString():'-'}</td>
           <td></td></tr>`;
