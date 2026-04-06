@@ -514,6 +514,16 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 .wh-name{font-size:.75rem;font-weight:600;color:var(--white);margin-bottom:3px;}
 .wh-qty{font-family:var(--mono);font-size:1.3rem;color:var(--a5);font-weight:500;}
 .wh-meta{font-size:.6rem;color:var(--text2);}
+.rc-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;}
+.rc-item-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:end;}
+.rc-field{display:flex;flex-direction:column;gap:3px;}
+.rc-field label{font-size:.54rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);}
+.rc-inline{display:flex;gap:4px;align-items:center;}
+.rc-inline .btn{padding:.18rem .42rem;font-size:.62rem;flex-shrink:0;}
+.rc-item .bx{align-self:flex-start;margin-top:2px;}
+@media(max-width:600px){
+  .rc-item-grid{grid-template-columns:1fr;}
+}
 
 /* ── SHIPMENTS ── */
 .ship-card{background:var(--s2);border:1px solid var(--border);border-radius:9px;margin-bottom:.55rem;overflow:hidden;}
@@ -3326,25 +3336,78 @@ function openReceiveModal(){
 function addRCItem(){rcItems.push({imei:'',imei2:'',cat:'IPHONE',brand:'',model:'',color:'',storage:'',buyPrice:0,notes:''});renderRCItems();}
 function renderRCItems(){
   const el=$('rc-items');if(!el)return;
-  el.innerHTML=rcItems.map((it,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 90px 70px 85px 22px;gap:5px;margin-bottom:5px;align-items:center">
-    <div style="display:flex;gap:4px;align-items:center;">
-      <input id="rc-i1-${i}" placeholder="IMEI 1" value="${esc(it.imei)}" oninput="rcItems[${i}].imei=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-      <button class="btn bo" onclick="openCamera('rc1:${i}')" style="padding:.18rem .42rem;font-size:.62rem;flex-shrink:0;">Cam</button>
+  el.innerHTML=rcItems.map((it,i)=>`<div class="rc-item">
+    <div class="rc-item-grid">
+      <div class="rc-field">
+        <label>IMEI 1</label>
+        <div class="rc-inline">
+          <input id="rc-i1-${i}" placeholder="15 digits" value="${esc(it.imei)}" oninput="rcItems[${i}].imei=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+          <button class="btn bo" onclick="openCamera('rc1:${i}')">Cam</button>
+        </div>
+      </div>
+      <div class="rc-field">
+        <label>IMEI 2 (Optional)</label>
+        <div class="rc-inline">
+          <input id="rc-i2-${i}" placeholder="15 digits" value="${esc(it.imei2||'')}" oninput="rcItems[${i}].imei2=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+          <button class="btn bo" onclick="openCamera('rc2:${i}')">Cam</button>
+        </div>
+      </div>
+      <div class="rc-field">
+        <label>Category</label>
+        <select onchange="rcItems[${i}].cat=this.value;renderRCItems()" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.22rem .42rem;outline:none">${Object.keys(CATS).map(k=>`<option value="${k}" ${k===it.cat?'selected':''}>${k}</option>`).join('')}</select>
+      </div>
+      <div class="rc-field">
+        <label>Brand</label>
+        <select id="rc-brand-${i}" onchange="rcItems[${i}].brand=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+          <option value="">— Select —</option>
+          <option value="Apple" ${it.brand==='Apple'?'selected':''}>Apple</option>
+          <option value="Samsung" ${it.brand==='Samsung'?'selected':''}>Samsung</option>
+          <option value="Google" ${it.brand==='Google'?'selected':''}>Google</option>
+          <option value="Xiaomi" ${it.brand==='Xiaomi'?'selected':''}>Xiaomi</option>
+          <option value="OnePlus" ${it.brand==='OnePlus'?'selected':''}>OnePlus</option>
+          <option value="Vivo" ${it.brand==='Vivo'?'selected':''}>Vivo</option>
+          <option value="Oppo" ${it.brand==='Oppo'?'selected':''}>Oppo</option>
+          <option value="Realme" ${it.brand==='Realme'?'selected':''}>Realme</option>
+          <option value="Infinix" ${it.brand==='Infinix'?'selected':''}>Infinix</option>
+          <option value="Tecno" ${it.brand==='Tecno'?'selected':''}>Tecno</option>
+          <option value="Nokia" ${it.brand==='Nokia'?'selected':''}>Nokia</option>
+          <option value="Motorola" ${it.brand==='Motorola'?'selected':''}>Motorola</option>
+          <option value="Huawei" ${it.brand==='Huawei'?'selected':''}>Huawei</option>
+          <option value="Sony" ${it.brand==='Sony'?'selected':''}>Sony</option>
+          <option value="Nothing" ${it.brand==='Nothing'?'selected':''}>Nothing</option>
+          <option value="Other" ${it.brand==='Other'?'selected':''}>Other</option>
+        </select>
+      </div>
+      <div class="rc-field">
+        <label>Model</label>
+        <input placeholder="Model" value="${esc(it.model)}" oninput="rcItems[${i}].model=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+      </div>
+      <div class="rc-field">
+        <label>Color</label>
+        <input placeholder="Color" value="${esc(it.color)}" oninput="rcItems[${i}].color=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+      </div>
+      <div class="rc-field">
+        <label>Storage</label>
+        <select onchange="rcItems[${i}].storage=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.64rem;padding:.22rem .42rem;outline:none">
+          <option value="" ${!it.storage?'selected':''}>— Select —</option>
+          <option value="32GB" ${it.storage==='32GB'?'selected':''}>32GB</option>
+          <option value="64GB" ${it.storage==='64GB'?'selected':''}>64GB</option>
+          <option value="128GB" ${it.storage==='128GB'?'selected':''}>128GB</option>
+          <option value="256GB" ${it.storage==='256GB'?'selected':''}>256GB</option>
+          <option value="512GB" ${it.storage==='512GB'?'selected':''}>512GB</option>
+          <option value="1TB" ${it.storage==='1TB'?'selected':''}>1TB</option>
+        </select>
+      </div>
+      <div class="rc-field">
+        <label>Buy Price</label>
+        <input type="number" placeholder="Buy price" value="${it.buyPrice||''}" min="0" oninput="rcItems[${i}].buyPrice=+this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:right">
+      </div>
+      <div class="rc-field" style="grid-column:1/-1;">
+        <label>Notes</label>
+        <input placeholder="Notes (optional)" value="${esc(it.notes||'')}" oninput="rcItems[${i}].notes=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+      </div>
+      <button class="bx" onclick="rcItems.splice(${i},1);renderRCItems()">✕</button>
     </div>
-    <div style="display:flex;gap:4px;align-items:center;">
-      <input id="rc-i2-${i}" placeholder="IMEI 2 (opt)" value="${esc(it.imei2||'')}" oninput="rcItems[${i}].imei2=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-      <button class="btn bo" onclick="openCamera('rc2:${i}')" style="padding:.18rem .42rem;font-size:.62rem;flex-shrink:0;">Cam</button>
-    </div>
-    <input id="rc-brand-${i}" placeholder="Brand" value="${esc(it.brand)}" oninput="rcItems[${i}].brand=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-    <input placeholder="Model" value="${esc(it.model)}" oninput="rcItems[${i}].model=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-    <input placeholder="Color" value="${esc(it.color)}" oninput="rcItems[${i}].color=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-    <input placeholder="Storage" value="${esc(it.storage||'')}" oninput="rcItems[${i}].storage=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-    <input type="number" placeholder="Buy price" value="${it.buyPrice||''}" min="0" oninput="rcItems[${i}].buyPrice=+this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:right">
-    <button class="bx" onclick="rcItems.splice(${i},1);renderRCItems()">✕</button>
-  </div>
-  <div style="display:grid;grid-template-columns:120px 1fr;gap:5px;margin:-1px 0 8px;align-items:center">
-    <select onchange="rcItems[${i}].cat=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.2rem;outline:none">${Object.keys(CATS).map(k=>`<option value="${k}" ${k===it.cat?'selected':''}>${k}</option>`).join('')}</select>
-    <input placeholder="Notes (optional)" value="${esc(it.notes||'')}" oninput="rcItems[${i}].notes=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
   </div>`).join('');
 }
 async function saveReceive(){
