@@ -1843,6 +1843,7 @@ let zxingReader = null;
 const camLabels = {
   imei1:'Scanning for IMEI 1…', imei2:'Scanning for IMEI 2…',
   batch1:'Scanning for batch IMEI 1…', batch:'Scanning for batch IMEI 2…',
+  rc1:'Scanning for warehouse IMEI 1…', rc2:'Scanning for warehouse IMEI 2…',
   free:'Scan any barcode',
 };
 
@@ -1994,6 +1995,30 @@ function onBarcodeDetected(value,format){
   const result=digits.length>=14?digits:value;
   if(result===lastScanResult)return;
   lastScanResult=result;
+  if(camMode.startsWith('rc1:')){
+    closeCamera();
+    const idx=Number(camMode.split(':')[1]);
+    const clean=result.replace(/\D/g,'');
+    if(Number.isInteger(idx)&&idx>=0&&idx<rcItems.length){
+      rcItems[idx].imei=clean;
+      const f=document.getElementById(`rc-i1-${idx}`);
+      if(f){f.value=clean;flashField(f);}
+      const next=document.getElementById(`rc-i2-${idx}`);
+      if(next)next.focus();
+    }
+    showToast('IMEI 1 scanned ✓');return;
+  }
+  if(camMode.startsWith('rc2:')){
+    closeCamera();
+    const idx=Number(camMode.split(':')[1]);
+    const clean=result.replace(/\D/g,'');
+    if(Number.isInteger(idx)&&idx>=0&&idx<rcItems.length){
+      rcItems[idx].imei2=clean;
+      const f=document.getElementById(`rc-i2-${idx}`);
+      if(f){f.value=clean;flashField(f);f.focus();}
+    }
+    showToast('IMEI 2 scanned ✓');return;
+  }
   if(camMode==='imei1'&&scanMode==='sell'){
     closeCamera();
     const imeiInputElement=$('imeiInput');
@@ -3300,8 +3325,14 @@ function addRCItem(){rcItems.push({imei:'',imei2:'',cat:'IPHONE',brand:'',model:
 function renderRCItems(){
   const el=$('rc-items');if(!el)return;
   el.innerHTML=rcItems.map((it,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 90px 70px 85px 22px;gap:5px;margin-bottom:5px;align-items:center">
-    <input placeholder="IMEI 1" value="${esc(it.imei)}" oninput="rcItems[${i}].imei=this.value.replace(/\\D/g,'')" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-    <input placeholder="IMEI 2 (opt)" value="${esc(it.imei2||'')}" oninput="rcItems[${i}].imei2=this.value.replace(/\\D/g,'')" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <div style="display:flex;gap:4px;align-items:center;">
+      <input id="rc-i1-${i}" placeholder="IMEI 1" value="${esc(it.imei)}" oninput="rcItems[${i}].imei=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+      <button class="btn bo" onclick="openCamera('rc1:${i}')" style="padding:.18rem .42rem;font-size:.62rem;flex-shrink:0;">Cam</button>
+    </div>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <input id="rc-i2-${i}" placeholder="IMEI 2 (opt)" value="${esc(it.imei2||'')}" oninput="rcItems[${i}].imei2=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+      <button class="btn bo" onclick="openCamera('rc2:${i}')" style="padding:.18rem .42rem;font-size:.62rem;flex-shrink:0;">Cam</button>
+    </div>
     <input placeholder="Brand" value="${esc(it.brand)}" oninput="rcItems[${i}].brand=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
     <input placeholder="Model" value="${esc(it.model)}" oninput="rcItems[${i}].model=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
     <input placeholder="Color" value="${esc(it.color)}" oninput="rcItems[${i}].color=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
