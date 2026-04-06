@@ -3410,7 +3410,7 @@ function openDispatchModal(){
         <label>IMEIs to send (optional quick-select)</label>
         <textarea id="ds-imeis" placeholder="Paste IMEIs here (spaces/new lines/comma separated)" style="min-height:68px"></textarea>
         <div style="display:flex;gap:6px;margin-top:5px">
-          <button class="btn bo" style="font-size:.58rem;padding:.14rem .45rem" onclick="applyDispatchImeis()">Match IMEIs</button>
+          <button class="btn bo" style="font-size:.58rem;padding:.14rem .45rem" onclick="applyDispatchImeis()">Auto-Select IMEIs</button>
           <span style="font-size:.58rem;color:var(--text2);align-self:center">Then review selection below before dispatch</span>
         </div>
       </div>
@@ -3436,8 +3436,8 @@ function applyDispatchImeis(){
   const missing=[...wanted].filter(imei=>!items.some(it=>String(it?.imei||'').replace(/\D/g,'')===imei));
   showToast(`${matched} IMEI(s) matched${missing.length?`, ${missing.length} not found in warehouse`:''}`,missing.length?'warn':'success');
 }
-async function saveDispatch(items){
-  items=items||dispatchModalItems||[];
+async function saveDispatch(){
+  const items=dispatchModalItems||[];
   const toShop=$('ds-shop').value,date=$('ds-date').value,note=$('ds-note').value.trim();
   const dispatched=[];
   items.forEach((it,i)=>{
