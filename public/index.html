@@ -1439,7 +1439,7 @@ async function api(method,url,body){
       sessionStorage.removeItem('authToken');sessionStorage.removeItem('authRole');sessionStorage.removeItem('authShop');
       authRole=null;authShop=null;
       $('auth-overlay').classList.remove('hidden');
-      $('auth-gate').style.display='';$('auth-role').style.display='none';
+      $('auth-gate').style.display='block';$('auth-role').style.display='none';
       showToast('Session expired — please sign in again','warn');
       return {};
     }
@@ -4081,7 +4081,10 @@ let authRole=null,authShop=null,_pendingGatePassword='';
 async function _authPost(payload){
   try{
     const r=await fetch(BASE+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    return await r.json();
+    let data={ok:false};
+    try{data=await r.json();}catch(e){return{ok:false};}
+    if(!r.ok)return{ok:false};
+    return data;
   }catch(e){return{ok:false};}
 }
 
@@ -4092,7 +4095,7 @@ async function checkGate(){
   if(d.ok){
     _pendingGatePassword=pw; // kept in memory only — never stored to sessionStorage
     $('auth-gate').style.display='none';
-    $('auth-role').style.display='';
+    $('auth-role').style.display='block';
     setTimeout(()=>$('auth-admin-input')?.focus(),80);
   }else{
     const e=$('auth-gate-err');e.classList.add('show');
