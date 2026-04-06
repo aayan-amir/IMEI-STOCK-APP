@@ -3409,7 +3409,7 @@ function addToReceiveQueue(){
   if(!imei1){showToast('IMEI 1 is required','error');$('rc-next-i1')?.focus();return;}
   if(imei1.length!==15){showToast('IMEI 1 must be exactly 15 digits','error');return;}
   if(imei2&&imei2.length!==15){showToast('IMEI 2 must be exactly 15 digits','error');return;}
-  if(!brand&&!model){showToast('Brand or Model (or both) must be provided','error');$('rc-brand')?.focus();return;}
+  if(!brand&&!model){showToast('Brand or Model is required','error');$('rc-brand')?.focus();return;}
   const duplicateEntry=rcItems.find(e=>
     e.imei===imei1 ||
     e.imei2===imei1 ||
@@ -3460,8 +3460,12 @@ async function saveReceive(){
   const unique=new Set(items.map(it=>it.imei));if(unique.size!==items.length){showToast('Duplicate IMEIs in shipment','error');return;}
   const saveBtn=$('rc-save-btn');
   if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving…';}
-  const r=await api('POST','/api/shipments',{date,supplier,ref,items});
-  if(saveBtn){saveBtn.textContent='Save All';saveBtn.disabled=false;}
+  let r={};
+  try{
+    r=await api('POST','/api/shipments',{date,supplier,ref,items});
+  }finally{
+    if(saveBtn){saveBtn.textContent='Save All';saveBtn.disabled=false;}
+  }
   if(r.error){showToast(r.error,'error');return;}
   closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`${items.length} phone(s) received`);
 }
