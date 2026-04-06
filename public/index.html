@@ -517,7 +517,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 .rc-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;}
 .rc-item-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:end;}
 .rc-field{display:flex;flex-direction:column;gap:3px;}
-.rc-field label{font-size:.54rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);}
+.rc-field label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);}
 .rc-inline{display:flex;gap:4px;align-items:center;}
 .rc-inline .btn{padding:.18rem .42rem;font-size:.62rem;flex-shrink:0;}
 .rc-item .bx{align-self:flex-start;margin-top:2px;}
@@ -3354,7 +3354,10 @@ function renderRCItems(){
       </div>
       <div class="rc-field">
         <label>Category</label>
-        <select onchange="rcItems[${i}].cat=this.value;renderRCItems()" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.22rem .42rem;outline:none">${Object.keys(CATS).map(k=>`<option value="${k}" ${k===it.cat?'selected':''}>${k}</option>`).join('')}</select>
+        <select onchange="rcItems[${i}].cat=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.22rem .42rem;outline:none">
+          <option value="" ${!it.cat?'selected':''}>— Select —</option>
+          ${Object.keys(CATS).map(k=>`<option value="${k}" ${k===it.cat?'selected':''}>${k}</option>`).join('')}
+        </select>
       </div>
       <div class="rc-field">
         <label>Brand</label>
