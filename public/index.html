@@ -1433,6 +1433,7 @@ function ym(d){return d?d.slice(0,7):'';}
 function pkr(n){return 'Rs '+(Number(n)||0).toLocaleString('en-PK');}
 function fmtDate(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'});}
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function cleanImei(v){return String(v||'').replace(/\D/g,'');}
 function titleCase(s){return (s||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());}
 function fmtPhoneName(brand,model){const b=titleCase(brand||'Unknown');const m=titleCase(model||'');return esc((b+' '+m).trim());}
 function showToast(msg,type='success'){const t=$('toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
@@ -3383,6 +3384,7 @@ function renderWarehouse(){
 let rcItems=[];
 let dispatchSourceItems=[];
 let dispatchSelectedImeis=new Set();
+let dispatchSourceByImei=new Map();
 function openReceiveModal(){
   rcItems=[];
   showModal(`<h3>+ Receive Stock into Warehouse</h3>
@@ -3534,11 +3536,18 @@ async function saveReceive(){
 function openDispatchModal(){
   const items=(hqStock.items||[]).filter(it=>it.imei).map(it=>({
     ...it,
-    imei:String(it.imei||'').replace(/\D/g,''),
-    imei2:String(it.imei2||'').replace(/\D/g,'')
+    imei:cleanImei(it.imei),
+    imei2:cleanImei(it.imei2)
   })).filter(it=>it.imei);
   if(!items.length){showToast('Warehouse is empty','warn');return;}
-  dispatchSourceItems=items;
+  dispatchSourceByImei=new Map();
+  const deduped=[];
+  items.forEach(it=>{
+    if(dispatchSourceByImei.has(it.imei)) return;
+    dispatchSourceByImei.set(it.imei,it);
+    deduped.push(it);
+  });
+  dispatchSourceItems=deduped;
   dispatchSelectedImeis=new Set();
   showModal(`<h3>↗ Dispatch to Shop</h3>
     <div class="fc">
@@ -3581,7 +3590,7 @@ function renderDispatchSelectableList(){
     if(!groups[key]) groups[key]={cat,brand:it.brand||'',model:it.model||'',storage:it.storage||'',rows:[]};
     groups[key].rows.push(it);
   });
-  wrap.innerHTML=Object.values(groups).map(g=>{
+  wrap.innerHTML=Object.values(groups).map((g,gi)=>{
     const name=[g.brand,g.model,g.storage].filter(Boolean).join(' ')||'Phone';
     const catLabel=(CATS[g.cat]?.label)||titleCase(g.cat||'Other');
     return `<div style="border:1px solid var(--border2);border-radius:8px;margin-bottom:7px;overflow:hidden;">
@@ -3594,7 +3603,7 @@ function renderDispatchSelectableList(){
       </div>
       <div style="padding:4px 8px;">
         ${g.rows.map((it,i)=>{
-          const cbId=`dsi-${it.imei}-${i}`;
+          const cbId=`dsi-${it.imei}-${gi}-${i}`;
           const checked=dispatchSelectedImeis.has(it.imei);
           return `<div style="display:flex;align-items:center;gap:.45rem;padding:.22rem 0;border-bottom:1px solid var(--border2)">
             <input type="checkbox" id="${cbId}" style="width:14px;height:14px" ${checked?'checked':''} onchange="toggleDispatchSelection('${it.imei}',this.checked)">
@@ -3611,7 +3620,7 @@ function updateDispatchSelectedCount(){
   if(el) el.textContent=dispatchSelectedImeis.size;
 }
 function toggleDispatchSelection(imei,checked){
-  const clean=String(imei||'').replace(/\D/g,'');
+  const clean=cleanImei(imei);
   if(!clean) return;
   if(checked) dispatchSelectedImeis.add(clean);
   else dispatchSelectedImeis.delete(clean);
@@ -3627,10 +3636,10 @@ function addDispatchScanImei(){
   addDispatchByImei(raw,false);
 }
 function addDispatchByImei(raw,fromScan){
-  const imei=String(raw||'').replace(/\D/g,'');
+  const imei=cleanImei(raw);
   if(!imei){showToast('Enter IMEI to add','warn');return;}
-  if(imei.length!==15){showToast('IMEI must be exactly 15 digits','error');return;}
-  const exists=dispatchSourceItems.some(it=>it.imei===imei);
+  if(imei.length<14||imei.length>16){showToast('IMEI must be 14 to 16 digits','error');return;}
+  const exists=dispatchSourceByImei.has(imei);
   if(!exists){showToast('IMEI not found in warehouse stock','error');return;}
   if(dispatchSelectedImeis.has(imei)){showToast('IMEI already selected','warn');return;}
   dispatchSelectedImeis.add(imei);
@@ -3641,8 +3650,7 @@ function addDispatchByImei(raw,fromScan){
 }
 async function saveDispatch(){
   const toShop=$('ds-shop').value,date=$('ds-date').value,note=$('ds-note').value.trim();
-  const byImei=new Map(dispatchSourceItems.map(it=>[it.imei,it]));
-  const dispatched=[...dispatchSelectedImeis].map(imei=>byImei.get(imei)).filter(Boolean).map(it=>({
+  const dispatched=[...dispatchSelectedImeis].map(imei=>dispatchSourceByImei.get(imei)).filter(Boolean).map(it=>({
     imei:it.imei,imei2:it.imei2||'',cat:it.cat||guessCat(it.brand,it.model,it.cat),
     brand:it.brand||'',model:it.model||'',color:it.color||'',storage:it.storage||'',
     buyPrice:Number(it.buyPrice||it.costPerUnit||0),notes:it.notes||''
@@ -3650,7 +3658,7 @@ async function saveDispatch(){
   if(!dispatched.length){showToast('Select at least one phone','error');return;}
   const r=await api('POST','/api/dispatches',{date,toShop,note,items:dispatched});
   if(r.error){showToast(r.error,'error');return;}
-  closeModal();dispatchSelectedImeis.clear();dispatchSourceItems=[];loadWarehouse();loadShipments();showToast(`${dispatched.length} phone(s) dispatched to Shop ${toShop}`);
+  closeModal();dispatchSelectedImeis.clear();dispatchSourceItems=[];dispatchSourceByImei=new Map();loadWarehouse();loadShipments();showToast(`${dispatched.length} phone(s) dispatched to Shop ${toShop}`);
 }
 
 async function openDispatchFromShipments(){
