@@ -2005,6 +2005,21 @@ function onBarcodeDetected(value,format){
   const result=digits.length>=14?digits:value;
   if(result===lastScanResult)return;
   lastScanResult=result;
+  if(camMode==='rc1:next'){
+    closeCamera();
+    const clean=result.replace(/\D/g,'');
+    const f=$('rc-next-i1');
+    if(f){f.value=clean;flashField(f);}
+    $('rc-next-i2')?.focus();
+    showToast('IMEI 1 scanned ✓');return;
+  }
+  if(camMode==='rc2:next'){
+    closeCamera();
+    const clean=result.replace(/\D/g,'');
+    const f=$('rc-next-i2');
+    if(f){f.value=clean;flashField(f);f.focus();}
+    showToast('IMEI 2 scanned ✓');return;
+  }
   if(camMode.startsWith('rc1:')){
     closeCamera();
     const idx=Number(camMode.split(':')[1]);
@@ -3327,103 +3342,144 @@ function openReceiveModal(){
     <div class="fc">
       <div class="f2"><div class="fi"><label>Supplier</label><input type="text" id="rc-supplier" placeholder="Supplier name"></div><div class="fi"><label>Date</label><input type="date" id="rc-date" value="${today()}"></div></div>
       <div class="fi"><label>Reference</label><input type="text" id="rc-ref" placeholder="Invoice #, notes…"></div>
-      <div id="rc-items"></div>
-      <button class="btn bo" onclick="addRCItem()" style="font-size:.62rem">+ Add Phone</button>
+      <div style="font-size:.66rem;color:var(--text2);margin:.1rem 0 .35rem;line-height:1.5">Set shared phone details once, then scan IMEI pairs and add each phone to queue.</div>
+      <div class="form-grid" style="margin-bottom:10px;">
+        <div class="form-group"><label>Category</label>
+          <select id="rc-cat" onchange="autoBrandFromCat('rc-cat','rc-brand')">${Object.keys(CATS).map(k=>`<option value="${k}" ${k==='IPHONE'?'selected':''}>${k}</option>`).join('')}</select>
+        </div>
+        <div class="form-group"><label>Brand</label><input id="rc-brand" type="text" placeholder="Apple, Samsung…" oninput="autoSelectCat(this.value,'rc-cat')"></div>
+        <div class="form-group"><label>Model</label><input id="rc-model" type="text" placeholder="iPhone 14, S24…"></div>
+        <div class="form-group"><label>Shared Color</label><input id="rc-color" type="text" placeholder="Black, White…"></div>
+        <div class="form-group"><label>Storage</label>
+          <select id="rc-storage"><option value="">—</option><option>32GB</option><option>64GB</option><option>128GB</option><option>256GB</option><option>512GB</option><option>1TB</option></select>
+        </div>
+        <div class="form-group"><label>Buy Price (PKR)</label><input type="number" id="rc-buy" min="0" placeholder="Cost per unit"></div>
+        <div class="form-group full"><label>Shared Notes</label><input id="rc-notes" type="text" placeholder="Condition, accessories, box status…"></div>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:10px;margin-bottom:10px;">
+        <div style="font-size:.6rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Scan Next IMEI Pair</div>
+        <div class="imei-pair-grid" style="margin-bottom:8px;">
+          <div>
+            <div style="font-size:.58rem;font-weight:700;color:var(--a1);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 1</div>
+            <div style="display:flex;gap:5px;">
+              <input type="text" id="rc-next-i1" placeholder="Scan IMEI 1…" inputmode="numeric" class="imei2-field" style="flex:1"
+                oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('rc-next-i2').focus();}">
+              <button class="btn bo" onclick="openCamera('rc1:next')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">Cam</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:.58rem;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 2 (optional)</div>
+            <div style="display:flex;gap:5px;">
+              <input type="text" id="rc-next-i2" placeholder="Scan IMEI 2…" inputmode="numeric" class="imei2-field" style="flex:1"
+                oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();addToReceiveQueue();}">
+              <button class="btn bo" onclick="openCamera('rc2:next')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">Cam</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label>This phone color (optional)</label>
+          <input type="text" id="rc-next-color" placeholder="Overrides shared color for this phone only">
+        </div>
+        <button class="btn bb" onclick="addToReceiveQueue()" style="width:100%;font-size:.75rem;">+ Add This Phone to Queue</button>
+      </div>
+      <div id="rc-queue" style="display:none;">
+        <div style="font-size:.62rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+          <span>Queue <span id="rc-count" style="color:var(--a1);">0</span> phones</span>
+          <button class="btn bo" onclick="clearReceiveQueue()" style="font-size:.6rem;padding:.15rem .4rem;">Clear all</button>
+        </div>
+        <div id="rc-items"></div>
+      </div>
     </div>
-    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveReceive()">Save</button></div>`);
-  addRCItem();
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" id="rc-save-btn" onclick="saveReceive()" disabled>Save All</button></div>`);
+  $('rc-brand')?.focus();
 }
-function addRCItem(){rcItems.push({imei:'',imei2:'',cat:'IPHONE',brand:'',model:'',color:'',storage:'',buyPrice:0,notes:''});renderRCItems();}
+function addToReceiveQueue(){
+  const imei1=($('rc-next-i1')?.value||'').trim().replace(/\D/g,'');
+  const imei2=($('rc-next-i2')?.value||'').trim().replace(/\D/g,'');
+  const entryColor=($('rc-next-color')?.value||'').trim();
+  const sharedColor=($('rc-color')?.value||'').trim();
+  const cat=($('rc-cat')?.value||'').trim();
+  const brand=($('rc-brand')?.value||'').trim();
+  const model=($('rc-model')?.value||'').trim();
+  const storage=($('rc-storage')?.value||'').trim();
+  const buyPrice=Number(($('rc-buy')?.value||'').trim())||0;
+  const notes=($('rc-notes')?.value||'').trim();
+  if(!imei1){showToast('IMEI 1 is required','error');$('rc-next-i1')?.focus();return;}
+  if(imei1.length!==15){showToast('IMEI 1 must be exactly 15 digits','error');return;}
+  if(imei2&&imei2.length!==15){showToast('IMEI 2, if provided, must be exactly 15 digits','error');return;}
+  if(!brand&&!model){showToast('Brand or Model is required','error');$('rc-brand')?.focus();return;}
+  const duplicateEntry=rcItems.find(e=>
+    e.imei===imei1 ||
+    e.imei2===imei1 ||
+    (imei2 && (e.imei===imei2 || e.imei2===imei2))
+  );
+  if(duplicateEntry){showToast('This IMEI is already in the queue','warn');return;}
+  rcItems.push({imei:imei1,imei2,cat,brand,model,color:entryColor||sharedColor,storage,buyPrice,notes});
+  const nextI1=$('rc-next-i1');if(nextI1)nextI1.value='';
+  const nextI2=$('rc-next-i2');if(nextI2)nextI2.value='';
+  const nextColor=$('rc-next-color');if(nextColor)nextColor.value='';
+  $('rc-next-i1')?.focus();
+  renderRCItems();
+  showToast(`Phone ${rcItems.length} added to queue`);
+}
 function renderRCItems(){
   const el=$('rc-items');if(!el)return;
-  el.innerHTML=rcItems.map((it,i)=>`<div class="rc-item">
-    <div class="rc-item-grid">
-      <div class="rc-field">
-        <label>IMEI 1</label>
-        <div class="rc-inline">
-          <input id="rc-i1-${i}" placeholder="15 digits" value="${esc(it.imei)}" oninput="rcItems[${i}].imei=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-          <button class="btn bo" onclick="openCamera('rc1:${i}')">Cam</button>
-        </div>
-      </div>
-      <div class="rc-field">
-        <label>IMEI 2 (Optional)</label>
-        <div class="rc-inline">
-          <input id="rc-i2-${i}" placeholder="15 digits" value="${esc(it.imei2||'')}" oninput="rcItems[${i}].imei2=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-          <button class="btn bo" onclick="openCamera('rc2:${i}')">Cam</button>
-        </div>
-      </div>
-      <div class="rc-field">
-        <label>Category</label>
-        <select onchange="rcItems[${i}].cat=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.22rem .42rem;outline:none">
-          <option value="" ${!it.cat?'selected':''}>— Select —</option>
-          ${Object.keys(CATS).map(k=>`<option value="${k}" ${k===it.cat?'selected':''}>${k}</option>`).join('')}
-        </select>
-      </div>
-      <div class="rc-field">
-        <label>Brand</label>
-        <select id="rc-brand-${i}" onchange="rcItems[${i}].brand=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-          <option value="">— Select —</option>
-          <option value="Apple" ${it.brand==='Apple'?'selected':''}>Apple</option>
-          <option value="Samsung" ${it.brand==='Samsung'?'selected':''}>Samsung</option>
-          <option value="Google" ${it.brand==='Google'?'selected':''}>Google</option>
-          <option value="Xiaomi" ${it.brand==='Xiaomi'?'selected':''}>Xiaomi</option>
-          <option value="OnePlus" ${it.brand==='OnePlus'?'selected':''}>OnePlus</option>
-          <option value="Vivo" ${it.brand==='Vivo'?'selected':''}>Vivo</option>
-          <option value="Oppo" ${it.brand==='Oppo'?'selected':''}>Oppo</option>
-          <option value="Realme" ${it.brand==='Realme'?'selected':''}>Realme</option>
-          <option value="Infinix" ${it.brand==='Infinix'?'selected':''}>Infinix</option>
-          <option value="Tecno" ${it.brand==='Tecno'?'selected':''}>Tecno</option>
-          <option value="Nokia" ${it.brand==='Nokia'?'selected':''}>Nokia</option>
-          <option value="Motorola" ${it.brand==='Motorola'?'selected':''}>Motorola</option>
-          <option value="Huawei" ${it.brand==='Huawei'?'selected':''}>Huawei</option>
-          <option value="Sony" ${it.brand==='Sony'?'selected':''}>Sony</option>
-          <option value="Nothing" ${it.brand==='Nothing'?'selected':''}>Nothing</option>
-          <option value="Other" ${it.brand==='Other'?'selected':''}>Other</option>
-        </select>
-      </div>
-      <div class="rc-field">
-        <label>Model</label>
-        <input placeholder="Model" value="${esc(it.model)}" oninput="rcItems[${i}].model=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-      </div>
-      <div class="rc-field">
-        <label>Color</label>
-        <input placeholder="Color" value="${esc(it.color)}" oninput="rcItems[${i}].color=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-      </div>
-      <div class="rc-field">
-        <label>Storage</label>
-        <select onchange="rcItems[${i}].storage=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.64rem;padding:.22rem .42rem;outline:none">
-          <option value="" ${!it.storage?'selected':''}>— Select —</option>
-          <option value="32GB" ${it.storage==='32GB'?'selected':''}>32GB</option>
-          <option value="64GB" ${it.storage==='64GB'?'selected':''}>64GB</option>
-          <option value="128GB" ${it.storage==='128GB'?'selected':''}>128GB</option>
-          <option value="256GB" ${it.storage==='256GB'?'selected':''}>256GB</option>
-          <option value="512GB" ${it.storage==='512GB'?'selected':''}>512GB</option>
-          <option value="1TB" ${it.storage==='1TB'?'selected':''}>1TB</option>
-        </select>
-      </div>
-      <div class="rc-field">
-        <label>Buy Price</label>
-        <input type="number" placeholder="Buy price" value="${it.buyPrice||''}" min="0" oninput="rcItems[${i}].buyPrice=+this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:right">
-      </div>
-      <div class="rc-field" style="grid-column:1/-1;">
-        <label>Notes</label>
-        <input placeholder="Notes (optional)" value="${esc(it.notes||'')}" oninput="rcItems[${i}].notes=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-      </div>
-      <button class="bx" onclick="rcItems.splice(${i},1);renderRCItems()">✕</button>
+  const q=$('rc-queue'),count=$('rc-count'),saveBtn=$('rc-save-btn');
+  if(!rcItems.length){
+    if(q)q.style.display='none';
+    if(saveBtn)saveBtn.disabled=true;
+    el.innerHTML='';
+    return;
+  }
+  if(q)q.style.display='block';
+  if(count)count.textContent=rcItems.length;
+  if(saveBtn)saveBtn.disabled=false;
+  el.innerHTML=rcItems.map((it,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:5px;font-family:var(--mono);font-size:.68rem;">
+    <span style="color:var(--a1);font-weight:700;min-width:20px;">#${i+1}</span>
+    <div style="flex:1;min-width:0;">
+      <div style="color:var(--white);">IMEI 1: ${esc(it.imei)}</div>
+      ${it.imei2?`<div style="color:var(--text2);font-size:.62rem;margin-top:2px;">IMEI 2: ${esc(it.imei2)}</div>`:''}
+      <div style="color:var(--text2);font-size:.62rem;margin-top:2px;">${esc([it.brand,it.model,it.storage].filter(Boolean).join(' '))} · ${esc(it.color)||'No color'}</div>
     </div>
+    <button class="bx" onclick="removeReceiveQueueItem(${i})">✕</button>
   </div>`).join('');
 }
+function removeReceiveQueueItem(i){rcItems.splice(i,1);renderRCItems();}
+function clearReceiveQueue(){rcItems=[];renderRCItems();}
 async function saveReceive(){
   const supplier=$('rc-supplier').value.trim(),date=$('rc-date').value,ref=$('rc-ref').value.trim();
-  const items=rcItems.map(it=>({
-    imei:(it.imei||'').replace(/\D/g,''),
-    imei2:(it.imei2||'').replace(/\D/g,''),
-    cat:it.cat,brand:it.brand.trim(),model:it.model.trim(),color:it.color.trim(),storage:(it.storage||'').trim(),buyPrice:Number(it.buyPrice)||0,notes:(it.notes||'').trim()
-  })).filter(it=>it.imei);
-  if(!items.length){showToast('Add at least one phone IMEI','error');return;}
+  const items=rcItems
+    .map(it=>({
+      imei:(it.imei||'').replace(/\D/g,''),
+      imei2:(it.imei2||'').replace(/\D/g,''),
+      cat:it.cat,
+      brand:(it.brand||'').trim(),
+      model:(it.model||'').trim(),
+      color:(it.color||'').trim(),
+      storage:(it.storage||'').trim(),
+      buyPrice:Number(it.buyPrice)||0,
+      notes:(it.notes||'').trim()
+    }))
+    .filter(it=>it.imei);
+  if(!items.length){showToast('Queue is empty','error');return;}
   if(items.some(it=>it.imei.length!==15)){showToast('Each IMEI must be exactly 15 digits','error');return;}
   const unique=new Set(items.map(it=>it.imei));if(unique.size!==items.length){showToast('Duplicate IMEIs in shipment','error');return;}
-  const r=await api('POST','/api/shipments',{date,supplier,ref,items});
+  const saveBtn=$('rc-save-btn');
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving…';}
+  let r={};
+  let shouldReEnable=true;
+  let requestError='';
+  try{
+    r=await api('POST','/api/shipments',{date,supplier,ref,items});
+    if(!r.error) shouldReEnable=false;
+  }catch(e){
+    requestError='Network error while saving shipment';
+  }finally{
+    if(saveBtn&&shouldReEnable){saveBtn.textContent='Save All';saveBtn.disabled=false;}
+  }
+  if(requestError){showToast(requestError,'error');return;}
   if(r.error){showToast(r.error,'error');return;}
   closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`${items.length} phone(s) received`);
 }
