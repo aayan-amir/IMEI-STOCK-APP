@@ -761,56 +761,57 @@ app.post('/api/dispatches', adminOnly, async (req, res) => {
     if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'At least one item is required' });
 
     const imeiItems = items.filter(it => it && it.imei);
-    // New IMEI flow: move phones from warehouse to selected shop stock
-    if (imeiItems.length === items.length) {
-      const normalizedImei = imeiItems.map(it => String(it.imei || '').replace(/\D/g, ''));
-      const invalid = normalizedImei.find(imei => !/^\d{15}$/.test(imei));
-      if (invalid) return res.status(400).json({ error: `Invalid IMEI: ${invalid}` });
-
-      const uniqImeis = [...new Set(normalizedImei)];
-      if (uniqImeis.length !== normalizedImei.length) return res.status(409).json({ error: 'Duplicate IMEI in dispatch payload' });
-
-      const existing = await Phone.find({ imei: { $in: uniqImeis } }, { imei: 1 });
-      if (existing.length) return res.status(409).json({ error: `IMEI already exists in stock: ${existing[0].imei}` });
-
-      const stock = await HQStockModel.findOne({ key: 'hq' });
-      const hqItems = Array.isArray(stock?.items) ? stock.items : [];
-      const byImei = new Map(hqItems
-        .filter(it => it && it.imei)
-        .map(it => [String(it.imei).replace(/\D/g, ''), it]));
-      const missing = uniqImeis.find(imei => !byImei.has(imei));
-      if (missing) return res.status(400).json({ error: `IMEI not found in warehouse: ${missing}` });
-
-      const now = new Date().toISOString();
-      const phonesToCreate = uniqImeis.map((imei) => {
-        const src = byImei.get(imei) || {};
-        return {
-          imei,
-          imei2: src.imei2 || undefined,
-          brand: src.brand || '',
-          model: src.model || '',
-          color: src.color || '',
-          storage: src.storage || '',
-          buyPrice: Number(src.buyPrice) || 0,
-          status: 'in_stock',
-          shop: toShop,
-          cat: src.cat || '',
-          notes: src.notes || '',
-          addedAt: now,
-        };
-      });
-
-      await Phone.insertMany(phonesToCreate, { ordered: true });
-      const remaining = hqItems.filter(it => {
-        const imei = String(it?.imei || '').replace(/\D/g, '');
-        return !imei || !uniqImeis.includes(imei);
-      });
-      await HQStockModel.findOneAndUpdate(
-        { key: 'hq' },
-        { key: 'hq', items: remaining, updatedAt: now },
-        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
-      );
+    if (imeiItems.length !== items.length) {
+      return res.status(400).json({ error: 'Dispatch must include explicit IMEIs for every phone sent' });
     }
+    // New IMEI flow: move phones from warehouse to selected shop stock
+    const normalizedImei = imeiItems.map(it => String(it.imei || '').replace(/\D/g, ''));
+    const invalid = normalizedImei.find(imei => !/^\d{15}$/.test(imei));
+    if (invalid) return res.status(400).json({ error: `Invalid IMEI: ${invalid}` });
+
+    const uniqImeis = [...new Set(normalizedImei)];
+    if (uniqImeis.length !== normalizedImei.length) return res.status(409).json({ error: 'Duplicate IMEI in dispatch payload' });
+
+    const existing = await Phone.find({ imei: { $in: uniqImeis } }, { imei: 1 });
+    if (existing.length) return res.status(409).json({ error: `IMEI already exists in stock: ${existing[0].imei}` });
+
+    const stock = await HQStockModel.findOne({ key: 'hq' });
+    const hqItems = Array.isArray(stock?.items) ? stock.items : [];
+    const byImei = new Map(hqItems
+      .filter(it => it && it.imei)
+      .map(it => [String(it.imei).replace(/\D/g, ''), it]));
+    const missing = uniqImeis.find(imei => !byImei.has(imei));
+    if (missing) return res.status(400).json({ error: `IMEI not found in warehouse: ${missing}` });
+
+    const now = new Date().toISOString();
+    const phonesToCreate = uniqImeis.map((imei) => {
+      const src = byImei.get(imei) || {};
+      return {
+        imei,
+        imei2: src.imei2 || undefined,
+        brand: src.brand || '',
+        model: src.model || '',
+        color: src.color || '',
+        storage: src.storage || '',
+        buyPrice: Number(src.buyPrice) || 0,
+        status: 'in_stock',
+        shop: toShop,
+        cat: src.cat || '',
+        notes: src.notes || '',
+        addedAt: now,
+      };
+    });
+
+    await Phone.insertMany(phonesToCreate, { ordered: true });
+    const remaining = hqItems.filter(it => {
+      const imei = String(it?.imei || '').replace(/\D/g, '');
+      return !imei || !uniqImeis.includes(imei);
+    });
+    await HQStockModel.findOneAndUpdate(
+      { key: 'hq' },
+      { key: 'hq', items: remaining, updatedAt: now },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+    );
 
     const dispatch = new Dispatch({ date, toShop, note, items, addedAt: new Date().toISOString() });
     await dispatch.save();
