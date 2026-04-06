@@ -2015,7 +2015,9 @@ function onBarcodeDetected(value,format){
     if(Number.isInteger(idx)&&idx>=0&&idx<rcItems.length){
       rcItems[idx].imei2=clean;
       const f=document.getElementById(`rc-i2-${idx}`);
-      if(f){f.value=clean;flashField(f);f.focus();}
+      if(f){f.value=clean;flashField(f);}
+      const next=document.getElementById(`rc-brand-${idx}`);
+      if(next)next.focus();
     }
     showToast('IMEI 2 scanned ✓');return;
   }
@@ -3333,7 +3335,7 @@ function renderRCItems(){
       <input id="rc-i2-${i}" placeholder="IMEI 2 (opt)" value="${esc(it.imei2||'')}" oninput="rcItems[${i}].imei2=this.value.replace(/\\D/g,'')" style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
       <button class="btn bo" onclick="openCamera('rc2:${i}')" style="padding:.18rem .42rem;font-size:.62rem;flex-shrink:0;">Cam</button>
     </div>
-    <input placeholder="Brand" value="${esc(it.brand)}" oninput="rcItems[${i}].brand=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <input id="rc-brand-${i}" placeholder="Brand" value="${esc(it.brand)}" oninput="rcItems[${i}].brand=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
     <input placeholder="Model" value="${esc(it.model)}" oninput="rcItems[${i}].model=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
     <input placeholder="Color" value="${esc(it.color)}" oninput="rcItems[${i}].color=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
     <input placeholder="Storage" value="${esc(it.storage||'')}" oninput="rcItems[${i}].storage=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
