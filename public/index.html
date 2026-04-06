@@ -3408,7 +3408,7 @@ function addToReceiveQueue(){
   const notes=($('rc-notes')?.value||'').trim();
   if(!imei1){showToast('IMEI 1 is required','error');$('rc-next-i1')?.focus();return;}
   if(imei1.length!==15){showToast('IMEI 1 must be exactly 15 digits','error');return;}
-  if(imei2&&imei2.length!==15){showToast('IMEI 2 must be exactly 15 digits','error');return;}
+  if(imei2&&imei2.length!==15){showToast('IMEI 2, if provided, must be exactly 15 digits','error');return;}
   if(!brand&&!model){showToast('Brand or Model is required','error');$('rc-brand')?.focus();return;}
   const duplicateEntry=rcItems.find(e=>
     e.imei===imei1 ||
@@ -3450,11 +3450,19 @@ function removeReceiveQueueItem(i){rcItems.splice(i,1);renderRCItems();}
 function clearReceiveQueue(){rcItems=[];renderRCItems();}
 async function saveReceive(){
   const supplier=$('rc-supplier').value.trim(),date=$('rc-date').value,ref=$('rc-ref').value.trim();
-  const items=rcItems.map(it=>({
-    imei:(it.imei||'').replace(/\D/g,''),
-    imei2:(it.imei2||'').replace(/\D/g,''),
-    cat:it.cat,brand:(it.brand||'').trim(),model:(it.model||'').trim(),color:(it.color||'').trim(),storage:(it.storage||'').trim(),buyPrice:Number(it.buyPrice)||0,notes:(it.notes||'').trim()
-  })).filter(it=>it.imei);
+  const items=rcItems
+    .map(it=>({
+      imei:(it.imei||'').replace(/\D/g,''),
+      imei2:(it.imei2||'').replace(/\D/g,''),
+      cat:it.cat,
+      brand:(it.brand||'').trim(),
+      model:(it.model||'').trim(),
+      color:(it.color||'').trim(),
+      storage:(it.storage||'').trim(),
+      buyPrice:Number(it.buyPrice)||0,
+      notes:(it.notes||'').trim()
+    }))
+    .filter(it=>it.imei);
   if(!items.length){showToast('Queue is empty','error');return;}
   if(items.some(it=>it.imei.length!==15)){showToast('Each IMEI must be exactly 15 digits','error');return;}
   const unique=new Set(items.map(it=>it.imei));if(unique.size!==items.length){showToast('Duplicate IMEIs in shipment','error');return;}
@@ -3469,6 +3477,7 @@ async function saveReceive(){
     if(saveBtn&&!saveSucceeded){saveBtn.textContent='Save All';saveBtn.disabled=false;}
   }
   if(r.error){showToast(r.error,'error');return;}
+  if(saveBtn){saveBtn.textContent='Save All';saveBtn.disabled=true;}
   closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`${items.length} phone(s) received`);
 }
 
