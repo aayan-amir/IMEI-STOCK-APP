@@ -1125,6 +1125,7 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
         <div class="tbsep"></div>
         <button class="btn bv" onclick="openReceiveModal()">+ Receive Stock</button>
         <button class="btn bb" onclick="openDispatchModal()">↗ Dispatch</button>
+        <button class="btn" onclick="clearWarehouseStock()" style="background:var(--danger);border-color:var(--danger);color:#fff">Delete Warehouse Stock</button>
         <div class="tbsep"></div>
         <button class="btn bo" style="font-size:.62rem" onclick="printWarehouse()">Print</button>
         <div class="tbsep"></div>
@@ -3290,13 +3291,81 @@ function openReceiveModal(){
     <div class="fc">
       <div class="f2"><div class="fi"><label>Supplier</label><input type="text" id="rc-supplier" placeholder="Supplier name"></div><div class="fi"><label>Date</label><input type="date" id="rc-date" value="${today()}"></div></div>
       <div class="fi"><label>Reference</label><input type="text" id="rc-ref" placeholder="Invoice #, notes…"></div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:10px;margin:3px 0 7px">
+        <div style="font-size:.6rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Add IMEIs (batch like Batch Add)</div>
+        <div style="display:grid;grid-template-columns:120px 1fr 1fr 1fr 1fr 1fr 110px;gap:5px;margin-bottom:6px;align-items:center">
+          <select id="rc-cat" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.2rem;outline:none">${Object.keys(CATS).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>
+          <input id="rc-brand" placeholder="Brand" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+          <input id="rc-model" placeholder="Model" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+          <input id="rc-color" placeholder="Color" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+          <input id="rc-storage" placeholder="Storage" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+          <input id="rc-notes" placeholder="Notes" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+          <input type="number" id="rc-buyPrice" min="0" placeholder="Buy price" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:right">
+        </div>
+        <textarea id="rc-imeis" placeholder="Paste IMEIs here, one phone per line. You can include IMEI2 on the same line." style="width:100%;min-height:72px;background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.4rem .5rem;outline:none;resize:vertical"></textarea>
+        <div style="display:flex;gap:6px;margin-top:7px">
+          <button class="btn bb" onclick="addRCImeisBatch()" style="font-size:.62rem">+ Add IMEIs</button>
+          <button class="btn bo" onclick="addRCItem()" style="font-size:.62rem">+ Add Single Phone Row</button>
+        </div>
+      </div>
       <div id="rc-items"></div>
-      <button class="btn bo" onclick="addRCItem()" style="font-size:.62rem">+ Add Phone</button>
     </div>
     <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveReceive()">Save</button></div>`);
   addRCItem();
 }
-function addRCItem(){rcItems.push({imei:'',imei2:'',cat:'IPHONE',brand:'',model:'',color:'',storage:'',buyPrice:0,notes:''});renderRCItems();}
+function getRCSharedValues(){
+  return {
+    cat:$('rc-cat')?.value||'IPHONE',
+    brand:$('rc-brand')?.value.trim()||'',
+    model:$('rc-model')?.value.trim()||'',
+    color:$('rc-color')?.value.trim()||'',
+    storage:$('rc-storage')?.value.trim()||'',
+    buyPrice:Number($('rc-buyPrice')?.value)||0,
+    notes:$('rc-notes')?.value.trim()||''
+  };
+}
+function addRCItem(seed={}){
+  const shared=getRCSharedValues();
+  rcItems.push({
+    imei:(seed.imei||'').replace(/\D/g,''),
+    imei2:(seed.imei2||'').replace(/\D/g,''),
+    cat:seed.cat||shared.cat||'IPHONE',
+    brand:seed.brand??shared.brand??'',
+    model:seed.model??shared.model??'',
+    color:seed.color??shared.color??'',
+    storage:seed.storage??shared.storage??'',
+    buyPrice:Number(seed.buyPrice??shared.buyPrice||0),
+    notes:seed.notes??shared.notes??''
+  });
+  renderRCItems();
+}
+function addRCImeisBatch(){
+  const raw=$('rc-imeis')?.value||'';
+  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(!lines.length){showToast('Paste IMEIs first','error');return;}
+  const shared=getRCSharedValues();
+  const used=new Set();
+  rcItems.forEach(it=>{
+    const a=String(it.imei||'').replace(/\D/g,''),b=String(it.imei2||'').replace(/\D/g,'');
+    if(a)used.add(a);if(b)used.add(b);
+  });
+  let added=0,dup=0,bad=0;
+  lines.forEach(line=>{
+    const parts=(line.match(/\d{15}/g)||[]);
+    const imei=parts[0]||'';
+    const imei2=parts[1]||'';
+    if(!imei){bad++;return;}
+    if(imei2&&imei2===imei){bad++;return;}
+    if(used.has(imei)||(imei2&&used.has(imei2))){dup++;return;}
+    used.add(imei);if(imei2)used.add(imei2);
+    rcItems.push({...shared,imei,imei2});
+    added++;
+  });
+  if(!added){showToast(bad?'No valid IMEIs found':'All IMEIs are duplicates','error');return;}
+  $('rc-imeis').value='';
+  renderRCItems();
+  showToast(`${added} phone(s) added${dup?`, ${dup} duplicate skipped`:''}${bad?`, ${bad} invalid line(s)`:''}`);
+}
 function renderRCItems(){
   const el=$('rc-items');if(!el)return;
   el.innerHTML=rcItems.map((it,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 90px 70px 85px 22px;gap:5px;margin-bottom:5px;align-items:center">
@@ -3332,16 +3401,43 @@ async function saveReceive(){
 function openDispatchModal(){
   const items=(hqStock.items||[]).filter(it=>it.imei);
   if(!items.length){showToast('Warehouse is empty','warn');return;}
+  dispatchModalItems=items;
   showModal(`<h3>↗ Dispatch to Shop</h3>
     <div class="fc">
       <div class="f2"><div class="fi"><label>To Shop</label><select id="ds-shop">${SHOPS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div><div class="fi"><label>Date</label><input type="date" id="ds-date" value="${today()}"></div></div>
       <div class="fi"><label>Note</label><input type="text" id="ds-note" placeholder="Notes…"></div>
+      <div class="fi">
+        <label>IMEIs to send (optional quick-select)</label>
+        <textarea id="ds-imeis" placeholder="Paste IMEIs here (spaces/new lines/comma separated)" style="min-height:68px"></textarea>
+        <div style="display:flex;gap:6px;margin-top:5px">
+          <button class="btn bo" style="font-size:.58rem;padding:.14rem .45rem" onclick="applyDispatchImeis()">Auto-Select IMEIs</button>
+          <span style="font-size:.58rem;color:var(--text2);align-self:center">Then review selection below before dispatch</span>
+        </div>
+      </div>
       <div style="font-size:.62rem;color:var(--text2);margin:.3rem 0;font-weight:600">Select phones to dispatch:</div>
       <div style="max-height:230px;overflow-y:auto">${items.map((it,i)=>{const label=[it.brand,it.model,it.storage].filter(Boolean).join(' ')||it.name||'Phone';return `<div style="display:flex;align-items:center;gap:.5rem;padding:.24rem 0;border-bottom:1px solid var(--border2)"><input type="checkbox" id="dsi-${i}" style="width:14px;height:14px"><label for="dsi-${i}" style="flex:1;color:var(--white);font-size:.68rem">${esc(label)} <span style="color:var(--text2);font-family:var(--mono)">${esc(it.imei||'')}</span></label></div>`;}).join('')}</div>
     </div>
-    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bb" onclick="saveDispatch(${JSON.stringify(items).replace(/"/g,'&quot;')})">Dispatch</button></div>`);
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bb" onclick="saveDispatch()">Dispatch</button></div>`);
 }
-async function saveDispatch(items){
+let dispatchModalItems=[];
+function applyDispatchImeis(){
+  const items=dispatchModalItems||[];
+  const raw=$('ds-imeis')?.value||'';
+  const parsed=[...(raw.match(/\d{15}/g)||[])];
+  if(!parsed.length){showToast('Paste at least one valid 15-digit IMEI','error');return;}
+  const wanted=new Set(parsed.map(x=>String(x).replace(/\D/g,'')));
+  let matched=0;
+  items.forEach((it,i)=>{
+    const imei=String(it?.imei||'').replace(/\D/g,'');
+    const chk=document.getElementById(`dsi-${i}`);
+    if(chk) chk.checked=!!imei && wanted.has(imei);
+    if(chk?.checked) matched++;
+  });
+  const missing=[...wanted].filter(imei=>!items.some(it=>String(it?.imei||'').replace(/\D/g,'')===imei));
+  showToast(`${matched} IMEI(s) matched${missing.length?`, ${missing.length} not found in warehouse`:''}`,missing.length?'warn':'success');
+}
+async function saveDispatch(){
+  const items=dispatchModalItems||[];
   const toShop=$('ds-shop').value,date=$('ds-date').value,note=$('ds-note').value.trim();
   const dispatched=[];
   items.forEach((it,i)=>{
@@ -3440,6 +3536,14 @@ async function deleteWarehouseImei(imei){
   if(!confirm(`Delete IMEI ${raw} from warehouse?`))return;
   const r=await api('DELETE',`/api/hqstock/${raw}`);
   if(r.success){loadWarehouse();showToast('Warehouse phone deleted','warn');}
+  else showToast(r.error||'Delete failed','error');
+}
+async function clearWarehouseStock(){
+  const count=(hqStock?.items||[]).length||0;
+  if(!count){showToast('Warehouse is already empty','warn');return;}
+  if(!confirm(`Delete all ${count} warehouse phone(s)? This cannot be undone.`))return;
+  const r=await api('DELETE','/api/hqstock');
+  if(r.success){hqStock={items:[]};loadWarehouse();loadShipments();showToast('Warehouse stock deleted','warn');}
   else showToast(r.error||'Delete failed','error');
 }
 
