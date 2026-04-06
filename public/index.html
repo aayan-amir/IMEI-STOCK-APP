@@ -3473,6 +3473,9 @@ async function saveReceive(){
   try{
     r=await api('POST','/api/shipments',{date,supplier,ref,items});
     saveSucceeded=!r.error;
+  }catch(e){
+    showToast('Network error while saving shipment','error');
+    return;
   }finally{
     if(saveBtn&&!saveSucceeded){saveBtn.textContent='Save All';saveBtn.disabled=false;}
   }
