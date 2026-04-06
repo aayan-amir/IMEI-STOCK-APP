@@ -3355,7 +3355,7 @@ function addRCImeisBatch(){
     const imei=parts[0]||'';
     const imei2=parts[1]||'';
     if(!imei){bad++;return;}
-    if(imei2&&imei2===imei){dup++;return;}
+    if(imei2&&imei2===imei){bad++;return;}
     if(used.has(imei)||(imei2&&used.has(imei2))){dup++;return;}
     used.add(imei);if(imei2)used.add(imei2);
     rcItems.push({...shared,imei,imei2});
@@ -3401,6 +3401,7 @@ async function saveReceive(){
 function openDispatchModal(){
   const items=(hqStock.items||[]).filter(it=>it.imei);
   if(!items.length){showToast('Warehouse is empty','warn');return;}
+  dispatchModalItems=items;
   showModal(`<h3>↗ Dispatch to Shop</h3>
     <div class="fc">
       <div class="f2"><div class="fi"><label>To Shop</label><select id="ds-shop">${SHOPS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div><div class="fi"><label>Date</label><input type="date" id="ds-date" value="${today()}"></div></div>
@@ -3409,16 +3410,18 @@ function openDispatchModal(){
         <label>IMEIs to send (optional quick-select)</label>
         <textarea id="ds-imeis" placeholder="Paste IMEIs here (spaces/new lines/comma separated)" style="min-height:68px"></textarea>
         <div style="display:flex;gap:6px;margin-top:5px">
-          <button class="btn bo" style="font-size:.58rem;padding:.14rem .45rem" onclick="applyDispatchImeis(${JSON.stringify(items).replace(/"/g,'&quot;')})">Match IMEIs</button>
+          <button class="btn bo" style="font-size:.58rem;padding:.14rem .45rem" onclick="applyDispatchImeis()">Match IMEIs</button>
           <span style="font-size:.58rem;color:var(--text2);align-self:center">Then review selection below before dispatch</span>
         </div>
       </div>
       <div style="font-size:.62rem;color:var(--text2);margin:.3rem 0;font-weight:600">Select phones to dispatch:</div>
       <div style="max-height:230px;overflow-y:auto">${items.map((it,i)=>{const label=[it.brand,it.model,it.storage].filter(Boolean).join(' ')||it.name||'Phone';return `<div style="display:flex;align-items:center;gap:.5rem;padding:.24rem 0;border-bottom:1px solid var(--border2)"><input type="checkbox" id="dsi-${i}" style="width:14px;height:14px"><label for="dsi-${i}" style="flex:1;color:var(--white);font-size:.68rem">${esc(label)} <span style="color:var(--text2);font-family:var(--mono)">${esc(it.imei||'')}</span></label></div>`;}).join('')}</div>
     </div>
-    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bb" onclick="saveDispatch(${JSON.stringify(items).replace(/"/g,'&quot;')})">Dispatch</button></div>`);
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bb" onclick="saveDispatch()">Dispatch</button></div>`);
 }
-function applyDispatchImeis(items){
+let dispatchModalItems=[];
+function applyDispatchImeis(){
+  const items=dispatchModalItems||[];
   const raw=$('ds-imeis')?.value||'';
   const parsed=[...(raw.match(/\d{15}/g)||[])];
   if(!parsed.length){showToast('Paste at least one valid 15-digit IMEI','error');return;}
@@ -3434,6 +3437,7 @@ function applyDispatchImeis(items){
   showToast(`${matched} IMEI(s) matched${missing.length?`, ${missing.length} not found in warehouse`:''}`,missing.length?'warn':'success');
 }
 async function saveDispatch(items){
+  items=items||dispatchModalItems||[];
   const toShop=$('ds-shop').value,date=$('ds-date').value,note=$('ds-note').value.trim();
   const dispatched=[];
   items.forEach((it,i)=>{
