@@ -873,6 +873,19 @@ app.delete('/api/hqstock/:imei', adminOnly, async (req, res) => {
   }
 });
 
+app.delete('/api/hqstock', adminOnly, async (req, res) => {
+  try {
+    await HQStockModel.findOneAndUpdate(
+      { key: 'hq' },
+      { key: 'hq', items: [], updatedAt: new Date().toISOString() },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ── BULK DELETE SALES ────────────────────────────
 app.delete('/api/sales', adminOnly, async (req, res) => {
   try {
