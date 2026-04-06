@@ -3409,10 +3409,13 @@ function addToReceiveQueue(){
   if(!imei1){showToast('IMEI 1 is required','error');$('rc-next-i1')?.focus();return;}
   if(imei1.length!==15){showToast('IMEI 1 must be exactly 15 digits','error');return;}
   if(imei2&&imei2.length!==15){showToast('IMEI 2 must be exactly 15 digits','error');return;}
-  const dup=rcItems.find(e=>e.imei===imei1||e.imei2===imei1||(imei2&&(e.imei===imei2||e.imei2===imei2)));
-  if(dup){showToast('This IMEI is already in the queue','warn');return;}
+  if(!brand&&!model){showToast('Brand or Model is required','error');$('rc-brand')?.focus();return;}
+  const duplicateEntry=rcItems.find(e=>e.imei===imei1||e.imei2===imei1||(imei2&&(e.imei===imei2||e.imei2===imei2)));
+  if(duplicateEntry){showToast('This IMEI is already in the queue','warn');return;}
   rcItems.push({imei:imei1,imei2,cat,brand,model,color:entryColor||sharedColor,storage,buyPrice,notes});
-  $('rc-next-i1').value='';$('rc-next-i2').value='';$('rc-next-color').value='';
+  const nextI1=$('rc-next-i1');if(nextI1)nextI1.value='';
+  const nextI2=$('rc-next-i2');if(nextI2)nextI2.value='';
+  const nextColor=$('rc-next-color');if(nextColor)nextColor.value='';
   $('rc-next-i1')?.focus();
   renderRCItems();
   showToast(`Phone ${rcItems.length} added to queue`);
@@ -3452,7 +3455,7 @@ async function saveReceive(){
   if(items.some(it=>it.imei.length!==15)){showToast('Each IMEI must be exactly 15 digits','error');return;}
   const unique=new Set(items.map(it=>it.imei));if(unique.size!==items.length){showToast('Duplicate IMEIs in shipment','error');return;}
   const saveBtn=$('rc-save-btn');
-  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent=`Saving 0/${items.length}…`;}
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving…';}
   const r=await api('POST','/api/shipments',{date,supplier,ref,items});
   if(saveBtn){saveBtn.textContent='Save All';saveBtn.disabled=false;}
   if(r.error){showToast(r.error,'error');return;}
