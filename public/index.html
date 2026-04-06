@@ -3441,7 +3441,7 @@ function renderRCItems(){
     <div style="flex:1;min-width:0;">
       <div style="color:var(--white);">IMEI 1: ${esc(it.imei)}</div>
       ${it.imei2?`<div style="color:var(--text2);font-size:.62rem;margin-top:2px;">IMEI 2: ${esc(it.imei2)}</div>`:''}
-      <div style="color:var(--text2);font-size:.62rem;margin-top:2px;">${esc([it.brand,it.model,it.storage].filter(Boolean).join(' '))} · ${esc(it.color||'No color')}</div>
+      <div style="color:var(--text2);font-size:.62rem;margin-top:2px;">${esc([it.brand,it.model,it.storage].filter(Boolean).join(' '))} · ${esc(it.color)||'No color'}</div>
     </div>
     <button class="bx" onclick="removeReceiveQueueItem(${i})">✕</button>
   </div>`).join('');
@@ -3461,10 +3461,12 @@ async function saveReceive(){
   const saveBtn=$('rc-save-btn');
   if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving…';}
   let r={};
+  let saveSucceeded=false;
   try{
     r=await api('POST','/api/shipments',{date,supplier,ref,items});
+    saveSucceeded=!r.error;
   }finally{
-    if(saveBtn){saveBtn.textContent='Save All';saveBtn.disabled=false;}
+    if(saveBtn&&!saveSucceeded){saveBtn.textContent='Save All';saveBtn.disabled=false;}
   }
   if(r.error){showToast(r.error,'error');return;}
   closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`${items.length} phone(s) received`);
