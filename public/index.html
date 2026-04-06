@@ -1854,6 +1854,7 @@ const camLabels = {
   imei1:'Scanning for IMEI 1…', imei2:'Scanning for IMEI 2…',
   batch1:'Scanning for batch IMEI 1…', batch:'Scanning for batch IMEI 2…',
   rc1:'Scanning for warehouse IMEI 1…', rc2:'Scanning for warehouse IMEI 2…',
+  'ds:scan':'Scanning dispatch IMEI…',
   free:'Scan any barcode',
 };
 
@@ -2045,6 +2046,14 @@ function onBarcodeDetected(value,format){
       if(next)next.focus();
     }
     showToast('IMEI 2 scanned ✓');return;
+  }
+  if(camMode==='ds:scan'){
+    closeCamera();
+    const clean=result.replace(/\D/g,'');
+    const f=$('ds-scan-imei');
+    if(f){f.value=clean;flashField(f);}
+    addDispatchByImei(clean,true);
+    return;
   }
   if(camMode==='imei1'&&scanMode==='sell'){
     closeCamera();
@@ -3327,15 +3336,53 @@ function renderWarehouse(){
   const q=($('wh-search')?.value||'').toLowerCase();
   const items=(hqStock.items||[]).filter(it=>{
     const label=(it.name||[it.brand,it.model,it.storage].filter(Boolean).join(' '));
-    return !q || (label+String(it.cat||'')+String(it.imei||'')).toLowerCase().includes(q);
+    return !q || (label+String(it.cat||'')+String(it.imei||'')+String(it.imei2||'')).toLowerCase().includes(q);
   });
   const body=$('wh-body');
   if(!items.length){body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>Warehouse empty</h3><p>Click + Receive Stock to add items</p></div>`;return;}
-  const byCat={};items.forEach(it=>{const cat=it.cat||guessCat(it.brand,it.model,it.cat);if(!byCat[cat])byCat[cat]=[];byCat[cat].push(it);});
-  body.innerHTML=`<div style="padding:.9rem">${Object.entries(byCat).map(([cat,rows])=>{const c=CATS[cat];return `<div class="cb ${c?c.cls:'cot'}" style="margin-bottom:.65rem"><div class="ch"><div class="cl">${c?c.label:cat}</div><div class="cts"><span>Phones:<b>${rows.length}</b></span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.45rem">${rows.map(it=>{const name=[it.brand,it.model,it.storage].filter(Boolean).join(' ')||it.name||'Phone';return `<div class="wh-card"><div class="wh-cat">${it.cat||cat}</div><div class="wh-name">${esc(name)}</div><div class="wh-meta" style="margin-top:3px;color:var(--text2);font-family:var(--mono);font-size:.62rem">${esc(it.imei||'')}</div>${it.imei2?`<div class="wh-meta" style="font-family:var(--mono);font-size:.62rem;color:var(--text3)">IMEI2: ${esc(it.imei2)}</div>`:''}<div class="wh-meta">${it.costPerUnit?pkr(it.costPerUnit):it.buyPrice?pkr(it.buyPrice):''}</div>${it.imei?`<div style="margin-top:6px;display:flex;justify-content:flex-end"><button class="btn" style="font-size:.58rem;padding:.14rem .45rem;background:var(--danger);border-color:var(--danger);color:#fff" onclick="deleteWarehouseImei('${esc(it.imei||'')}')">Delete</button></div>`:''}</div>`;}).join('')}</div></div>`;}).join('')}</div>`;
+  const groups={};
+  items.forEach(it=>{
+    const cat=it.cat||guessCat(it.brand,it.model,it.cat);
+    const key=`${cat}|${String(it.brand||'').toLowerCase()}|${String(it.model||'').toLowerCase()}|${String(it.storage||'').toLowerCase()}`;
+    if(!groups[key]) groups[key]={cat,brand:it.brand||'',model:it.model||'',storage:it.storage||'',phones:[]};
+    groups[key].phones.push(it);
+  });
+  const sorted=Object.values(groups).sort((a,b)=>{
+    const ac=(CATS[a.cat]?.label||a.cat||'').toLowerCase();
+    const bc=(CATS[b.cat]?.label||b.cat||'').toLowerCase();
+    if(ac!==bc) return ac.localeCompare(bc);
+    const an=[a.brand,a.model,a.storage].join(' ').toLowerCase();
+    const bn=[b.brand,b.model,b.storage].join(' ').toLowerCase();
+    return an.localeCompare(bn);
+  });
+  body.innerHTML=`<div style="padding:.9rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.55rem">${sorted.map(g=>{
+    const c=CATS[g.cat];
+    const name=[g.brand,g.model,g.storage].filter(Boolean).join(' ')||'Phone';
+    const totalValue=g.phones.reduce((s,it)=>s+(Number(it.costPerUnit||it.buyPrice)||0),0);
+    return `<div class="wh-card">
+      <div class="wh-cat">${esc(c?c.label:(g.cat||'OTHER'))}</div>
+      <div class="wh-name">${esc(name)}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin:5px 0 7px;">
+        <span class="badge badge-green">${g.phones.length} unit${g.phones.length!==1?'s':''}</span>
+        ${g.storage?`<span class="badge badge-purple">${esc(g.storage)}</span>`:''}
+        ${totalValue?`<span class="badge badge-gray">${pkr(totalValue)}</span>`:''}
+      </div>
+      <div style="max-height:150px;overflow:auto;padding-right:2px;">
+        ${g.phones.map(it=>`<div style="display:flex;gap:6px;align-items:flex-start;justify-content:space-between;border-top:1px solid var(--border2);padding:6px 0 0;margin-top:6px;">
+          <div style="min-width:0;">
+            <div class="wh-meta" style="color:var(--text2);font-family:var(--mono);font-size:.62rem">${esc(it.imei||'')}</div>
+            ${it.imei2?`<div class="wh-meta" style="font-family:var(--mono);font-size:.6rem;color:var(--text3)">IMEI2: ${esc(it.imei2)}</div>`:''}
+          </div>
+          ${it.imei?`<button class="btn" style="font-size:.54rem;padding:.1rem .4rem;background:var(--danger);border-color:var(--danger);color:#fff;flex-shrink:0" onclick="deleteWarehouseImei('${esc(it.imei||'')}')">Delete</button>`:''}
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 let rcItems=[];
+let dispatchSourceItems=[];
+let dispatchSelectedImeis=new Set();
 function openReceiveModal(){
   rcItems=[];
   showModal(`<h3>+ Receive Stock into Warehouse</h3>
@@ -3485,34 +3532,125 @@ async function saveReceive(){
 }
 
 function openDispatchModal(){
-  const items=(hqStock.items||[]).filter(it=>it.imei);
+  const items=(hqStock.items||[]).filter(it=>it.imei).map(it=>({
+    ...it,
+    imei:String(it.imei||'').replace(/\D/g,''),
+    imei2:String(it.imei2||'').replace(/\D/g,'')
+  })).filter(it=>it.imei);
   if(!items.length){showToast('Warehouse is empty','warn');return;}
+  dispatchSourceItems=items;
+  dispatchSelectedImeis=new Set();
   showModal(`<h3>↗ Dispatch to Shop</h3>
     <div class="fc">
       <div class="f2"><div class="fi"><label>To Shop</label><select id="ds-shop">${SHOPS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div><div class="fi"><label>Date</label><input type="date" id="ds-date" value="${today()}"></div></div>
       <div class="fi"><label>Note</label><input type="text" id="ds-note" placeholder="Notes…"></div>
-      <div style="font-size:.62rem;color:var(--text2);margin:.3rem 0;font-weight:600">Select phones to dispatch:</div>
-      <div style="max-height:230px;overflow-y:auto">${items.map((it,i)=>{const label=[it.brand,it.model,it.storage].filter(Boolean).join(' ')||it.name||'Phone';return `<div style="display:flex;align-items:center;gap:.5rem;padding:.24rem 0;border-bottom:1px solid var(--border2)"><input type="checkbox" id="dsi-${i}" style="width:14px;height:14px"><label for="dsi-${i}" style="flex:1;color:var(--white);font-size:.68rem">${esc(label)} <span style="color:var(--text2);font-family:var(--mono)">${esc(it.imei||'')}</span></label></div>`;}).join('')}</div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:9px;margin-top:2px;">
+        <div style="font-size:.58rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Scan IMEI to Add</div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="ds-scan-imei" placeholder="Scan or type IMEI…" inputmode="numeric" style="flex:1"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addDispatchScanImei();}">
+          <button class="btn bo" onclick="openCamera('ds:scan')" style="padding:6px 9px;font-size:.74rem;">Cam</button>
+          <button class="btn bb" onclick="addDispatchScanImei()" style="padding:6px 9px;font-size:.74rem;">Add</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+        <div style="font-size:.62rem;color:var(--text2);font-weight:600">Selected: <span id="ds-selected-count" style="color:var(--a1)">0</span></div>
+        <button class="btn bo" onclick="clearDispatchSelection()" style="font-size:.58rem;padding:.14rem .4rem;">Clear</button>
+      </div>
+      <div class="fi" style="margin-top:5px;"><input type="text" id="ds-search" placeholder="Search by model or IMEI…" oninput="renderDispatchSelectableList()"></div>
+      <div id="ds-list" style="max-height:250px;overflow-y:auto"></div>
     </div>
-    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bb" onclick="saveDispatch(${JSON.stringify(items).replace(/"/g,'&quot;')})">Dispatch</button></div>`);
+    <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bb" onclick="saveDispatch()">Dispatch</button></div>`);
+  renderDispatchSelectableList();
+  $('ds-scan-imei')?.focus();
 }
-async function saveDispatch(items){
-  const toShop=$('ds-shop').value,date=$('ds-date').value,note=$('ds-note').value.trim();
-  const dispatched=[];
-  items.forEach((it,i)=>{
-    const chk=document.getElementById(`dsi-${i}`);
-    if(chk?.checked&&it.imei){
-      dispatched.push({
-        imei:it.imei,imei2:it.imei2||'',cat:it.cat||guessCat(it.brand,it.model,it.cat),
-        brand:it.brand||'',model:it.model||'',color:it.color||'',storage:it.storage||'',
-        buyPrice:Number(it.buyPrice||it.costPerUnit||0),notes:it.notes||''
-      });
-    }
+function renderDispatchSelectableList(){
+  const wrap=$('ds-list');
+  if(!wrap) return;
+  const q=($('ds-search')?.value||'').toLowerCase();
+  const filtered=dispatchSourceItems.filter(it=>{
+    const label=[it.brand,it.model,it.storage,it.cat,it.imei,it.imei2].filter(Boolean).join(' ').toLowerCase();
+    return !q || label.includes(q);
   });
+  if(!filtered.length){wrap.innerHTML=`<div class="empty" style="padding:10px 6px;"><h3 style="font-size:.72rem">No phones found</h3></div>`;updateDispatchSelectedCount();return;}
+  const groups={};
+  filtered.forEach(it=>{
+    const cat=it.cat||guessCat(it.brand,it.model,it.cat);
+    const key=`${cat}|${String(it.brand||'').toLowerCase()}|${String(it.model||'').toLowerCase()}|${String(it.storage||'').toLowerCase()}`;
+    if(!groups[key]) groups[key]={cat,brand:it.brand||'',model:it.model||'',storage:it.storage||'',rows:[]};
+    groups[key].rows.push(it);
+  });
+  wrap.innerHTML=Object.values(groups).map(g=>{
+    const name=[g.brand,g.model,g.storage].filter(Boolean).join(' ')||'Phone';
+    const catLabel=(CATS[g.cat]?.label)||titleCase(g.cat||'Other');
+    return `<div style="border:1px solid var(--border2);border-radius:8px;margin-bottom:7px;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--s3);font-size:.6rem;">
+        <div style="color:var(--white);font-weight:700">${esc(name)}</div>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <span class="badge badge-blue">${esc(catLabel)}</span>
+          <span class="badge badge-green">${g.rows.length}</span>
+        </div>
+      </div>
+      <div style="padding:4px 8px;">
+        ${g.rows.map((it,i)=>{
+          const cbId=`dsi-${it.imei}-${i}`;
+          const checked=dispatchSelectedImeis.has(it.imei);
+          return `<div style="display:flex;align-items:center;gap:.45rem;padding:.22rem 0;border-bottom:1px solid var(--border2)">
+            <input type="checkbox" id="${cbId}" style="width:14px;height:14px" ${checked?'checked':''} onchange="toggleDispatchSelection('${it.imei}',this.checked)">
+            <label for="${cbId}" style="flex:1;color:var(--text2);font-size:.66rem;font-family:var(--mono)">${esc(it.imei)}</label>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  updateDispatchSelectedCount();
+}
+function updateDispatchSelectedCount(){
+  const el=$('ds-selected-count');
+  if(el) el.textContent=dispatchSelectedImeis.size;
+}
+function toggleDispatchSelection(imei,checked){
+  const clean=String(imei||'').replace(/\D/g,'');
+  if(!clean) return;
+  if(checked) dispatchSelectedImeis.add(clean);
+  else dispatchSelectedImeis.delete(clean);
+  updateDispatchSelectedCount();
+}
+function clearDispatchSelection(){
+  dispatchSelectedImeis.clear();
+  renderDispatchSelectableList();
+}
+function addDispatchScanImei(){
+  const input=$('ds-scan-imei');
+  const raw=(input?.value||'').trim();
+  addDispatchByImei(raw,false);
+}
+function addDispatchByImei(raw,fromScan){
+  const imei=String(raw||'').replace(/\D/g,'');
+  if(!imei){showToast('Enter IMEI to add','warn');return;}
+  if(imei.length!==15){showToast('IMEI must be exactly 15 digits','error');return;}
+  const exists=dispatchSourceItems.some(it=>it.imei===imei);
+  if(!exists){showToast('IMEI not found in warehouse stock','error');return;}
+  if(dispatchSelectedImeis.has(imei)){showToast('IMEI already selected','warn');return;}
+  dispatchSelectedImeis.add(imei);
+  const input=$('ds-scan-imei');
+  if(input){input.value='';input.focus();}
+  renderDispatchSelectableList();
+  showToast(fromScan?'IMEI scanned and selected ✓':'IMEI added ✓');
+}
+async function saveDispatch(){
+  const toShop=$('ds-shop').value,date=$('ds-date').value,note=$('ds-note').value.trim();
+  const byImei=new Map(dispatchSourceItems.map(it=>[it.imei,it]));
+  const dispatched=[...dispatchSelectedImeis].map(imei=>byImei.get(imei)).filter(Boolean).map(it=>({
+    imei:it.imei,imei2:it.imei2||'',cat:it.cat||guessCat(it.brand,it.model,it.cat),
+    brand:it.brand||'',model:it.model||'',color:it.color||'',storage:it.storage||'',
+    buyPrice:Number(it.buyPrice||it.costPerUnit||0),notes:it.notes||''
+  }));
   if(!dispatched.length){showToast('Select at least one phone','error');return;}
   const r=await api('POST','/api/dispatches',{date,toShop,note,items:dispatched});
   if(r.error){showToast(r.error,'error');return;}
-  closeModal();loadWarehouse();loadShipments();showToast(`${dispatched.length} phone(s) dispatched to Shop ${toShop}`);
+  closeModal();dispatchSelectedImeis.clear();dispatchSourceItems=[];loadWarehouse();loadShipments();showToast(`${dispatched.length} phone(s) dispatched to Shop ${toShop}`);
 }
 
 async function openDispatchFromShipments(){
