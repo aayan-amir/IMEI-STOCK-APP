@@ -3409,8 +3409,12 @@ function addToReceiveQueue(){
   if(!imei1){showToast('IMEI 1 is required','error');$('rc-next-i1')?.focus();return;}
   if(imei1.length!==15){showToast('IMEI 1 must be exactly 15 digits','error');return;}
   if(imei2&&imei2.length!==15){showToast('IMEI 2 must be exactly 15 digits','error');return;}
-  if(!brand&&!model){showToast('Brand or Model is required','error');$('rc-brand')?.focus();return;}
-  const duplicateEntry=rcItems.find(e=>e.imei===imei1||e.imei2===imei1||(imei2&&(e.imei===imei2||e.imei2===imei2)));
+  if(!brand&&!model){showToast('Brand or Model (or both) must be provided','error');$('rc-brand')?.focus();return;}
+  const duplicateEntry=rcItems.find(e=>
+    e.imei===imei1 ||
+    e.imei2===imei1 ||
+    (imei2 && (e.imei===imei2 || e.imei2===imei2))
+  );
   if(duplicateEntry){showToast('This IMEI is already in the queue','warn');return;}
   rcItems.push({imei:imei1,imei2,cat,brand,model,color:entryColor||sharedColor,storage,buyPrice,notes});
   const nextI1=$('rc-next-i1');if(nextI1)nextI1.value='';
@@ -3437,7 +3441,7 @@ function renderRCItems(){
     <div style="flex:1;min-width:0;">
       <div style="color:var(--white);">IMEI 1: ${esc(it.imei)}</div>
       ${it.imei2?`<div style="color:var(--text2);font-size:.62rem;margin-top:2px;">IMEI 2: ${esc(it.imei2)}</div>`:''}
-      <div style="color:var(--text2);font-size:.62rem;margin-top:2px;">${esc([it.brand,it.model,it.storage].filter(Boolean).join(' ')||'Phone')} · ${esc(it.color||'No color')}</div>
+      <div style="color:var(--text2);font-size:.62rem;margin-top:2px;">${esc([it.brand,it.model,it.storage].filter(Boolean).join(' '))} · ${esc(it.color||'No color')}</div>
     </div>
     <button class="bx" onclick="removeReceiveQueueItem(${i})">✕</button>
   </div>`).join('');
