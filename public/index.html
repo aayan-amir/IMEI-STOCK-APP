@@ -2985,17 +2985,17 @@ function printHistory(){
 
 function printWarehouse(){
   const q=($('wh-search')?.value||'').toLowerCase();
-  const items=(hqStock.items||[]).filter(it=>!q||(it.name+it.cat).toLowerCase().includes(q));
+  const items=(hqStock.items||[]).filter(it=>{const label=(it.name||[it.brand,it.model,it.storage].filter(Boolean).join(' '));return !q||(label+String(it.cat||'')+String(it.imei||'')).toLowerCase().includes(q);});
   if(!items.length){showToast('Warehouse is empty','warn');return;}
-  const byCat={};items.forEach(it=>{if(!byCat[it.cat])byCat[it.cat]=[];byCat[it.cat].push(it);});
-  const totalUnits=items.reduce((s,it)=>s+it.qty,0);
-  const totalValue=items.reduce((s,it)=>s+(it.qty*(it.costPerUnit||0)),0);
+  const byCat={};items.forEach(it=>{const cat=it.cat||guessCat(it.brand,it.model,it.cat);if(!byCat[cat])byCat[cat]=[];byCat[cat].push(it);});
+  const totalUnits=items.length;
+  const totalValue=items.reduce((s,it)=>s+(Number(it.costPerUnit||it.buyPrice)||0),0);
   let tables=Object.entries(byCat).map(([cat,rows])=>{
-    const catUnits=rows.reduce((s,it)=>s+it.qty,0);
-    const catVal=rows.reduce((s,it)=>s+(it.qty*(it.costPerUnit||0)),0);
-    const trows=rows.map(it=>`<tr><td>${esc(it.name||'')}</td><td>${esc(it.cat||'')}</td><td class="right">${it.qty}</td><td class="right num">${it.costPerUnit?pkr(it.costPerUnit):'—'}</td><td class="right num">${it.costPerUnit?pkr(it.qty*it.costPerUnit):'—'}</td></tr>`).join('');
+    const catUnits=rows.length;
+    const catVal=rows.reduce((s,it)=>s+(Number(it.costPerUnit||it.buyPrice)||0),0);
+    const trows=rows.map(it=>{const name=[it.brand,it.model,it.storage].filter(Boolean).join(' ')||it.name||'';const unit=(Number(it.costPerUnit||it.buyPrice)||0);return `<tr><td>${esc(name)}</td><td class="num">${esc(it.imei||'—')}</td><td>${esc(it.cat||cat)}</td><td class="right num">${unit?pkr(unit):'—'}</td></tr>`;}).join('');
     return `<h2>${esc(cat)} — ${catUnits} unit${catUnits!==1?'s':''}${catVal?` · ${pkr(catVal)}`:''}</h2><table>
-      <thead><tr><th>Item</th><th>Category</th><th class="right">Qty</th><th class="right">Cost/Unit</th><th class="right">Total Value</th></tr></thead>
+      <thead><tr><th>Phone</th><th>IMEI</th><th>Category</th><th class="right">Buy Price</th></tr></thead>
       <tbody>${trows}</tbody>
     </table>`;
   }).join('');
@@ -3272,11 +3272,15 @@ async function deleteHistDay(shop,date){
 // ── WAREHOUSE ──
 async function loadWarehouse(){hqStock=await api('GET','/api/hqstock');renderWarehouse();}
 function renderWarehouse(){
-  const q=($('wh-search')?.value||'').toLowerCase();const items=(hqStock.items||[]).filter(it=>!q||(it.name+it.cat).toLowerCase().includes(q));
+  const q=($('wh-search')?.value||'').toLowerCase();
+  const items=(hqStock.items||[]).filter(it=>{
+    const label=(it.name||[it.brand,it.model,it.storage].filter(Boolean).join(' '));
+    return !q || (label+String(it.cat||'')+String(it.imei||'')).toLowerCase().includes(q);
+  });
   const body=$('wh-body');
   if(!items.length){body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>Warehouse empty</h3><p>Click + Receive Stock to add items</p></div>`;return;}
-  const byCat={};items.forEach(it=>{if(!byCat[it.cat])byCat[it.cat]=[];byCat[it.cat].push(it);});
-  body.innerHTML=`<div style="padding:.9rem">${Object.entries(byCat).map(([cat,rows])=>{const c=CATS[cat];return `<div class="cb ${c?c.cls:'cot'}" style="margin-bottom:.65rem"><div class="ch"><div class="cl">${c?c.label:cat}</div><div class="cts"><span>Items:<b>${rows.length}</b></span><span>Units:<b>${rows.reduce((s,r)=>s+r.qty,0)}</b></span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.45rem">${rows.map(it=>`<div class="wh-card"><div class="wh-cat">${it.cat}</div><div class="wh-name">${esc(it.name)}</div><div class="wh-qty">${it.qty}</div><div class="wh-meta">${it.costPerUnit?pkr(it.costPerUnit)+' ea':''}</div></div>`).join('')}</div></div>`;}).join('')}</div>`;
+  const byCat={};items.forEach(it=>{const cat=it.cat||guessCat(it.brand,it.model,it.cat);if(!byCat[cat])byCat[cat]=[];byCat[cat].push(it);});
+  body.innerHTML=`<div style="padding:.9rem">${Object.entries(byCat).map(([cat,rows])=>{const c=CATS[cat];return `<div class="cb ${c?c.cls:'cot'}" style="margin-bottom:.65rem"><div class="ch"><div class="cl">${c?c.label:cat}</div><div class="cts"><span>Phones:<b>${rows.length}</b></span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.45rem">${rows.map(it=>{const name=[it.brand,it.model,it.storage].filter(Boolean).join(' ')||it.name||'Phone';return `<div class="wh-card"><div class="wh-cat">${it.cat||cat}</div><div class="wh-name">${esc(name)}</div><div class="wh-meta" style="margin-top:3px;color:var(--text2);font-family:var(--mono);font-size:.62rem">${esc(it.imei||'')}</div>${it.imei2?`<div class="wh-meta" style="font-family:var(--mono);font-size:.62rem;color:var(--text3)">IMEI2: ${esc(it.imei2)}</div>`:''}<div class="wh-meta">${it.costPerUnit?pkr(it.costPerUnit):it.buyPrice?pkr(it.buyPrice):''}</div>${it.imei?`<div style="margin-top:6px;display:flex;justify-content:flex-end"><button class="btn" style="font-size:.58rem;padding:.14rem .45rem;background:var(--danger);border-color:var(--danger);color:#fff" onclick="deleteWarehouseImei('${esc(it.imei||'')}')">Delete</button></div>`:''}</div>`;}).join('')}</div></div>`;}).join('')}</div>`;
 }
 
 let rcItems=[];
@@ -3287,50 +3291,73 @@ function openReceiveModal(){
       <div class="f2"><div class="fi"><label>Supplier</label><input type="text" id="rc-supplier" placeholder="Supplier name"></div><div class="fi"><label>Date</label><input type="date" id="rc-date" value="${today()}"></div></div>
       <div class="fi"><label>Reference</label><input type="text" id="rc-ref" placeholder="Invoice #, notes…"></div>
       <div id="rc-items"></div>
-      <button class="btn bo" onclick="addRCItem()" style="font-size:.62rem">+ Add Item</button>
+      <button class="btn bo" onclick="addRCItem()" style="font-size:.62rem">+ Add Phone</button>
     </div>
     <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveReceive()">Save</button></div>`);
   addRCItem();
 }
-function addRCItem(){rcItems.push({name:'',cat:'IPHONE',qty:1,costPerUnit:0});renderRCItems();}
+function addRCItem(){rcItems.push({imei:'',imei2:'',cat:'IPHONE',brand:'',model:'',color:'',storage:'',buyPrice:0,notes:''});renderRCItems();}
 function renderRCItems(){
   const el=$('rc-items');if(!el)return;
-  el.innerHTML=rcItems.map((it,i)=>`<div style="display:grid;grid-template-columns:2fr 1fr 70px 85px 22px;gap:5px;margin-bottom:5px;align-items:center">
-    <input placeholder="Item name" value="${esc(it.name)}" oninput="rcItems[${i}].name=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
-    <select onchange="rcItems[${i}].cat=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.2rem;outline:none">${Object.keys(CATS).map(k=>`<option value="${k}" ${k===it.cat?'selected':''}>${k}</option>`).join('')}</select>
-    <input type="number" placeholder="Qty" value="${it.qty}" min="1" oninput="rcItems[${i}].qty=+this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:center">
-    <input type="number" placeholder="Cost/u" value="${it.costPerUnit||''}" min="0" oninput="rcItems[${i}].costPerUnit=+this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:right">
+  el.innerHTML=rcItems.map((it,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 90px 70px 85px 22px;gap:5px;margin-bottom:5px;align-items:center">
+    <input placeholder="IMEI 1" value="${esc(it.imei)}" oninput="rcItems[${i}].imei=this.value.replace(/\\D/g,'')" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <input placeholder="IMEI 2 (opt)" value="${esc(it.imei2||'')}" oninput="rcItems[${i}].imei2=this.value.replace(/\\D/g,'')" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <input placeholder="Brand" value="${esc(it.brand)}" oninput="rcItems[${i}].brand=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <input placeholder="Model" value="${esc(it.model)}" oninput="rcItems[${i}].model=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <input placeholder="Color" value="${esc(it.color)}" oninput="rcItems[${i}].color=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <input placeholder="Storage" value="${esc(it.storage||'')}" oninput="rcItems[${i}].storage=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
+    <input type="number" placeholder="Buy price" value="${it.buyPrice||''}" min="0" oninput="rcItems[${i}].buyPrice=+this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .38rem;outline:none;text-align:right">
     <button class="bx" onclick="rcItems.splice(${i},1);renderRCItems()">✕</button>
+  </div>
+  <div style="display:grid;grid-template-columns:120px 1fr;gap:5px;margin:-1px 0 8px;align-items:center">
+    <select onchange="rcItems[${i}].cat=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--a5);font-family:var(--mono);font-size:.64rem;padding:.2rem;outline:none">${Object.keys(CATS).map(k=>`<option value="${k}" ${k===it.cat?'selected':''}>${k}</option>`).join('')}</select>
+    <input placeholder="Notes (optional)" value="${esc(it.notes||'')}" oninput="rcItems[${i}].notes=this.value" style="background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.66rem;padding:.22rem .42rem;outline:none">
   </div>`).join('');
 }
 async function saveReceive(){
   const supplier=$('rc-supplier').value.trim(),date=$('rc-date').value,ref=$('rc-ref').value.trim();
-  const items=rcItems.filter(it=>it.name);if(!items.length){showToast('Add at least one item','error');return;}
-  if(!hqStock)hqStock={items:[]};if(!hqStock.items)hqStock.items=[];
-  items.forEach(it=>{const ex=hqStock.items.find(x=>x.name===it.name&&x.cat===it.cat);if(ex){ex.qty+=it.qty;ex.costPerUnit=it.costPerUnit||ex.costPerUnit;}else hqStock.items.push({...it,addedAt:new Date().toISOString()});});
-  await api('PUT','/api/hqstock',hqStock);await api('POST','/api/shipments',{date,supplier,ref,items});
-  closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`${items.length} item type(s) received`);
+  const items=rcItems.map(it=>({
+    imei:(it.imei||'').replace(/\D/g,''),
+    imei2:(it.imei2||'').replace(/\D/g,''),
+    cat:it.cat,brand:it.brand.trim(),model:it.model.trim(),color:it.color.trim(),storage:(it.storage||'').trim(),buyPrice:Number(it.buyPrice)||0,notes:(it.notes||'').trim()
+  })).filter(it=>it.imei);
+  if(!items.length){showToast('Add at least one phone IMEI','error');return;}
+  if(items.some(it=>it.imei.length!==15)){showToast('Each IMEI must be exactly 15 digits','error');return;}
+  const unique=new Set(items.map(it=>it.imei));if(unique.size!==items.length){showToast('Duplicate IMEIs in shipment','error');return;}
+  const r=await api('POST','/api/shipments',{date,supplier,ref,items});
+  if(r.error){showToast(r.error,'error');return;}
+  closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`${items.length} phone(s) received`);
 }
 
 function openDispatchModal(){
-  const items=(hqStock.items||[]).filter(it=>it.qty>0);
+  const items=(hqStock.items||[]).filter(it=>it.imei);
   if(!items.length){showToast('Warehouse is empty','warn');return;}
   showModal(`<h3>↗ Dispatch to Shop</h3>
     <div class="fc">
       <div class="f2"><div class="fi"><label>To Shop</label><select id="ds-shop">${SHOPS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div><div class="fi"><label>Date</label><input type="date" id="ds-date" value="${today()}"></div></div>
       <div class="fi"><label>Note</label><input type="text" id="ds-note" placeholder="Notes…"></div>
-      <div style="font-size:.62rem;color:var(--text2);margin:.3rem 0;font-weight:600">Select items to dispatch:</div>
-      <div style="max-height:230px;overflow-y:auto">${items.map((it,i)=>`<div style="display:flex;align-items:center;gap:.5rem;padding:.24rem 0;border-bottom:1px solid var(--border2)"><input type="checkbox" id="dsi-${i}" style="width:14px;height:14px"><label for="dsi-${i}" style="flex:1;color:var(--white);font-size:.7rem">${esc(it.name)} <span style="color:var(--text2)">(${it.qty} avail)</span></label><input type="number" id="dsq-${i}" value="1" min="1" max="${it.qty}" style="width:50px;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:var(--mono);font-size:.65rem;padding:.18rem .3rem;text-align:center;outline:none"></div>`).join('')}</div>
+      <div style="font-size:.62rem;color:var(--text2);margin:.3rem 0;font-weight:600">Select phones to dispatch:</div>
+      <div style="max-height:230px;overflow-y:auto">${items.map((it,i)=>{const label=[it.brand,it.model,it.storage].filter(Boolean).join(' ')||it.name||'Phone';return `<div style="display:flex;align-items:center;gap:.5rem;padding:.24rem 0;border-bottom:1px solid var(--border2)"><input type="checkbox" id="dsi-${i}" style="width:14px;height:14px"><label for="dsi-${i}" style="flex:1;color:var(--white);font-size:.68rem">${esc(label)} <span style="color:var(--text2);font-family:var(--mono)">${esc(it.imei||'')}</span></label></div>`;}).join('')}</div>
     </div>
     <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bb" onclick="saveDispatch(${JSON.stringify(items).replace(/"/g,'&quot;')})">Dispatch</button></div>`);
 }
 async function saveDispatch(items){
   const toShop=$('ds-shop').value,date=$('ds-date').value,note=$('ds-note').value.trim();
   const dispatched=[];
-  items.forEach((it,i)=>{const chk=document.getElementById(`dsi-${i}`);const qty=parseInt(document.getElementById(`dsq-${i}`)?.value)||0;if(chk?.checked&&qty>0){dispatched.push({name:it.name,cat:it.cat,qty,costPerUnit:it.costPerUnit||0});const stock=hqStock.items.find(x=>x.name===it.name&&x.cat===it.cat);if(stock)stock.qty=Math.max(0,stock.qty-qty);}});
-  if(!dispatched.length){showToast('Select at least one item','error');return;}
-  await api('PUT','/api/hqstock',hqStock);await api('POST','/api/dispatches',{date,toShop,note,items:dispatched});
-  closeModal();loadWarehouse();loadShipments();showToast(`${dispatched.length} item type(s) dispatched to Shop ${toShop}`);
+  items.forEach((it,i)=>{
+    const chk=document.getElementById(`dsi-${i}`);
+    if(chk?.checked&&it.imei){
+      dispatched.push({
+        imei:it.imei,imei2:it.imei2||'',cat:it.cat||guessCat(it.brand,it.model,it.cat),
+        brand:it.brand||'',model:it.model||'',color:it.color||'',storage:it.storage||'',
+        buyPrice:Number(it.buyPrice||it.costPerUnit||0),notes:it.notes||''
+      });
+    }
+  });
+  if(!dispatched.length){showToast('Select at least one phone','error');return;}
+  const r=await api('POST','/api/dispatches',{date,toShop,note,items:dispatched});
+  if(r.error){showToast(r.error,'error');return;}
+  closeModal();loadWarehouse();loadShipments();showToast(`${dispatched.length} phone(s) dispatched to Shop ${toShop}`);
 }
 
 async function openDispatchFromShipments(){
@@ -3353,7 +3380,7 @@ function renderShipments(){
   const body=$('ship-body');
   if(!all.length){body.innerHTML=`<div class="empty"><div class="empty-icon">—</div><h3>No shipments found</h3></div>`;return;}
   const catC={IPHONE:'var(--a1)',SAMSUNG:'var(--a2)',GOOGLE:'var(--a4)',OTHER:'var(--a5)',BOX:'var(--a6)',EXTRA:'var(--a3)'};
-  body.innerHTML=`<div style="padding:.9rem">${all.map(sh=>{const isD=sh.source==='dispatch';const c=isD?(SHOP_COLOR[sh.toShop]||'var(--a5)'):'var(--a4)';const r=isD?(SHOP_RGBA[sh.toShop]||'22,163,74'):'2,132,199';const tot=(sh.items||[]).reduce((s,i)=>s+i.qty,0);return `<div class="ship-card"><div class="ship-hd" style="background:rgba(${r},.05);border-bottom:1px solid rgba(${r},.12)"><span style="font-size:.82rem;font-weight:700;color:${c}">${isD?`→ Shop ${sh.toShop}`:'⬇ Inbound'}</span><span style="font-family:var(--mono);font-size:.63rem;color:var(--text2)">${sh.date}</span>${sh.supplier?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.supplier)}</span>`:''}${sh.note||sh.ref?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.note||sh.ref)}</span>`:''}<span style="margin-left:auto;font-size:.63rem;color:var(--a5);font-family:var(--mono)">${tot} units</span></div><div class="ship-items">${(sh.items||[]).map(it=>`<div style="display:flex;gap:.5rem;align-items:center;padding:.2rem 0;border-bottom:1px solid var(--border2);font-size:.63rem"><span style="flex:1;color:var(--white)">${esc(it.name)}</span><span style="padding:.03rem .28rem;background:var(--s3);color:${catC[it.cat]||'var(--text2)'};border-radius:4px;font-size:.52rem;font-weight:600">${it.cat||''}</span><span style="color:var(--text2)">×${it.qty}</span>${it.costPerUnit?`<span style="color:var(--a5);font-family:var(--mono)">${pkr(it.costPerUnit)}</span>`:''}</div>`).join('')}</div></div>`;}).join('')}</div>`;
+  body.innerHTML=`<div style="padding:.9rem">${all.map(sh=>{const isD=sh.source==='dispatch';const c=isD?(SHOP_COLOR[sh.toShop]||'var(--a5)'):'var(--a4)';const r=isD?(SHOP_RGBA[sh.toShop]||'22,163,74'):'2,132,199';const imeiItems=(sh.items||[]).filter(it=>it.imei);const tot=imeiItems.length||((sh.items||[]).reduce((s,i)=>s+(Number(i.qty)||0),0));const sold=isD?(Number(sh.soldPhones)||0):0;const sellPct=isD&&tot?Math.round((sold/tot)*100):0;const id=sh._id||sh.id||'';return `<div class="ship-card"><div class="ship-hd" style="background:rgba(${r},.05);border-bottom:1px solid rgba(${r},.12)"><span style="font-size:.82rem;font-weight:700;color:${c}">${isD?`→ Shop ${sh.toShop}`:'⬇ Inbound'}</span><span style="font-family:var(--mono);font-size:.63rem;color:var(--text2)">${sh.date}</span>${sh.supplier?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.supplier)}</span>`:''}${sh.note||sh.ref?`<span style="font-size:.63rem;color:var(--text2)">${esc(sh.note||sh.ref)}</span>`:''}<span style="margin-left:auto;font-size:.63rem;color:var(--a5);font-family:var(--mono)">${tot} phone${tot===1?'':'s'}</span><button class="btn" style="margin-left:8px;font-size:.56rem;padding:.1rem .4rem;background:var(--danger);border-color:var(--danger);color:#fff" onclick="deleteShipmentRecord('${isD?'dispatch':'shipment'}','${id}')">Delete</button></div>${isD?`<div style="padding:.35rem .55rem .15rem;font-size:.6rem;color:var(--text2)">Sold from this shipment: <span style="color:${sold>0?'var(--success)':'var(--text2)'};font-weight:700">${sold}</span> / ${tot} (${sellPct}%)</div>`:''}<div class="ship-items">${(sh.items||[]).map(it=>{const name=[it.brand,it.model,it.storage].filter(Boolean).join(' ')||it.name||'Phone';return `<div style="display:flex;gap:.5rem;align-items:center;padding:.2rem 0;border-bottom:1px solid var(--border2);font-size:.63rem"><span style="flex:1;color:var(--white)">${esc(name)}</span><span style="padding:.03rem .28rem;background:var(--s3);color:${catC[it.cat]||'var(--text2)'};border-radius:4px;font-size:.52rem;font-weight:600">${it.cat||''}</span>${it.imei?`<span style="color:var(--text2);font-family:var(--mono)">${esc(it.imei)}</span>`:`<span style="color:var(--text2)">×${it.qty}</span>`}${it.costPerUnit||it.buyPrice?`<span style="color:var(--a5);font-family:var(--mono)">${pkr(it.costPerUnit||it.buyPrice)}</span>`:''}</div>`;}).join('')}</div></div>`;}).join('')}</div>`;
 }
 
 // ── MONTHLY P&L ──
@@ -3376,11 +3403,44 @@ async function renderMonthly(){
 }
 
 // ── BACKUP ──
-function doBackup(){window.open(BASE+'/api/backup','_blank');}
+async function doBackup(){
+  const tok=sessionStorage.getItem('authToken');
+  if(!tok){showToast('Please sign in again','error');return;}
+  try{
+    const r=await fetch(BASE+'/api/backup',{headers:{Authorization:'Bearer '+tok}});
+    if(r.status===401){showToast('Session expired — please sign in again','warn');return;}
+    if(!r.ok){showToast('Backup failed','error');return;}
+    const data=await r.json();
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`imei-stock-backup-${today()}.json`;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+    showToast('Backup downloaded');
+  }catch(e){showToast('Backup failed','error');}
+}
 async function doRestore(){
   const file=$('restoreFile')?.files[0];if(!file){showToast('Select a backup file','error');return;}
   if(!confirm('This will overwrite existing data. Continue?'))return;
   try{const data=JSON.parse(await file.text());const r=await api('POST','/api/restore',data);if(r.success){showToast('Restore complete — reloading…');setTimeout(()=>location.reload(),1200);}else showToast('Restore failed: '+(r.error||'unknown'),'error');}catch(e){showToast('Error reading file','error');}
+}
+
+async function deleteShipmentRecord(type,id){
+  if(!id){showToast('Cannot delete this record','error');return;}
+  if(!confirm('Delete this shipment record?'))return;
+  const ep=type==='dispatch'?`/api/dispatches/${id}`:`/api/shipments/${id}`;
+  const r=await api('DELETE',ep);
+  if(r.success){loadShipments();showToast('Shipment deleted','warn');}
+  else showToast(r.error||'Delete failed','error');
+}
+
+async function deleteWarehouseImei(imei){
+  const raw=String(imei||'').replace(/\D/g,'');
+  if(raw.length!==15){showToast('Invalid IMEI','error');return;}
+  if(!confirm(`Delete IMEI ${raw} from warehouse?`))return;
+  const r=await api('DELETE',`/api/hqstock/${raw}`);
+  if(r.success){loadWarehouse();showToast('Warehouse phone deleted','warn');}
+  else showToast(r.error||'Delete failed','error');
 }
 
 // ── CEO DASHBOARD ────────────────────────────────
