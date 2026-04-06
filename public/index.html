@@ -1854,6 +1854,7 @@ let zxingReader = null;
 const camLabels = {
   imei1:'Scanning for IMEI 1…', imei2:'Scanning for IMEI 2…',
   batch1:'Scanning for batch IMEI 1…', batch:'Scanning for batch IMEI 2…',
+  batch2:'Scanning for batch IMEI 2…',
   rc1:'Scanning for warehouse IMEI 1…', rc2:'Scanning for warehouse IMEI 2…',
   'ds:scan':'Scanning dispatch IMEI…',
   free:'Scan any barcode',
@@ -3638,7 +3639,7 @@ function addDispatchScanImei(){
 function addDispatchByImei(raw,fromScan){
   const imei=cleanImei(raw);
   if(!imei){showToast('Enter IMEI to add','warn');return;}
-  if(imei.length<14||imei.length>16){showToast('IMEI must be 14 to 16 digits','error');return;}
+  if(imei.length<14||imei.length>16){showToast('IMEI must be between 14 and 16 digits','error');return;}
   const exists=dispatchSourceByImei.has(imei);
   if(!exists){showToast('IMEI not found in warehouse stock','error');return;}
   if(dispatchSelectedImeis.has(imei)){showToast('IMEI already selected','warn');return;}
