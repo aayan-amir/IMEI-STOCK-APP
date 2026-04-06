@@ -3470,15 +3470,16 @@ async function saveReceive(){
   if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving…';}
   let r={};
   let saveSucceeded=false;
+  let requestError='';
   try{
     r=await api('POST','/api/shipments',{date,supplier,ref,items});
     saveSucceeded=!r.error;
   }catch(e){
-    showToast('Network error while saving shipment','error');
-    return;
+    requestError='Network error while saving shipment';
   }finally{
     if(saveBtn&&!saveSucceeded){saveBtn.textContent='Save All';saveBtn.disabled=false;}
   }
+  if(requestError){showToast(requestError,'error');return;}
   if(r.error){showToast(r.error,'error');return;}
   if(saveBtn){saveBtn.textContent='Save All';saveBtn.disabled=true;}
   closeModal();rcItems=[];loadWarehouse();loadShipments();showToast(`${items.length} phone(s) received`);
