@@ -21,6 +21,7 @@ if (trustProxy !== undefined) {
     }
   }
 } else if (process.env.NODE_ENV === 'production') {
+  // Most hosted deployments (e.g., Render/Heroku) run behind one reverse proxy.
   app.set('trust proxy', 1);
 }
 
@@ -31,7 +32,7 @@ app.use(express.static('public'));
 // Rate limiting — 300 requests per minute per IP
 app.use('/api/', rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true, legacyHeaders: false }));
 
-// Return 503 when MongoDB is not ready
+// Return 503 immediately when MongoDB is not ready (prevents 10 s buffer timeout)
 app.use('/api/', (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
     return res.status(503).json({ error: 'Database not ready, please try again shortly.' });
@@ -57,7 +58,7 @@ function connectMongo() {
   reconnecting = true;
   return mongoose.connect(process.env.MONGO_URI, MONGO_OPTS)
     .then(() => {
-      console.log('✅ MongoDB connected');
+      console.log("✅ MongoDB connected");
       reconnectAttempts = 0;
       reconnecting = false;
     })
@@ -71,17 +72,128 @@ function connectMongo() {
 }
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️  MongoDB disconnected – reconnecting…');
+  console.warn("⚠️  MongoDB disconnected – reconnecting…");
   connectMongo();
 });
 
 mongoose.connection.on('error', err => {
-  console.error('❌ MongoDB error:', err.message);
+  console.error("❌ MongoDB error:", err.message);
 });
 
 connectMongo();
 
-// ── PASSWORDS ─────────────────────────────────
+// ── Schemas ────────────────────────────────────
+const PhoneSchema = new mongoose.Schema({
+  imei: String,
+  imei2: String,
+  brand: String,
+  model: String,
+  color: String,
+  storage: String,
+  buyPrice: Number,
+  salePrice: Number,
+  status: { type: String, default: 'in_stock' },
+  shop: String,
+  soldByShop: String,
+  cat: String,
+  notes: String,
+  addedAt: String,
+  soldAt: String
+}, { toJSON: { virtuals: true } });
+
+const SaleSchema = new mongoose.Schema({
+  imei: String,
+  brand: String,
+  model: String,
+  buyPrice: Number,
+  salePrice: Number,
+  profit: Number,
+  shop: String,
+  soldByShop: String,
+  buyerName: String,
+  buyerPhone: String,
+  notes: String,
+  soldAt: String
+});
+
+const Phone = mongoose.model('Phone', PhoneSchema);
+const Sale = mongoose.model('Sale', SaleSchema);
+
+const DaySchema = new mongoose.Schema({
+  shop: String,
+  date: String,
+  cats: mongoose.Schema.Types.Mixed,
+  expenses: Array,
+  purchases: Array,
+  transfers: Array,
+  carryForward: Number,
+});
+const Day = mongoose.model('Day', DaySchema);
+
+const ShopExpenseSchema = new mongoose.Schema({
+  shop: String,
+  date: String,
+  month: String,
+  category: String,
+  description: String,
+  amount: Number,
+  addedAt: String,
+});
+const ShopExpense = mongoose.model('ShopExpense', ShopExpenseSchema);
+
+const HQStockSchema = new mongoose.Schema({
+  key: { type: String, default: 'hq' },
+  items: { type: Array, default: [] },
+  updatedAt: String,
+});
+const HQStockModel = mongoose.model('HQStock', HQStockSchema);
+
+const ShipmentSchema = new mongoose.Schema({
+  date: String,
+  supplier: String,
+  ref: String,
+  items: Array,
+  addedAt: String,
+});
+const Shipment = mongoose.model('Shipment', ShipmentSchema);
+
+const DispatchSchema = new mongoose.Schema({
+  date: String,
+  toShop: String,
+  note: String,
+  items: Array,
+  addedAt: String,
+});
+const Dispatch = mongoose.model('Dispatch', DispatchSchema);
+
+const CustomerSchema = new mongoose.Schema({
+  name: String,
+  phone: String,
+  email: String,
+  notes: String,
+  addedAt: String,
+});
+const Customer = mongoose.model('Customer', CustomerSchema);
+
+const AuditLogSchema = new mongoose.Schema({
+  action: String,
+  shop: String,
+  role: String,
+  details: mongoose.Schema.Types.Mixed,
+  ts: { type: String, default: () => new Date().toISOString() },
+});
+const AuditLog = mongoose.model('AuditLog', AuditLogSchema);
+
+const ReportSchema = new mongoose.Schema({
+  type: String,   // 'daily' | 'monthly'
+  shop: String,
+  period: String, // YYYY-MM-DD or YYYY-MM
+  data: mongoose.Schema.Types.Mixed,
+  generatedAt: String,
+});
+const Report = mongoose.model('Report', ReportSchema);
+
+// ── PASSWORDS (required — set via env vars, no defaults) ──────
 if (!process.env.GATE_PASSWORD || !process.env.ADMIN_PASSWORD) {
   console.error('❌ GATE_PASSWORD and ADMIN_PASSWORD must be set as environment variables. Refusing to start.');
   process.exit(1);
@@ -89,249 +201,19 @@ if (!process.env.GATE_PASSWORD || !process.env.ADMIN_PASSWORD) {
 const GATE_PASSWORD  = process.env.GATE_PASSWORD;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-// ── VALID SHOPS ────────────────────────────────
+// ── VALID SHOPS (set via VALID_SHOPS env var as comma-separated list) ──
+// Not a secret, but configure this to match your actual shop identifiers.
+// Example: VALID_SHOPS=shopA,shopB,shopC
 const VALID_SHOPS = process.env.VALID_SHOPS
   ? process.env.VALID_SHOPS.split(',').map(s => s.trim()).filter(Boolean)
   : ['456', '192', 'G15'];
 
-// ── DEFAULT CLIENT ID ──────────────────────────
-// All legacy data (created before multi-tenancy) belongs to this client.
-// The migration script sets clientId = DEFAULT_CLIENT_ID on every existing document.
-const DEFAULT_CLIENT_ID = process.env.DEFAULT_CLIENT_ID || 'default';
-
-// ══════════════════════════════════════════════════════════════════
-// SCHEMAS
-// ══════════════════════════════════════════════════════════════════
-
-// ── NEW: Client (tenant) ───────────────────────
-// One Client = one business owner who may control multiple shops.
-const ClientSchema = new mongoose.Schema({
-  clientId:    { type: String, required: true, unique: true, index: true },
-  name:        { type: String, required: true, trim: true },
-  slug:        { type: String, required: true, unique: true, lowercase: true, trim: true },
-  status:      { type: String, enum: ['active', 'suspended'], default: 'active' },
-  // Which shop identifiers belong to this client (subset of VALID_SHOPS or custom)
-  shops:       { type: [String], default: [] },
-  // Optional metadata
-  contactEmail: { type: String, default: '' },
-  notes:        { type: String, default: '' },
-  createdAt:   { type: String, default: () => new Date().toISOString() },
-  updatedAt:   { type: String, default: () => new Date().toISOString() },
-});
-const Client = mongoose.model('Client', ClientSchema);
-
-// ── NEW: ClientUser (per-tenant user accounts) ─
-// Replaces the single-password auth model for client and shop users.
-// Master admin credentials stay in env vars and are NOT stored here.
-const ClientUserSchema = new mongoose.Schema({
-  clientId:     { type: String, required: true, index: true },
-  username:     { type: String, required: true, trim: true },
-  // bcrypt hash stored here — plain passwords NEVER persisted.
-  // For Phase 1 we store a placeholder; Phase 2 wires up bcrypt login.
-  passwordHash: { type: String, default: '' },
-  role:         { type: String, enum: ['client_admin', 'shop_user'], default: 'shop_user' },
-  // Empty array = access to all shops in the client; otherwise scoped.
-  assignedShops: { type: [String], default: [] },
-  status:       { type: String, enum: ['active', 'suspended'], default: 'active' },
-  lastLoginAt:  { type: String, default: '' },
-  createdAt:    { type: String, default: () => new Date().toISOString() },
-  updatedAt:    { type: String, default: () => new Date().toISOString() },
-});
-// Uniqueness: username must be unique within a client (not globally)
-ClientUserSchema.index({ clientId: 1, username: 1 }, { unique: true });
-const ClientUser = mongoose.model('ClientUser', ClientUserSchema);
-
-// ── EXISTING: Phone ────────────────────────────
-// Added: clientId (indexed), compound indexes for common query patterns
-const PhoneSchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields (unchanged) ──
-  imei:     String,
-  imei2:    String,
-  brand:    String,
-  model:    String,
-  color:    String,
-  storage:  String,
-  buyPrice: Number,
-  salePrice: Number,
-  status:   { type: String, default: 'in_stock' },
-  shop:     String,
-  soldByShop: String,
-  cat:      String,
-  notes:    String,
-  addedAt:  String,
-  soldAt:   String,
-}, { toJSON: { virtuals: true } });
-
-// Compound indexes: tenant isolation + common filters
-PhoneSchema.index({ clientId: 1, shop: 1 });
-PhoneSchema.index({ clientId: 1, status: 1 });
-PhoneSchema.index({ clientId: 1, imei: 1 }, { unique: true, sparse: true });
-PhoneSchema.index({ clientId: 1, soldByShop: 1 });
-
-const Phone = mongoose.model('Phone', PhoneSchema);
-
-// ── EXISTING: Sale ─────────────────────────────
-const SaleSchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields ──
-  imei:       String,
-  brand:      String,
-  model:      String,
-  buyPrice:   Number,
-  salePrice:  Number,
-  profit:     Number,
-  shop:       String,
-  soldByShop: String,
-  buyerName:  String,
-  buyerPhone: String,
-  notes:      String,
-  soldAt:     String,
-});
-
-SaleSchema.index({ clientId: 1, soldByShop: 1 });
-SaleSchema.index({ clientId: 1, soldAt: 1 });
-
-const Sale = mongoose.model('Sale', SaleSchema);
-
-// ── EXISTING: Day ──────────────────────────────
-const DaySchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields ──
-  shop:         String,
-  date:         String,
-  cats:         mongoose.Schema.Types.Mixed,
-  expenses:     Array,
-  purchases:    Array,
-  transfers:    Array,
-  carryForward: Number,
-});
-
-DaySchema.index({ clientId: 1, shop: 1, date: 1 }, { unique: true, sparse: true });
-
-const Day = mongoose.model('Day', DaySchema);
-
-// ── EXISTING: ShopExpense ──────────────────────
-const ShopExpenseSchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields ──
-  shop:        String,
-  date:        String,
-  month:       String,
-  category:    String,
-  description: String,
-  amount:      Number,
-  addedAt:     String,
-});
-
-ShopExpenseSchema.index({ clientId: 1, shop: 1, month: 1 });
-
-const ShopExpense = mongoose.model('ShopExpense', ShopExpenseSchema);
-
-// ── EXISTING: HQStock ──────────────────────────
-// One HQ stock document per client (key = clientId instead of 'hq')
-const HQStockSchema = new mongoose.Schema({
-  // ── CHANGED: key is now clientId (was always 'hq') ──
-  // For legacy data the migration sets key = DEFAULT_CLIENT_ID
-  clientId:  { type: String, default: DEFAULT_CLIENT_ID, unique: true, index: true },
-  key:       { type: String, default: 'hq' },           // kept for backward compat
-  items:     { type: Array, default: [] },
-  updatedAt: String,
-});
-
-const HQStockModel = mongoose.model('HQStock', HQStockSchema);
-
-// ── EXISTING: Shipment ─────────────────────────
-const ShipmentSchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields ──
-  date:     String,
-  supplier: String,
-  ref:      String,
-  items:    Array,
-  addedAt:  String,
-});
-
-ShipmentSchema.index({ clientId: 1, date: -1 });
-
-const Shipment = mongoose.model('Shipment', ShipmentSchema);
-
-// ── EXISTING: Dispatch ─────────────────────────
-const DispatchSchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields ──
-  date:    String,
-  toShop:  String,
-  note:    String,
-  items:   Array,
-  addedAt: String,
-});
-
-DispatchSchema.index({ clientId: 1, date: -1 });
-
-const Dispatch = mongoose.model('Dispatch', DispatchSchema);
-
-// ── EXISTING: Customer ─────────────────────────
-const CustomerSchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields ──
-  name:    String,
-  phone:   String,
-  email:   String,
-  notes:   String,
-  addedAt: String,
-});
-
-CustomerSchema.index({ clientId: 1, name: 1 });
-
-const Customer = mongoose.model('Customer', CustomerSchema);
-
-// ── EXISTING: AuditLog ─────────────────────────
-const AuditLogSchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields ──
-  action:  String,
-  shop:    String,
-  role:    String,
-  details: mongoose.Schema.Types.Mixed,
-  ts:      { type: String, default: () => new Date().toISOString() },
-});
-
-AuditLogSchema.index({ clientId: 1, ts: -1 });
-
-const AuditLog = mongoose.model('AuditLog', AuditLogSchema);
-
-// ── EXISTING: Report ───────────────────────────
-const ReportSchema = new mongoose.Schema({
-  // ── NEW FIELD ──
-  clientId: { type: String, default: DEFAULT_CLIENT_ID, index: true },
-  // ── existing fields ──
-  type:        String,
-  shop:        String,
-  period:      String,
-  data:        mongoose.Schema.Types.Mixed,
-  generatedAt: String,
-});
-
-ReportSchema.index({ clientId: 1, type: 1, period: -1 });
-
-const Report = mongoose.model('Report', ReportSchema);
-
-// ══════════════════════════════════════════════════════════════════
-// AUTH  (unchanged from original — Phase 2 will overhaul this)
-// ══════════════════════════════════════════════════════════════════
-
+// ── SESSION TOKENS ─────────────────────────────
+// Simple in-memory store: token -> { role, shop, expiresAt }
 const tokenStore = new Map();
-const TOKEN_TTL = 8 * 60 * 60 * 1000;
+const TOKEN_TTL = 8 * 60 * 60 * 1000; // 8 hours
 
+// Expire old tokens periodically
 setInterval(() => {
   const now = Date.now();
   for (const [tok, data] of tokenStore) {
@@ -343,18 +225,20 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+// Constant-time string comparison to prevent timing attacks
 function safeCompare(a, b) {
   try {
     const ba = Buffer.from(String(a || ''), 'utf8');
     const bb = Buffer.from(String(b || ''), 'utf8');
     if (ba.length !== bb.length) {
-      crypto.timingSafeEqual(ba, ba);
+      crypto.timingSafeEqual(ba, ba); // burn time, always false
       return false;
     }
     return crypto.timingSafeEqual(ba, bb);
   } catch { return false; }
 }
 
+// Auth middleware — verifies Bearer token in Authorization header
 function requireAuth(roles = ['admin', 'shop']) {
   return (req, res, next) => {
     const header = req.headers['authorization'] || '';
@@ -368,10 +252,7 @@ function requireAuth(roles = ['admin', 'shop']) {
       return res.status(403).json({ error: 'Forbidden' });
     }
     req.authRole = session.role;
-    req.authShop = session.shop;
-    // Phase 1: all existing sessions belong to the default client.
-    // Phase 2 will set this from the token payload per-user.
-    req.clientId = session.clientId || DEFAULT_CLIENT_ID;
+    req.authShop = session.shop; // null for admin
     next();
   };
 }
@@ -379,16 +260,13 @@ function requireAuth(roles = ['admin', 'shop']) {
 const adminOnly = requireAuth(['admin']);
 const anyAuth   = requireAuth(['admin', 'shop']);
 
-function logAction(action, shop, role, details, clientId) {
-  AuditLog.create({
-    action,
-    shop:     shop || null,
-    role:     role || null,
-    details,
-    clientId: clientId || DEFAULT_CLIENT_ID,
-  }).catch(err => console.error('Audit log error:', err));
+// Fire-and-forget audit log writer
+function logAction(action, shop, role, details) {
+  AuditLog.create({ action, shop: shop || null, role: role || null, details })
+    .catch(err => console.error('Audit log error:', err));
 }
 
+// Strict rate limiter for the auth endpoint: 10 attempts per 15 minutes
 const authLimiter = rateLimit({
   windowMs: 15 * 60_000,
   max: 10,
@@ -397,306 +275,41 @@ const authLimiter = rateLimit({
   message: { ok: false, error: 'Too many attempts, please try again later.' },
 });
 
-// ══════════════════════════════════════════════════════════════════
-// MASTER ADMIN MIDDLEWARE (Phase 3 will expand this significantly)
-// ══════════════════════════════════════════════════════════════════
+// ── ROUTES ─────────────────────────────────────
 
-const MASTER_ADMIN_PASSWORD = process.env.MASTER_ADMIN_PASSWORD || ADMIN_PASSWORD;
-
-function requireMasterAdmin(req, res, next) {
-  const header = req.headers['authorization'] || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const session = tokenStore.get(token);
-  if (!session || session.expiresAt < Date.now() || session.role !== 'master') {
-    return res.status(403).json({ error: 'Master admin access required' });
-  }
-  req.authRole = 'master';
-  req.clientId = null; // master has no client scope
-  next();
-}
-
-// ══════════════════════════════════════════════════════════════════
-// ROUTES
-// ══════════════════════════════════════════════════════════════════
-
-// ── AUTH ───────────────────────────────────────
+// Auth — validates passwords and issues session tokens (never exposes passwords)
 app.post('/api/auth', authLimiter, (req, res) => {
   const { type, password, shop } = req.body || {};
 
+  // Step 1: gate check (no token issued — just confirms the gate password)
   if (type === 'gate') {
     return res.json({ ok: safeCompare(password, GATE_PASSWORD) });
   }
 
+  // Step 2a: admin login
   if (type === 'admin') {
     if (!safeCompare(password, ADMIN_PASSWORD)) return res.json({ ok: false });
     const token = generateToken();
-    tokenStore.set(token, {
-      role: 'admin',
-      shop: null,
-      clientId: DEFAULT_CLIENT_ID,
-      expiresAt: Date.now() + TOKEN_TTL,
-    });
+    tokenStore.set(token, { role: 'admin', shop: null, expiresAt: Date.now() + TOKEN_TTL });
     return res.json({ ok: true, token, role: 'admin' });
   }
 
+  // Step 2b: shop login — requires gate password to prevent gate bypass
   if (type === 'shop') {
     if (!safeCompare(password, GATE_PASSWORD)) return res.json({ ok: false });
     if (!VALID_SHOPS.includes(shop)) return res.status(400).json({ ok: false, error: 'Invalid shop' });
     const token = generateToken();
-    tokenStore.set(token, {
-      role: 'shop',
-      shop,
-      clientId: DEFAULT_CLIENT_ID,
-      expiresAt: Date.now() + TOKEN_TTL,
-    });
+    tokenStore.set(token, { role: 'shop', shop, expiresAt: Date.now() + TOKEN_TTL });
     return res.json({ ok: true, token, role: 'shop', shop });
-  }
-
-  // ── NEW: master admin login ──
-  if (type === 'master') {
-    if (!safeCompare(password, MASTER_ADMIN_PASSWORD)) return res.json({ ok: false });
-    const token = generateToken();
-    tokenStore.set(token, {
-      role: 'master',
-      shop: null,
-      clientId: null,
-      expiresAt: Date.now() + TOKEN_TTL,
-    });
-    return res.json({ ok: true, token, role: 'master' });
   }
 
   return res.status(400).json({ ok: false });
 });
 
-// ── MASTER ADMIN: Client management ───────────
-// Placeholder routes — fully implemented in Phase 3.
-// Returning stubs now so the schema + indexes can be verified.
-
-app.get('/api/master/clients', requireMasterAdmin, async (req, res) => {
-  try {
-    const clients = await Client.find().sort({ createdAt: -1 });
-    res.json(clients);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.post('/api/master/clients', requireMasterAdmin, async (req, res) => {
-  try {
-    const { name, slug, shops, contactEmail, notes } = req.body || {};
-    if (!name || !slug) return res.status(400).json({ error: 'name and slug are required' });
-
-    // Validate slug format
-    if (!/^[a-z0-9-]+$/.test(slug)) {
-      return res.status(400).json({ error: 'slug must be lowercase alphanumeric with hyphens only' });
-    }
-
-    // Validate shops against VALID_SHOPS — clients can only be assigned known shops
-    const assignedShops = (Array.isArray(shops) ? shops : []).filter(s => VALID_SHOPS.includes(s));
-
-    const clientId = `client_${slug}_${crypto.randomBytes(4).toString('hex')}`;
-    const client = await Client.create({
-      clientId,
-      name: name.trim(),
-      slug: slug.trim(),
-      shops: assignedShops,
-      contactEmail: contactEmail || '',
-      notes: notes || '',
-    });
-
-    // Auto-create the default HQ stock document for this client
-    await HQStockModel.create({ clientId, key: 'hq', items: [], updatedAt: new Date().toISOString() });
-
-    res.status(201).json({ success: true, client });
-  } catch (err) {
-    if (err.code === 11000) return res.status(409).json({ error: 'A client with this slug or clientId already exists' });
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.get('/api/master/clients/:clientId', requireMasterAdmin, async (req, res) => {
-  try {
-    const client = await Client.findOne({ clientId: req.params.clientId });
-    if (!client) return res.status(404).json({ error: 'Client not found' });
-    res.json(client);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.put('/api/master/clients/:clientId', requireMasterAdmin, async (req, res) => {
-  try {
-    const { name, status, shops, contactEmail, notes } = req.body || {};
-    const allowed = {};
-    if (name)         allowed.name         = name.trim();
-    if (status && ['active', 'suspended'].includes(status)) allowed.status = status;
-    if (Array.isArray(shops)) allowed.shops = shops.filter(s => VALID_SHOPS.includes(s));
-    if (contactEmail !== undefined) allowed.contactEmail = contactEmail;
-    if (notes !== undefined)        allowed.notes        = notes;
-    allowed.updatedAt = new Date().toISOString();
-
-    const client = await Client.findOneAndUpdate(
-      { clientId: req.params.clientId },
-      { $set: allowed },
-      { returnDocument: 'after' }
-    );
-    if (!client) return res.status(404).json({ error: 'Client not found' });
-    res.json({ success: true, client });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.delete('/api/master/clients/:clientId', requireMasterAdmin, async (req, res) => {
-  try {
-    const { clientId } = req.params;
-    // Soft delete only — suspend the client, never hard-delete tenant data
-    const client = await Client.findOneAndUpdate(
-      { clientId },
-      { $set: { status: 'suspended', updatedAt: new Date().toISOString() } },
-      { returnDocument: 'after' }
-    );
-    if (!client) return res.status(404).json({ error: 'Client not found' });
-    res.json({ success: true, message: 'Client suspended. Data retained.', client });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ── MASTER ADMIN: ClientUser stubs ────────────
-app.get('/api/master/clients/:clientId/users', requireMasterAdmin, async (req, res) => {
-  try {
-    const users = await ClientUser
-      .find({ clientId: req.params.clientId }, { passwordHash: 0 })
-      .sort({ createdAt: -1 });
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.post('/api/master/clients/:clientId/users', requireMasterAdmin, async (req, res) => {
-  try {
-    const { clientId } = req.params;
-    const { username, role, assignedShops } = req.body || {};
-    if (!username) return res.status(400).json({ error: 'username is required' });
-
-    const client = await Client.findOne({ clientId });
-    if (!client) return res.status(404).json({ error: 'Client not found' });
-
-    // Validate assignedShops are within this client's shops
-    const validShops = (Array.isArray(assignedShops) ? assignedShops : [])
-      .filter(s => client.shops.includes(s));
-
-    // passwordHash is empty here — Phase 2 will add bcrypt password setting
-    const user = await ClientUser.create({
-      clientId,
-      username: username.trim(),
-      role: ['client_admin', 'shop_user'].includes(role) ? role : 'shop_user',
-      assignedShops: validShops,
-    });
-
-    const { passwordHash: _, ...safeUser } = user.toObject();
-    res.status(201).json({ success: true, user: safeUser });
-  } catch (err) {
-    if (err.code === 11000) return res.status(409).json({ error: 'Username already exists for this client' });
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.put('/api/master/clients/:clientId/users/:userId', requireMasterAdmin, async (req, res) => {
-  try {
-    const { clientId, userId } = req.params;
-    const { role, assignedShops, status } = req.body || {};
-
-    const client = await Client.findOne({ clientId });
-    if (!client) return res.status(404).json({ error: 'Client not found' });
-
-    const allowed = { updatedAt: new Date().toISOString() };
-    if (role && ['client_admin', 'shop_user'].includes(role)) allowed.role = role;
-    if (status && ['active', 'suspended'].includes(status)) allowed.status = status;
-    if (Array.isArray(assignedShops)) {
-      allowed.assignedShops = assignedShops.filter(s => client.shops.includes(s));
-    }
-
-    const user = await ClientUser.findOneAndUpdate(
-      { _id: userId, clientId },
-      { $set: allowed },
-      { returnDocument: 'after', projection: { passwordHash: 0 } }
-    );
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ success: true, user });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.delete('/api/master/clients/:clientId/users/:userId', requireMasterAdmin, async (req, res) => {
-  try {
-    await ClientUser.findOneAndDelete({ _id: req.params.userId, clientId: req.params.clientId });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ── MASTER: aggregate stats ────────────────────
-app.get('/api/master/stats', requireMasterAdmin, async (req, res) => {
-  try {
-    const [clients, phones, sales] = await Promise.all([
-      Client.countDocuments(),
-      Phone.aggregate([
-        { $group: { _id: '$clientId', total: { $sum: 1 }, inStock: { $sum: { $cond: [{ $eq: ['$status', 'in_stock'] }, 1, 0] } } } }
-      ]),
-      Sale.aggregate([
-        { $group: { _id: '$clientId', revenue: { $sum: '$salePrice' }, count: { $sum: 1 } } }
-      ]),
-    ]);
-
-    const phoneMap  = Object.fromEntries(phones.map(p => [p._id, p]));
-    const saleMap   = Object.fromEntries(sales.map(s => [s._id, s]));
-    const allClients = await Client.find();
-
-    const summary = allClients.map(c => ({
-      clientId:  c.clientId,
-      name:      c.name,
-      status:    c.status,
-      shops:     c.shops,
-      inStock:   phoneMap[c.clientId]?.inStock  || 0,
-      totalPhones: phoneMap[c.clientId]?.total  || 0,
-      revenue:   saleMap[c.clientId]?.revenue   || 0,
-      salesCount: saleMap[c.clientId]?.count    || 0,
-    }));
-
-    res.json({ totalClients: clients, summary });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ══════════════════════════════════════════════════════════════════
-// ALL EXISTING ROUTES — clientId injected from req.clientId
-// (set by requireAuth middleware; defaults to DEFAULT_CLIENT_ID)
-// ══════════════════════════════════════════════════════════════════
-
-// Helper: build a sales-by-shop query scoped to the current tenant
-function buildSalesByShopQuery(shop, clientId) {
-  const base = { clientId: clientId || DEFAULT_CLIENT_ID };
-  if (!shop || typeof shop !== 'string') return base;
-  return {
-    ...base,
-    $or: [
-      { soldByShop: shop },
-      { soldByShop: { $exists: false }, shop },
-      { soldByShop: null, shop },
-    ],
-  };
-}
-
-// ── Lookup ─────────────────────────────────────
+// Lookup single phone by IMEI (used by scan/sell flow)
 app.get('/api/lookup/:imei', anyAuth, async (req, res) => {
   try {
-    const phone = await Phone.findOne({ imei: req.params.imei, clientId: req.clientId });
+    const phone = await Phone.findOne({ imei: req.params.imei });
     if (!phone) return res.json({});
     res.json(phone);
   } catch (err) {
@@ -704,24 +317,24 @@ app.get('/api/lookup/:imei', anyAuth, async (req, res) => {
   }
 });
 
-// ── Stock ──────────────────────────────────────
+// Get stock — shop users are scoped to their own shop
 app.get('/api/stock', anyAuth, async (req, res) => {
   const shop = req.authShop || (typeof req.query.shop === 'string' && VALID_SHOPS.includes(req.query.shop) ? req.query.shop : undefined);
-  const query = { clientId: req.clientId };
-  if (shop) query.shop = shop;
+  const query = shop ? { shop } : {};
   if (req.query.all !== 'true') query.status = 'in_stock';
+  // Support querying phones by the shop that sold them (for cross-shop sale tracking in the daily sheet)
   if (req.query.soldByShop && typeof req.query.soldByShop === 'string' && VALID_SHOPS.includes(req.query.soldByShop)) {
     if (req.authRole !== 'admin' && req.query.soldByShop !== req.authShop) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    delete query.shop;
+    delete query.shop; // query across all shops' stock, not just the requesting shop's
     query.soldByShop = req.query.soldByShop;
   }
   const items = await Phone.find(query);
   res.json(items);
 });
 
-// ── Add stock ──────────────────────────────────
+// Add stock — shop users can only add to their own shop
 app.post('/api/stock/add', anyAuth, async (req, res) => {
   const body = { ...req.body };
   if (req.authRole === 'shop') body.shop = req.authShop;
@@ -730,17 +343,16 @@ app.post('/api/stock/add', anyAuth, async (req, res) => {
   if (!imei) return res.status(400).json({ error: 'IMEI required' });
   if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
 
-  // Uniqueness check is scoped to the tenant
-  const exists = await Phone.findOne({ imei, clientId: req.clientId });
+  const exists = await Phone.findOne({ imei });
   if (exists) return res.status(409).json({ error: 'IMEI exists' });
 
-  const phone = new Phone({ ...body, clientId: req.clientId, addedAt: new Date().toISOString() });
+  const phone = new Phone({ ...body, addedAt: new Date().toISOString() });
   await phone.save();
-  logAction('stock_add', body.shop || null, req.authRole, { imei, brand: body.brand, model: body.model, buyPrice: body.buyPrice }, req.clientId);
+  logAction('stock_add', body.shop || null, req.authRole, { imei, brand: body.brand, model: body.model, buyPrice: body.buyPrice });
   res.json({ success: true, phone });
 });
 
-// ── Sell ───────────────────────────────────────
+// Sell phone — any authenticated user can sell any in-stock phone
 app.post('/api/stock/sell', anyAuth, async (req, res) => {
   try {
     const { imei, salePrice, buyerName, buyerPhone, notes, soldByShop } = req.body;
@@ -751,13 +363,15 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       return res.status(400).json({ error: 'salePrice required' });
     }
 
-    const phone = await Phone.findOne({ imei, clientId: req.clientId });
+    const phone = await Phone.findOne({ imei });
+
     if (!phone) return res.status(404).json({ error: 'Not found' });
     if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
 
     const sp = Number(salePrice);
     if (Number.isNaN(sp) || sp <= 0) return res.status(400).json({ error: 'Sale price must be greater than zero' });
 
+    // Determine the selling shop: explicit value from body, or the authenticated shop, or the stock-owning shop
     const effectiveSoldByShop = (soldByShop && VALID_SHOPS.includes(soldByShop))
       ? soldByShop
       : (req.authShop || phone.shop);
@@ -769,22 +383,23 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
     phone.salePrice = sp;
     phone.soldAt = new Date().toISOString();
     phone.soldByShop = effectiveSoldByShop;
+    // phone.shop intentionally not changed — keeps the stock-owning shop for audit
+
     await phone.save();
 
     const sale = new Sale({
-      clientId: req.clientId,
       imei: phone.imei,
       brand: phone.brand,
       model: phone.model,
       buyPrice: bp,
       salePrice: sp,
-      profit,
+      profit: profit,
       shop: phone.shop,
       soldByShop: effectiveSoldByShop,
       buyerName: buyerName || null,
       buyerPhone: buyerPhone || null,
       notes: notes || null,
-      soldAt: phone.soldAt,
+      soldAt: phone.soldAt
     });
 
     try {
@@ -793,23 +408,28 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       phone.status = 'in_stock';
       phone.salePrice = undefined;
       phone.soldAt = undefined;
-      await phone.save().catch(e => console.error('Revert failed:', e));
+      await phone.save().catch(revertErr => console.error('Failed to revert phone after sale error:', revertErr));
       throw saleErr;
     }
 
-    // Auto-upsert customer contact
+    // Auto-upsert customer contact if buyer info is provided
     if (buyerName || buyerPhone) {
       try {
         const nameVal = (buyerName || '').trim();
         const phoneVal = (buyerPhone || '').trim();
         if (nameVal) {
-          const orClauses = [{ name: { $regex: `^${nameVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }, clientId: req.clientId }];
-          if (phoneVal) orClauses.push({ phone: phoneVal, clientId: req.clientId });
+          // Try to find existing customer by name (case-insensitive) or phone
+          const orClauses = [{ name: { $regex: `^${nameVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } }];
+          if (phoneVal) orClauses.push({ phone: phoneVal });
           const existing = await Customer.findOne({ $or: orClauses });
           if (existing) {
-            if (phoneVal && !existing.phone) { existing.phone = phoneVal; await existing.save(); }
+            // Update phone if not already set
+            if (phoneVal && !existing.phone) {
+              existing.phone = phoneVal;
+              await existing.save();
+            }
           } else {
-            await Customer.create({ clientId: req.clientId, name: nameVal, phone: phoneVal || undefined, addedAt: new Date().toISOString() });
+            await Customer.create({ name: nameVal, phone: phoneVal || undefined, addedAt: new Date().toISOString() });
           }
         }
       } catch (contactErr) {
@@ -817,11 +437,7 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       }
     }
 
-    logAction('stock_sell', effectiveSoldByShop || phone.shop || null, req.authRole, {
-      imei: phone.imei, brand: phone.brand, model: phone.model,
-      salePrice: sp, profit, buyerName: buyerName || null,
-      stockShop: phone.shop || null, soldByShop: effectiveSoldByShop,
-    }, req.clientId);
+    logAction('stock_sell', effectiveSoldByShop || phone.shop || null, req.authRole, { imei: phone.imei, brand: phone.brand, model: phone.model, salePrice: sp, profit, buyerName: buyerName || null, stockShop: phone.shop || null, soldByShop: effectiveSoldByShop });
     res.json({ success: true, sale });
   } catch (err) {
     console.error('Sell endpoint error:', err);
@@ -829,41 +445,58 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
   }
 });
 
-// ── Sales ──────────────────────────────────────
+// Build a MongoDB query that matches sales for a given shop.
+// Filters by soldByShop (the shop that performed the sale) with a backward-compat fallback
+// to the shop field for older records that pre-date the soldByShop field.
+function buildSalesByShopQuery(shop) {
+  if (!shop || typeof shop !== 'string') return {};
+  return { $or: [{ soldByShop: shop }, { soldByShop: { $exists: false }, shop }, { soldByShop: null, shop }] };
+}
+
+// Get sales — admin only
 app.get('/api/sales', adminOnly, async (req, res) => {
   const shop = req.query.shop;
-  const query = buildSalesByShopQuery(shop, req.clientId);
+  const query = buildSalesByShopQuery(shop);
   const sales = await Sale.find(query);
   res.json(sales);
 });
 
-// ── Stats ──────────────────────────────────────
+// Stats — shop users are scoped to their own shop
 app.get('/api/stats', anyAuth, async (req, res) => {
   const rawShop = req.query.shop;
   const shop = req.authShop || (typeof rawShop === 'string' && VALID_SHOPS.includes(rawShop) ? rawShop : undefined);
-  const stockQuery = { clientId: req.clientId, ...(shop ? { shop } : {}) };
-  const salesQuery = buildSalesByShopQuery(shop, req.clientId);
-  const [stock, sales] = await Promise.all([Phone.find(stockQuery), Sale.find(salesQuery)]);
+  const stockQuery = shop ? { shop } : {};
+  // Sales are attributed to the shop that performed the sale (soldByShop); fall back to shop field for older records
+  const salesQuery = buildSalesByShopQuery(shop);
+  const stock = await Phone.find(stockQuery);
+  const sales = await Sale.find(salesQuery);
+
   res.json({
-    inStock:      stock.filter(p => p.status === 'in_stock').length,
-    sold:         stock.filter(p => p.status === 'sold').length,
-    total:        stock.length,
+    inStock: stock.filter(p => p.status === 'in_stock').length,
+    sold: stock.filter(p => p.status === 'sold').length,
+    total: stock.length,
     totalRevenue: sales.reduce((s, x) => s + (x.salePrice || 0), 0),
-    salesCount:   sales.length,
+    salesCount: sales.length
   });
 });
 
-// ── Batch edit ─────────────────────────────────
+// Batch edit phones — admin only
 app.put('/api/stock/batch', adminOnly, async (req, res) => {
   try {
     const { ids } = req.body || {};
-    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids required' });
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids required' });
+    }
     const validIds = ids.filter(id => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id));
-    if (validIds.length !== ids.length) return res.status(400).json({ error: 'Invalid phone ids' });
+    if (validIds.length !== ids.length) {
+      return res.status(400).json({ error: 'Invalid phone ids' });
+    }
 
     const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body || {};
     const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
-    Object.keys(allowed).forEach(k => { if (allowed[k] === undefined) delete allowed[k]; });
+    Object.keys(allowed).forEach(k => {
+      if (allowed[k] === undefined) delete allowed[k];
+    });
     if (allowed.buyPrice !== undefined) {
       const bp = Number(allowed.buyPrice);
       if (Number.isNaN(bp) || bp < 0) return res.status(400).json({ error: 'Invalid buy price' });
@@ -879,28 +512,31 @@ app.put('/api/stock/batch', adminOnly, async (req, res) => {
         if (v) allowed[k] = v; else delete allowed[k];
       }
     });
-    if (Object.keys(allowed).length === 0) return res.status(400).json({ error: 'No fields to update' });
 
-    // clientId scoping prevents editing another tenant's phones
-    const result = await Phone.updateMany({ _id: { $in: validIds }, clientId: req.clientId }, { $set: allowed });
-    const updated = await Phone.find({ _id: { $in: validIds }, clientId: req.clientId });
-    res.json({ success: true, matched: result.matchedCount, modified: result.modifiedCount, phones: updated });
+    if (Object.keys(allowed).length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    const result = await Phone.updateMany({ _id: { $in: validIds } }, { $set: allowed });
+    const updated = await Phone.find({ _id: { $in: validIds } });
+    res.json({
+      success: true,
+      matched: result.matchedCount ?? updated.length,
+      modified: result.modifiedCount ?? result.nModified ?? 0,
+      phones: updated
+    });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Edit phone ─────────────────────────────────
+// Edit phone — admin only
 app.put('/api/stock/:id', adminOnly, async (req, res) => {
   try {
     const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body;
     const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
     Object.keys(allowed).forEach(k => allowed[k] === undefined && delete allowed[k]);
-    const phone = await Phone.findOneAndUpdate(
-      { _id: req.params.id, clientId: req.clientId },
-      allowed,
-      { returnDocument: 'after' }
-    );
+    const phone = await Phone.findByIdAndUpdate(req.params.id, allowed, { returnDocument: 'after' });
     if (!phone) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true, phone });
   } catch (err) {
@@ -908,17 +544,18 @@ app.put('/api/stock/:id', adminOnly, async (req, res) => {
   }
 });
 
-// ── Delete phone ───────────────────────────────
+// Delete phone — admin only
 app.delete('/api/stock/:id', adminOnly, async (req, res) => {
   try {
     const { id } = req.params;
     if (!id || id === 'undefined' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid phone id' });
     }
-    const phone = await Phone.findOne({ _id: id, clientId: req.clientId });
+    // Retrieve the phone first so we can log its shop before deletion
+    const phone = await Phone.findById(id);
     if (phone) {
       await Phone.findByIdAndDelete(id);
-      logAction('stock_delete', phone.shop || null, req.authRole, { id, imei: phone.imei, brand: phone.brand, model: phone.model }, req.clientId);
+      logAction('stock_delete', phone.shop || null, req.authRole, { id, imei: phone.imei, brand: phone.brand, model: phone.model });
     }
     res.json({ success: true });
   } catch (err) {
@@ -926,11 +563,12 @@ app.delete('/api/stock/:id', adminOnly, async (req, res) => {
   }
 });
 
-// ── Daily sheets ───────────────────────────────
+// ── DAILY SHEET ────────────────────────────────
+
 app.get('/api/days', adminOnly, async (req, res) => {
   try {
     const { shop, month } = req.query;
-    const query = { clientId: req.clientId };
+    const query = {};
     if (shop) query.shop = shop;
     if (month) query.date = { $regex: `^${month}` };
     const days = await Day.find(query).sort({ date: -1 });
@@ -942,7 +580,7 @@ app.get('/api/days', adminOnly, async (req, res) => {
 
 app.get('/api/days/:shop/:date', adminOnly, async (req, res) => {
   try {
-    const day = await Day.findOne({ shop: req.params.shop, date: req.params.date, clientId: req.clientId });
+    const day = await Day.findOne({ shop: req.params.shop, date: req.params.date });
     res.json(day || {});
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -952,9 +590,9 @@ app.get('/api/days/:shop/:date', adminOnly, async (req, res) => {
 app.put('/api/days/:shop/:date', adminOnly, async (req, res) => {
   try {
     const { shop, date } = req.params;
-    const update = { ...req.body, shop, date, clientId: req.clientId };
+    const update = { ...req.body, shop, date };
     const day = await Day.findOneAndUpdate(
-      { shop, date, clientId: req.clientId },
+      { shop, date },
       update,
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
@@ -966,18 +604,20 @@ app.put('/api/days/:shop/:date', adminOnly, async (req, res) => {
 
 app.delete('/api/days/:shop/:date', adminOnly, async (req, res) => {
   try {
-    await Day.deleteOne({ shop: req.params.shop, date: req.params.date, clientId: req.clientId });
+    const { shop, date } = req.params;
+    await Day.deleteOne({ shop, date });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Shop expenses ──────────────────────────────
+// ── SHOP EXPENSES ───────────────────────────────
+
 app.get('/api/shopexpenses', adminOnly, async (req, res) => {
   try {
     const { shop, month } = req.query;
-    const query = { clientId: req.clientId };
+    const query = {};
     if (shop) query.shop = shop;
     if (month) query.month = month;
     const expenses = await ShopExpense.find(query).sort({ date: -1 });
@@ -989,7 +629,7 @@ app.get('/api/shopexpenses', adminOnly, async (req, res) => {
 
 app.post('/api/shopexpenses', adminOnly, async (req, res) => {
   try {
-    const expense = new ShopExpense({ ...req.body, clientId: req.clientId, addedAt: new Date().toISOString() });
+    const expense = new ShopExpense({ ...req.body, addedAt: new Date().toISOString() });
     await expense.save();
     res.json({ success: true, expense: { ...expense.toObject(), _key: expense.id } });
   } catch (err) {
@@ -999,17 +639,18 @@ app.post('/api/shopexpenses', adminOnly, async (req, res) => {
 
 app.delete('/api/shopexpenses/:id', adminOnly, async (req, res) => {
   try {
-    await ShopExpense.findOneAndDelete({ _id: req.params.id, clientId: req.clientId });
+    await ShopExpense.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── HQ Stock ───────────────────────────────────
+// ── HQ STOCK ────────────────────────────────────
+
 app.get('/api/hqstock', adminOnly, async (req, res) => {
   try {
-    const stock = await HQStockModel.findOne({ clientId: req.clientId });
+    const stock = await HQStockModel.findOne({ key: 'hq' });
     res.json(stock || { items: [] });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -1018,9 +659,9 @@ app.get('/api/hqstock', adminOnly, async (req, res) => {
 
 app.put('/api/hqstock', adminOnly, async (req, res) => {
   try {
-    const update = { ...req.body, clientId: req.clientId, key: 'hq', updatedAt: new Date().toISOString() };
+    const update = { ...req.body, key: 'hq', updatedAt: new Date().toISOString() };
     const stock = await HQStockModel.findOneAndUpdate(
-      { clientId: req.clientId },
+      { key: 'hq' },
       update,
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
@@ -1030,26 +671,34 @@ app.put('/api/hqstock', adminOnly, async (req, res) => {
   }
 });
 
-// ── Shipments ──────────────────────────────────
+// ── SHIPMENTS & DISPATCHES ──────────────────────
+
 app.post('/api/shipments', adminOnly, async (req, res) => {
   try {
     const { date, supplier, ref, items } = req.body || {};
-    if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'At least one item is required' });
+    if (!Array.isArray(items) || !items.length) {
+      return res.status(400).json({ error: 'At least one item is required' });
+    }
 
+    // New IMEI flow: receiving phones into warehouse
     const imeiItems = items.filter(it => it && it.imei);
     if (imeiItems.length === items.length) {
-      const normalized = imeiItems.map(it => ({
-        imei:     String(it.imei || '').replace(/\D/g, ''),
-        imei2:    String(it.imei2 || '').replace(/\D/g, '') || undefined,
-        cat:      String(it.cat || '').trim() || undefined,
-        brand:    String(it.brand || '').trim() || undefined,
-        model:    String(it.model || '').trim() || undefined,
-        color:    String(it.color || '').trim() || undefined,
-        storage:  String(it.storage || '').trim() || undefined,
-        buyPrice: Number.isFinite(Number(it.buyPrice)) && Number(it.buyPrice) >= 0 ? Number(it.buyPrice) : 0,
-        notes:    String(it.notes || '').trim() || undefined,
-        addedAt:  new Date().toISOString(),
-      }));
+      const normalized = imeiItems.map((it) => {
+        const imei = String(it.imei || '').replace(/\D/g, '');
+        const imei2 = String(it.imei2 || '').replace(/\D/g, '');
+        return {
+          imei,
+          imei2: imei2 || undefined,
+          cat: String(it.cat || '').trim() || undefined,
+          brand: String(it.brand || '').trim() || undefined,
+          model: String(it.model || '').trim() || undefined,
+          color: String(it.color || '').trim() || undefined,
+          storage: String(it.storage || '').trim() || undefined,
+          buyPrice: Number.isFinite(Number(it.buyPrice)) && Number(it.buyPrice) >= 0 ? Number(it.buyPrice) : 0,
+          notes: String(it.notes || '').trim() || undefined,
+          addedAt: new Date().toISOString(),
+        };
+      });
 
       const invalid = normalized.find(it => !/^\d{15}$/.test(it.imei));
       if (invalid) return res.status(400).json({ error: `Invalid IMEI: ${invalid.imei || '(empty)'}` });
@@ -1060,10 +709,12 @@ app.post('/api/shipments', adminOnly, async (req, res) => {
         payloadImeiSet.add(it.imei);
       }
 
-      const existingPhones = await Phone.find({ imei: { $in: [...payloadImeiSet] }, clientId: req.clientId }, { imei: 1 });
-      if (existingPhones.length) return res.status(409).json({ error: `IMEI already exists in stock: ${existingPhones[0].imei}` });
+      const existingPhones = await Phone.find({ imei: { $in: [...payloadImeiSet] } }, { imei: 1 });
+      if (existingPhones.length) {
+        return res.status(409).json({ error: `IMEI already exists in stock: ${existingPhones[0].imei}` });
+      }
 
-      const stock = await HQStockModel.findOne({ clientId: req.clientId });
+      const stock = await HQStockModel.findOne({ key: 'hq' });
       const hqItems = Array.isArray(stock?.items) ? stock.items : [];
       const hqImeiSet = new Set(hqItems.map(x => String(x?.imei || '').replace(/\D/g, '')).filter(Boolean));
       const dupHq = normalized.find(it => hqImeiSet.has(it.imei));
@@ -1071,13 +722,13 @@ app.post('/api/shipments', adminOnly, async (req, res) => {
 
       const mergedItems = [...hqItems, ...normalized];
       await HQStockModel.findOneAndUpdate(
-        { clientId: req.clientId },
-        { clientId: req.clientId, key: 'hq', items: mergedItems, updatedAt: new Date().toISOString() },
+        { key: 'hq' },
+        { key: 'hq', items: mergedItems, updatedAt: new Date().toISOString() },
         { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
       );
     }
 
-    const shipment = new Shipment({ clientId: req.clientId, date, supplier, ref, items, addedAt: new Date().toISOString() });
+    const shipment = new Shipment({ date, supplier, ref, items, addedAt: new Date().toISOString() });
     await shipment.save();
     res.json({ success: true, shipment });
   } catch (err) {
@@ -1087,7 +738,7 @@ app.post('/api/shipments', adminOnly, async (req, res) => {
 
 app.get('/api/shipments', adminOnly, async (req, res) => {
   try {
-    const shipments = await Shipment.find({ clientId: req.clientId }).sort({ date: -1 });
+    const shipments = await Shipment.find().sort({ date: -1 });
     res.json(shipments);
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -1096,14 +747,13 @@ app.get('/api/shipments', adminOnly, async (req, res) => {
 
 app.delete('/api/shipments/:id', adminOnly, async (req, res) => {
   try {
-    await Shipment.findOneAndDelete({ _id: req.params.id, clientId: req.clientId });
+    await Shipment.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Dispatches ─────────────────────────────────
 app.post('/api/dispatches', adminOnly, async (req, res) => {
   try {
     const { date, toShop, note, items } = req.body || {};
@@ -1111,6 +761,7 @@ app.post('/api/dispatches', adminOnly, async (req, res) => {
     if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'At least one item is required' });
 
     const imeiItems = items.filter(it => it && it.imei);
+    // New IMEI flow: move phones from warehouse to selected shop stock
     if (imeiItems.length === items.length) {
       const normalizedImei = imeiItems.map(it => String(it.imei || '').replace(/\D/g, ''));
       const invalid = normalizedImei.find(imei => !/^\d{15}$/.test(imei));
@@ -1119,32 +770,33 @@ app.post('/api/dispatches', adminOnly, async (req, res) => {
       const uniqImeis = [...new Set(normalizedImei)];
       if (uniqImeis.length !== normalizedImei.length) return res.status(409).json({ error: 'Duplicate IMEI in dispatch payload' });
 
-      const existing = await Phone.find({ imei: { $in: uniqImeis }, clientId: req.clientId }, { imei: 1 });
+      const existing = await Phone.find({ imei: { $in: uniqImeis } }, { imei: 1 });
       if (existing.length) return res.status(409).json({ error: `IMEI already exists in stock: ${existing[0].imei}` });
 
-      const stock = await HQStockModel.findOne({ clientId: req.clientId });
+      const stock = await HQStockModel.findOne({ key: 'hq' });
       const hqItems = Array.isArray(stock?.items) ? stock.items : [];
-      const byImei = new Map(hqItems.filter(it => it && it.imei).map(it => [String(it.imei).replace(/\D/g, ''), it]));
+      const byImei = new Map(hqItems
+        .filter(it => it && it.imei)
+        .map(it => [String(it.imei).replace(/\D/g, ''), it]));
       const missing = uniqImeis.find(imei => !byImei.has(imei));
       if (missing) return res.status(400).json({ error: `IMEI not found in warehouse: ${missing}` });
 
       const now = new Date().toISOString();
-      const phonesToCreate = uniqImeis.map(imei => {
+      const phonesToCreate = uniqImeis.map((imei) => {
         const src = byImei.get(imei) || {};
         return {
-          clientId: req.clientId,
           imei,
-          imei2:    src.imei2 || undefined,
-          brand:    src.brand || '',
-          model:    src.model || '',
-          color:    src.color || '',
-          storage:  src.storage || '',
+          imei2: src.imei2 || undefined,
+          brand: src.brand || '',
+          model: src.model || '',
+          color: src.color || '',
+          storage: src.storage || '',
           buyPrice: Number(src.buyPrice) || 0,
-          status:   'in_stock',
-          shop:     toShop,
-          cat:      src.cat || '',
-          notes:    src.notes || '',
-          addedAt:  now,
+          status: 'in_stock',
+          shop: toShop,
+          cat: src.cat || '',
+          notes: src.notes || '',
+          addedAt: now,
         };
       });
 
@@ -1154,13 +806,13 @@ app.post('/api/dispatches', adminOnly, async (req, res) => {
         return !imei || !uniqImeis.includes(imei);
       });
       await HQStockModel.findOneAndUpdate(
-        { clientId: req.clientId },
-        { clientId: req.clientId, key: 'hq', items: remaining, updatedAt: now },
+        { key: 'hq' },
+        { key: 'hq', items: remaining, updatedAt: now },
         { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
       );
     }
 
-    const dispatch = new Dispatch({ clientId: req.clientId, date, toShop, note, items, addedAt: new Date().toISOString() });
+    const dispatch = new Dispatch({ date, toShop, note, items, addedAt: new Date().toISOString() });
     await dispatch.save();
     res.json({ success: true, dispatch });
   } catch (err) {
@@ -1170,16 +822,24 @@ app.post('/api/dispatches', adminOnly, async (req, res) => {
 
 app.get('/api/dispatches', adminOnly, async (req, res) => {
   try {
-    const dispatches = await Dispatch.find({ clientId: req.clientId }).sort({ date: -1 });
-    const allImeis = [...new Set(dispatches.flatMap(d => (d.items || []).map(it => String(it?.imei || '').replace(/\D/g, '')).filter(Boolean)))];
+    const dispatches = await Dispatch.find().sort({ date: -1 });
+    const allImeis = [...new Set(
+      dispatches.flatMap(d => (d.items || [])
+        .map(it => String(it?.imei || '').replace(/\D/g, ''))
+        .filter(Boolean))
+    )];
     let soldSet = new Set();
     if (allImeis.length) {
-      const soldPhones = await Phone.find({ imei: { $in: allImeis }, status: 'sold', clientId: req.clientId }, { imei: 1, shop: 1 });
+      const soldPhones = await Phone.find(
+        { imei: { $in: allImeis }, status: 'sold' },
+        { imei: 1, shop: 1 }
+      );
       soldSet = new Set(soldPhones.map(p => `${p.shop}|${p.imei}`));
     }
-    const withStats = dispatches.map(d => {
-      const imeis = (d.items || []).map(it => String(it?.imei || '').replace(/\D/g, '')).filter(Boolean);
-      const totalPhones = imeis.length || (d.items || []).reduce((s, it) => s + (Number(it?.qty) || 0), 0);
+    const withStats = dispatches.map((d) => {
+      const items = d.items || [];
+      const imeis = items.map(it => String(it?.imei || '').replace(/\D/g, '')).filter(Boolean);
+      const totalPhones = imeis.length || items.reduce((s, it) => s + (Number(it?.qty) || 0), 0);
       const soldPhones = imeis.reduce((s, imei) => s + (soldSet.has(`${d.toShop}|${imei}`) ? 1 : 0), 0);
       return { ...d.toObject(), totalPhones, soldPhones };
     });
@@ -1191,7 +851,7 @@ app.get('/api/dispatches', adminOnly, async (req, res) => {
 
 app.delete('/api/dispatches/:id', adminOnly, async (req, res) => {
   try {
-    await Dispatch.findOneAndDelete({ _id: req.params.id, clientId: req.clientId });
+    await Dispatch.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -1202,7 +862,7 @@ app.delete('/api/hqstock/:imei', adminOnly, async (req, res) => {
   try {
     const imei = String(req.params.imei || '').replace(/\D/g, '');
     if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'Invalid IMEI' });
-    const stock = await HQStockModel.findOne({ clientId: req.clientId });
+    const stock = await HQStockModel.findOne({ key: 'hq' });
     if (!stock) return res.json({ success: true });
     stock.items = (stock.items || []).filter(it => String(it?.imei || '').replace(/\D/g, '') !== imei);
     stock.updatedAt = new Date().toISOString();
@@ -1213,65 +873,77 @@ app.delete('/api/hqstock/:imei', adminOnly, async (req, res) => {
   }
 });
 
-// ── Sales bulk delete ──────────────────────────
+// ── BULK DELETE SALES ────────────────────────────
 app.delete('/api/sales', adminOnly, async (req, res) => {
   try {
     const { shop } = req.query;
-    const query = buildSalesByShopQuery(shop, req.clientId);
+    // Filter by soldByShop (the shop that performed the sale); fall back to shop field for older records
+    const query = buildSalesByShopQuery(shop);
     const sales = await Sale.find(query);
-    if (!sales.length) return res.json({ success: true, deleted: 0 });
+    if (sales.length === 0) return res.json({ success: true, deleted: 0 });
+
+    // Revert all associated phones to in_stock in one bulk write
     const imeis = [...new Set(sales.map(s => s.imei).filter(Boolean))];
     if (imeis.length) {
       await Phone.updateMany(
-        { imei: { $in: imeis }, clientId: req.clientId },
+        { imei: { $in: imeis } },
         { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
       );
     }
+
     const result = await Sale.deleteMany(query);
     res.json({ success: true, deleted: result.deletedCount });
   } catch (err) {
+    console.error('Bulk delete sales error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Delete sale by IMEI ────────────────────────
+// ── DELETE SALE BY IMEI ──────────────────────────
 app.delete('/api/sales/by-imei/:imei', adminOnly, async (req, res) => {
   try {
-    const sale = await Sale.findOne({ imei: req.params.imei, clientId: req.clientId });
+    const sale = await Sale.findOne({ imei: req.params.imei });
     if (!sale) return res.status(404).json({ error: 'Sale not found' });
+
     await Phone.findOneAndUpdate(
-      { imei: sale.imei, clientId: req.clientId },
+      { imei: sale.imei },
       { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
     );
+
     await Sale.findByIdAndDelete(sale._id);
     res.json({ success: true });
   } catch (err) {
+    console.error('Delete sale by IMEI error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Delete sale by id ──────────────────────────
+// ── DELETE SALE ─────────────────────────────────
 app.delete('/api/sales/:id', adminOnly, async (req, res) => {
   try {
-    const sale = await Sale.findOne({ _id: req.params.id, clientId: req.clientId });
+    const sale = await Sale.findById(req.params.id);
     if (!sale) return res.status(404).json({ error: 'Sale not found' });
+
+    // Revert the phone to in_stock
     await Phone.findOneAndUpdate(
-      { imei: sale.imei, clientId: req.clientId },
+      { imei: sale.imei },
       { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
     );
+
     await Sale.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
+    console.error('Delete sale error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Customers ──────────────────────────────────
+// ── CUSTOMERS ───────────────────────────────────
+
 app.get('/api/customers', adminOnly, async (req, res) => {
   try {
     const { q } = req.query;
-    const query = { clientId: req.clientId };
-    if (q) query.$or = [{ name: { $regex: q, $options: 'i' } }, { phone: { $regex: q } }];
+    const query = q ? { $or: [{ name: { $regex: q, $options: 'i' } }, { phone: { $regex: q } }] } : {};
     const customers = await Customer.find(query).sort({ name: 1 });
     res.json(customers);
   } catch (err) {
@@ -1283,7 +955,7 @@ app.post('/api/customers', adminOnly, async (req, res) => {
   try {
     const { name, phone, email, notes } = req.body;
     if (!name) return res.status(400).json({ error: 'Name required' });
-    const customer = new Customer({ clientId: req.clientId, name, phone, email, notes, addedAt: new Date().toISOString() });
+    const customer = new Customer({ name, phone, email, notes, addedAt: new Date().toISOString() });
     await customer.save();
     res.json({ success: true, customer });
   } catch (err) {
@@ -1294,11 +966,7 @@ app.post('/api/customers', adminOnly, async (req, res) => {
 app.put('/api/customers/:id', adminOnly, async (req, res) => {
   try {
     const { name, phone, email, notes } = req.body;
-    const customer = await Customer.findOneAndUpdate(
-      { _id: req.params.id, clientId: req.clientId },
-      { name, phone, email, notes },
-      { returnDocument: 'after' }
-    );
+    const customer = await Customer.findByIdAndUpdate(req.params.id, { name, phone, email, notes }, { returnDocument: 'after' });
     if (!customer) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true, customer });
   } catch (err) {
@@ -1308,19 +976,19 @@ app.put('/api/customers/:id', adminOnly, async (req, res) => {
 
 app.delete('/api/customers/:id', adminOnly, async (req, res) => {
   try {
-    await Customer.findOneAndDelete({ _id: req.params.id, clientId: req.clientId });
+    await Customer.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Audit logs ─────────────────────────────────
+// ── AUDIT LOGS ───────────────────────────────────
+
 app.get('/api/logs', adminOnly, async (req, res) => {
   try {
     const { shop, limit = 300 } = req.query;
-    const query = { clientId: req.clientId };
-    if (shop) query.shop = shop;
+    const query = shop ? { shop } : {};
     const logs = await AuditLog.find(query).sort({ ts: -1 }).limit(Number(limit));
     res.json(logs);
   } catch (err) {
@@ -1328,28 +996,31 @@ app.get('/api/logs', adminOnly, async (req, res) => {
   }
 });
 
-// ── Analytics ──────────────────────────────────
+// ── MODEL ANALYTICS ──────────────────────────────
+
 app.get('/api/analytics/models', adminOnly, async (req, res) => {
   try {
     const { days = 30 } = req.query;
-    const since     = new Date(Date.now() - Number(days) * 86400000).toISOString();
-    const staleDate = new Date(Date.now() - 30 * 86400000).toISOString();
+    const since = new Date(Date.now() - Number(days) * 24 * 60 * 60 * 1000).toISOString();
+    const staleDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const [recentSales, staleStock] = await Promise.all([
-      Sale.find({ soldAt: { $gte: since }, clientId: req.clientId }),
-      Phone.find({ status: 'in_stock', addedAt: { $lte: staleDate }, clientId: req.clientId }),
+      Sale.find({ soldAt: { $gte: since } }),
+      Phone.find({ status: 'in_stock', addedAt: { $lte: staleDate } }),
     ]);
 
+    // Top sold models
     const modelMap = {};
     recentSales.forEach(s => {
       const key = `${s.brand || ''} ${s.model || ''}`.trim() || 'Unknown';
       if (!modelMap[key]) modelMap[key] = { model: key, count: 0, revenue: 0, profit: 0 };
       modelMap[key].count++;
       modelMap[key].revenue += s.salePrice || 0;
-      modelMap[key].profit  += s.profit    || 0;
+      modelMap[key].profit += s.profit || 0;
     });
     const topSold = Object.values(modelMap).sort((a, b) => b.count - a.count).slice(0, 15);
 
+    // Stagnating stock
     const staleMap = {};
     staleStock.forEach(p => {
       const key = `${p.brand || ''} ${p.model || ''}`.trim() || 'Unknown';
@@ -1371,32 +1042,36 @@ app.get('/api/analytics/models', adminOnly, async (req, res) => {
   }
 });
 
-// ── CEO summary ────────────────────────────────
+// ── CEO SUMMARY ──────────────────────────────────
+
 app.get('/api/ceo/summary', adminOnly, async (req, res) => {
   try {
     const { month } = req.query;
     const currentMonth = month || new Date().toISOString().slice(0, 7);
     const [y, m] = currentMonth.split('-').map(Number);
-    const prevDate  = new Date(y, m - 2, 1);
+    const prevDate = new Date(y, m - 2, 1);
     const prevMonth = prevDate.toISOString().slice(0, 7);
 
     const [currentSales, prevSales, currentExpenses, stock] = await Promise.all([
-      Sale.find({ soldAt: { $regex: `^${currentMonth}` }, clientId: req.clientId }),
-      Sale.find({ soldAt: { $regex: `^${prevMonth}`    }, clientId: req.clientId }),
-      ShopExpense.find({ month: currentMonth, clientId: req.clientId }),
-      Phone.find({ status: 'in_stock', clientId: req.clientId }),
+      Sale.find({ soldAt: { $regex: `^${currentMonth}` } }),
+      Sale.find({ soldAt: { $regex: `^${prevMonth}` } }),
+      ShopExpense.find({ month: currentMonth }),
+      Phone.find({ status: 'in_stock' }),
     ]);
 
+    // Per-shop breakdown
+    const VALID_SHOPS = ['456', '192', 'G15'];
     const shopStats = {};
     VALID_SHOPS.forEach(s => { shopStats[s] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 }; });
 
     currentSales.forEach(s => {
+      // Revenue and profit attributed to the shop that made the sale (soldByShop), falling back to stock-owning shop
       const sh = s.soldByShop || s.shop;
       if (!sh) return;
       if (!shopStats[sh]) shopStats[sh] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 };
       shopStats[sh].revenue += s.salePrice || 0;
-      shopStats[sh].cost    += s.buyPrice  || 0;
-      shopStats[sh].profit  += s.profit    || 0;
+      shopStats[sh].cost += s.buyPrice || 0;
+      shopStats[sh].profit += s.profit || 0;
       shopStats[sh].units++;
     });
 
@@ -1407,37 +1082,51 @@ app.get('/api/ceo/summary', adminOnly, async (req, res) => {
       shopStats[sh].expenses += e.amount || 0;
     });
 
+    // Top models
     const modelCounts = {};
     currentSales.forEach(s => {
       const key = `${s.brand || ''} ${s.model || ''}`.trim();
       if (key) modelCounts[key] = (modelCounts[key] || 0) + 1;
     });
-    const topModels = Object.entries(modelCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([model, count]) => ({ model, count }));
+    const topModels = Object.entries(modelCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([model, count]) => ({ model, count }));
 
-    const totalRevenue  = currentSales.reduce((s, x) => s + (x.salePrice || 0), 0);
-    const totalProfit   = currentSales.reduce((s, x) => s + (x.profit    || 0), 0);
-    const totalExpenses = currentExpenses.reduce((s, e) => s + (e.amount  || 0), 0);
-    const prevRevenue   = prevSales.reduce((s, x) => s + (x.salePrice || 0), 0);
-    const prevProfit    = prevSales.reduce((s, x) => s + (x.profit    || 0), 0);
+    const totalRevenue = currentSales.reduce((s, x) => s + (x.salePrice || 0), 0);
+    const totalProfit = currentSales.reduce((s, x) => s + (x.profit || 0), 0);
+    const totalExpenses = currentExpenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const prevRevenue = prevSales.reduce((s, x) => s + (x.salePrice || 0), 0);
+    const prevProfit = prevSales.reduce((s, x) => s + (x.profit || 0), 0);
 
     res.json({
-      month: currentMonth, prevMonth,
-      current: { revenue: totalRevenue, profit: totalProfit, expenses: totalExpenses, units: currentSales.length, netProfit: totalProfit - totalExpenses },
+      month: currentMonth,
+      prevMonth,
+      current: {
+        revenue: totalRevenue,
+        profit: totalProfit,
+        expenses: totalExpenses,
+        units: currentSales.length,
+        netProfit: totalProfit - totalExpenses,
+      },
       prev: { revenue: prevRevenue, profit: prevProfit },
-      shopStats, topModels,
+      shopStats,
+      topModels,
       inventoryCount: stock.length,
       inventoryValue: stock.reduce((s, p) => s + (p.buyPrice || 0), 0),
     });
   } catch (err) {
+    console.error('CEO summary error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Reports ────────────────────────────────────
+// ── REPORTS / INVOICES ───────────────────────────
+
 app.get('/api/reports', adminOnly, async (req, res) => {
   try {
     const { shop, type } = req.query;
-    const query = { clientId: req.clientId };
+    const query = {};
     if (shop) query.shop = shop;
     if (type) query.type = type;
     const reports = await Report.find(query).sort({ period: -1 }).limit(100);
@@ -1453,77 +1142,93 @@ app.post('/api/reports/generate', adminOnly, async (req, res) => {
     if (!type || !shop || !period) return res.status(400).json({ error: 'type, shop, period required' });
 
     let data = {};
+
     if (type === 'daily') {
-      const shopQ = shop === 'ALL' ? { clientId: req.clientId } : buildSalesByShopQuery(shop, req.clientId);
+      const shopQ = shop === 'ALL' ? {} : buildSalesByShopQuery(shop);
       const [sales, day] = await Promise.all([
         Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
-        shop === 'ALL' ? Promise.resolve(null) : Day.findOne({ shop, date: period, clientId: req.clientId }),
+        shop === 'ALL' ? Promise.resolve(null) : Day.findOne({ shop, date: period }),
       ]);
       const expenses = (day?.expenses || []).reduce((s, e) => s + (e.amt || 0), 0);
       data = {
-        totalSales:  sales.reduce((s, x) => s + (x.salePrice || 0), 0),
-        totalCost:   sales.reduce((s, x) => s + (x.buyPrice  || 0), 0),
-        grossProfit: sales.reduce((s, x) => s + (x.profit    || 0), 0),
-        unitsSold:   sales.length,
+        totalSales: sales.reduce((s, x) => s + (x.salePrice || 0), 0),
+        totalCost: sales.reduce((s, x) => s + (x.buyPrice || 0), 0),
+        grossProfit: sales.reduce((s, x) => s + (x.profit || 0), 0),
+        unitsSold: sales.length,
         expenses,
-        netProfit:   sales.reduce((s, x) => s + (x.profit || 0), 0) - expenses,
-        salesList:   sales.map(s => ({ model: `${s.brand || ''} ${s.model || ''}`.trim(), imei: s.imei, salePrice: s.salePrice, buyPrice: s.buyPrice, profit: s.profit, buyerName: s.buyerName || null, shop: s.shop })),
+        netProfit: sales.reduce((s, x) => s + (x.profit || 0), 0) - expenses,
+        salesList: sales.map(s => ({
+          model: `${s.brand || ''} ${s.model || ''}`.trim(),
+          imei: s.imei,
+          salePrice: s.salePrice,
+          buyPrice: s.buyPrice,
+          profit: s.profit,
+          buyerName: s.buyerName || null,
+          shop: s.shop,
+        })),
       };
     } else if (type === 'monthly') {
-      const shopQ = shop === 'ALL' ? { clientId: req.clientId } : buildSalesByShopQuery(shop, req.clientId);
+      const shopQ = shop === 'ALL' ? {} : buildSalesByShopQuery(shop);
       const [sales, expenses] = await Promise.all([
         Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
-        ShopExpense.find(shop === 'ALL' ? { month: period, clientId: req.clientId } : { shop, month: period, clientId: req.clientId }),
+        ShopExpense.find(shop === 'ALL' ? { month: period } : { shop, month: period }),
       ]);
-      const grossProfit   = sales.reduce((s, x) => s + (x.profit || 0), 0);
+      const grossProfit = sales.reduce((s, x) => s + (x.profit || 0), 0);
       const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
       data = {
-        totalSales:        sales.reduce((s, x) => s + (x.salePrice || 0), 0),
-        totalCost:         sales.reduce((s, x) => s + (x.buyPrice  || 0), 0),
+        totalSales: sales.reduce((s, x) => s + (x.salePrice || 0), 0),
+        totalCost: sales.reduce((s, x) => s + (x.buyPrice || 0), 0),
         grossProfit,
-        unitsSold:         sales.length,
+        unitsSold: sales.length,
         totalExpenses,
-        netProfit:         grossProfit - totalExpenses,
-        expenseBreakdown:  expenses.map(e => ({ category: e.category, description: e.description, amount: e.amount, date: e.date })),
+        netProfit: grossProfit - totalExpenses,
+        expenseBreakdown: expenses.map(e => ({ category: e.category, description: e.description, amount: e.amount, date: e.date })),
       };
     } else {
       return res.status(400).json({ error: 'Invalid type' });
     }
 
     const report = await Report.findOneAndUpdate(
-      { type, shop, period, clientId: req.clientId },
-      { type, shop, period, data, clientId: req.clientId, generatedAt: new Date().toISOString() },
+      { type, shop, period },
+      { type, shop, period, data, generatedAt: new Date().toISOString() },
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
     res.json({ success: true, report });
   } catch (err) {
+    console.error('Report generate error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 app.delete('/api/reports/:id', adminOnly, async (req, res) => {
   try {
-    await Report.findOneAndDelete({ _id: req.params.id, clientId: req.clientId });
+    await Report.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ── Backup & Restore ───────────────────────────
+// ── BACKUP & RESTORE ────────────────────────────
+
 app.get('/api/backup', adminOnly, async (req, res) => {
   try {
-    const cid = req.clientId;
     const [phones, sales, days, expenses, hqstock, shipments, dispatches] = await Promise.all([
-      Phone.find({ clientId: cid }),
-      Sale.find({ clientId: cid }),
-      Day.find({ clientId: cid }),
-      ShopExpense.find({ clientId: cid }),
-      HQStockModel.findOne({ clientId: cid }),
-      Shipment.find({ clientId: cid }),
-      Dispatch.find({ clientId: cid }),
+      Phone.find({}),
+      Sale.find({}),
+      Day.find({}),
+      ShopExpense.find({}),
+      HQStockModel.findOne({ key: 'hq' }),
+      Shipment.find({}),
+      Dispatch.find({}),
     ]);
-    res.json({ version: 2, clientId: cid, exportedAt: new Date().toISOString(), phones, sales, days, expenses, hqstock: hqstock || { items: [] }, shipments, dispatches });
+    res.json({
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      phones, sales, days, expenses,
+      hqstock: hqstock || { items: [] },
+      shipments, dispatches,
+    });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1532,42 +1237,53 @@ app.get('/api/backup', adminOnly, async (req, res) => {
 app.post('/api/restore', adminOnly, express.json({ limit: '50mb' }), async (req, res) => {
   try {
     const { phones, sales, days, expenses, hqstock, shipments, dispatches } = req.body;
-    const cid = req.clientId;
-
     if (phones?.length) {
       await Phone.bulkWrite(phones.map(p => ({
-        updateOne: { filter: { imei: p.imei, clientId: cid }, update: { $set: { ...p, clientId: cid } }, upsert: true }
+        updateOne: { filter: { imei: p.imei }, update: { $set: p }, upsert: true }
       })));
     }
     if (sales?.length) {
+      // Use _id as the primary key for upsert if present, otherwise fall back to imei+soldAt
       await Sale.bulkWrite(sales.map(s => ({
-        updateOne: { filter: s._id ? { _id: s._id, clientId: cid } : { imei: s.imei, soldAt: s.soldAt, clientId: cid }, update: { $set: { ...s, clientId: cid } }, upsert: true }
+        updateOne: {
+          filter: s._id ? { _id: s._id } : { imei: s.imei, soldAt: s.soldAt },
+          update: { $set: s },
+          upsert: true
+        }
       })));
     }
     if (days?.length) {
       await Day.bulkWrite(days.map(d => ({
-        updateOne: { filter: { shop: d.shop, date: d.date, clientId: cid }, update: { $set: { ...d, clientId: cid } }, upsert: true }
+        updateOne: { filter: { shop: d.shop, date: d.date }, update: { $set: d }, upsert: true }
       })));
     }
     if (expenses?.length) {
-      await ShopExpense.insertMany(expenses.map(e => ({ ...e, clientId: cid })), { ordered: false }).catch(() => {});
+      await ShopExpense.insertMany(expenses, { ordered: false })
+        .catch(err => console.error('Restore: some expenses skipped:', err.message));
     }
     if (hqstock) {
-      await HQStockModel.findOneAndUpdate({ clientId: cid }, { ...hqstock, clientId: cid, key: 'hq' }, { upsert: true });
+      await HQStockModel.findOneAndUpdate(
+        { key: 'hq' },
+        { ...hqstock, key: 'hq' },
+        { upsert: true }
+      );
     }
     if (shipments?.length) {
-      await Shipment.insertMany(shipments.map(s => ({ ...s, clientId: cid })), { ordered: false }).catch(() => {});
+      await Shipment.insertMany(shipments, { ordered: false })
+        .catch(err => console.error('Restore: some shipments skipped:', err.message));
     }
     if (dispatches?.length) {
-      await Dispatch.insertMany(dispatches.map(d => ({ ...d, clientId: cid })), { ordered: false }).catch(() => {});
+      await Dispatch.insertMany(dispatches, { ordered: false })
+        .catch(err => console.error('Restore: some dispatches skipped:', err.message));
     }
     res.json({ success: true });
   } catch (err) {
+    console.error('Restore error:', err);
     res.status(500).json({ error: 'Restore failed: ' + err.message });
   }
 });
 
-// ── START ──────────────────────────────────────
+// ── START SERVER ───────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
