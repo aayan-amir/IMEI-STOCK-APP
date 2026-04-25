@@ -3,7 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a18">
   <title>Mobile HQ</title>
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap"
@@ -2314,11 +2318,88 @@
 
       .tb {
         gap: .3rem;
+        flex-wrap: wrap;
+        padding: .4rem .75rem;
       }
 
       .tb-title {
         font-size: .88rem;
       }
+
+      /* Make toolbar buttons full-row on very small screens */
+      .tb > .btn { min-height: 34px; padding: .35rem .65rem; }
+    }
+
+    /* ── MOBILE / ANDROID WEBVIEW ── */
+    @media(max-width:480px) {
+      /* Larger base font for readability */
+      body { font-size: 14px; }
+
+      /* Topbar: hide clock, shrink padding */
+      #clk { display: none; }
+      #topbar { padding: 0 .75rem; gap: .5rem; overflow-x: auto; }
+
+      /* Stock scroll padding */
+      .stock-scroll { padding: .5rem .5rem .75rem; }
+
+      /* Tables: horizontal scroll with touch momentum */
+      .cb { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+      table.t { min-width: 520px; }
+      .t th, .t td { padding: .32rem .45rem; font-size: .7rem; }
+
+      /* Toolbar: stack on 2 lines */
+      .tb { flex-wrap: wrap; row-gap: .4rem; }
+
+      /* Buttons: larger tap target */
+      .btn { padding: .42rem .85rem; font-size: .75rem; min-height: 36px; }
+      .bx { padding: .25rem .5rem; font-size: .7rem; }
+
+      /* Summary cards: 2-column grid */
+      .scards { grid-template-columns: 1fr 1fr; gap: .35rem; padding: .45rem .5rem; }
+      .sc-val { font-size: .85rem; }
+
+      /* Forms: single column always */
+      .form-grid { grid-template-columns: 1fr !important; }
+
+      /* Input & select: large enough to avoid iOS zoom */
+      input[type=text], input[type=number], input[type=password],
+      input[type=email], select, textarea {
+        font-size: 16px !important; /* prevents iOS zoom */
+        min-height: 40px;
+      }
+      input[type=date] { font-size: 14px; min-height: 36px; }
+
+      /* Bottom panels */
+      .bpanels { max-height: 220px; overflow-y: auto; }
+      .expbar { gap: .4rem; padding: .35rem .5rem; flex-wrap: wrap; }
+
+      /* Auth overlay: full-screen on mobile */
+      #auth-overlay { padding: .5rem; align-items: flex-start; padding-top: 3rem; }
+      .auth-box { border-radius: 14px; padding: 1.5rem 1.25rem 1.4rem; }
+      .auth-btn { padding: .9rem; font-size: .9rem; min-height: 48px; }
+      .auth-input { padding: .85rem 1rem; font-size: 16px !important; }
+      .auth-shop-grid { grid-template-columns: 1fr 1fr 1fr; gap: .4rem; }
+      .auth-shop-btn { padding: .9rem .3rem; font-size: .75rem; min-height: 48px; }
+
+      /* Super admin form shops row */
+      #sa-form .form-grid { grid-template-columns: 1fr; }
+      #sa-shop-name { font-size: 16px !important; }
+
+      /* Page header / toolbar badges */
+      .tb-badge { font-size: .65rem; }
+
+      /* Analytics: single column */
+      .analytics-grid { grid-template-columns: 1fr !important; }
+
+      /* Log rows: more padding for touch */
+      .log-row { padding: .55rem .75rem; }
+
+      /* Print: hide on mobile (no printers) */
+    }
+
+    /* Prevent double-tap zoom on buttons (Android WebView) */
+    button, .btn, .auth-btn, .auth-shop-btn, .ni, .stab {
+      touch-action: manipulation;
     }
 
     /* ── AUTH OVERLAY ── */
