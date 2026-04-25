@@ -725,8 +725,46 @@ label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.
 
 <!-- ── AUTH OVERLAY ── -->
 <div id="auth-overlay">
+  
+  <!-- Step 0: Client ID -->
+  <div id="auth-client" class="auth-box">
+    <div class="auth-logo"><div class="auth-logo-dot"></div>Mobile HQ</div>
+    <div class="auth-title">Client Login</div>
+    <div class="auth-sub">Enter your Client ID to continue.</div>
+    <input type="text" class="auth-input" id="auth-client-input"
+      placeholder="Client ID..." autocomplete="username"
+      onkeydown="if(event.key==='Enter')checkClient()">
+    <div class="auth-err" id="auth-client-err">Client not found.</div>
+    <button class="auth-btn" onclick="checkClient()">Next</button>
+    <div class="auth-divider">super admin</div>
+    <button class="auth-btn" style="background:var(--s2);color:var(--text2);border:1px solid var(--border);" onclick="showSuperAdmin()">Manage Clients</button>
+  </div>
+
+
+  <!-- Super Admin Panel -->
+  <div id="auth-superadmin" class="auth-box" style="display:none; max-width: 500px;">
+    <div class="auth-logo"><div class="auth-logo-dot"></div>Mobile HQ - Super Admin</div>
+    <div class="auth-sub">Create and manage clients.</div>
+    
+    <div class="form-group">
+      <label>Super Admin Password</label>
+      <input type="password" id="sa-pass">
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Client ID</label><input type="text" id="sa-client-id" placeholder="e.g. ANAS"></div>
+      <div class="form-group"><label>Admin Password</label><input type="text" id="sa-admin-pass"></div>
+      <div class="form-group"><label>Gate Password</label><input type="text" id="sa-gate-pass"></div>
+      <div class="form-group" style="grid-column: 1 / -1;"><label>Shops (JSON array)</label>
+      <textarea id="sa-shops" placeholder='[{"id":"456","name":"Shop 456","color":"#16a34a"}]'></textarea>
+      </div>
+    </div>
+    <div class="auth-err" id="sa-err"></div>
+    <button class="auth-btn" onclick="saveClient()" style="margin-top:14px;">Save Client</button>
+    <button class="auth-btn" style="background:var(--s2);color:var(--text2);border:1px solid var(--border);" onclick="hideSuperAdmin()">Back</button>
+  </div>
+
   <!-- Step 1: gate password -->
-  <div id="auth-gate" class="auth-box">
+  <div id="auth-gate" class="auth-box" style="display:none">
     <div class="auth-logo"><div class="auth-logo-dot"></div>Mobile HQ</div>
     <div class="auth-title">Site Access</div>
     <div class="auth-sub">Enter the site password to continue.</div>
