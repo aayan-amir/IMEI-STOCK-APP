@@ -111,7 +111,10 @@ const PhoneSchema = new mongoose.Schema({
   notes: String,
   addedAt: String,
   soldAt: String
-}, { toJSON: { virtuals: true } });
+}, { toJSON: { virtuals: true }, timestamps: true });
+PhoneSchema.index({ imei: 1 });
+PhoneSchema.index({ shop: 1, status: 1 });
+PhoneSchema.index({ createdAt: -1 });
 
 const SaleSchema = new mongoose.Schema({
   imei: String,
@@ -210,7 +213,8 @@ const ClientSchema = new mongoose.Schema({
   clientId: { type: String, unique: true, required: true },
   adminPassword: { type: String, required: true },
   gatePassword: { type: String, required: true },
-  shops: { type: Array, default: [] }
+  shops: { type: Array, default: [] },
+  status: { type: String, default: 'active', enum: ['active', 'paused'] }
 });
 const Client = mongoose.model('Client', ClientSchema);
 
@@ -223,6 +227,7 @@ const SessionSchema = new mongoose.Schema({
   validShops: [String],
   expiresAt: { type: Date, index: { expires: 0 } }, // TTL index — Mongo auto-deletes
 });
+SessionSchema.index({ token: 1, clientId: 1 });
 const Session = mongoose.model('Session', SessionSchema);
 
 // ── Tenant Connections ──────────────────────────
@@ -358,9 +363,15 @@ const authLimiter = rateLimit({
 app.get('/api/clients/lookup', async (req, res) => {
   const { clientId } = req.query;
   if (!clientId) return res.status(400).json({ error: 'clientId required' });
-  const client = await Client.findOne({ clientId });
-  if (!client) return res.status(404).json({ error: 'Client not found' });
-  res.json({ shops: client.shops || [] });
+  try {
+    const client = await Client.findOne({ clientId });
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    if (client.status === 'paused') return res.status(403).json({ error: 'Account paused' });
+    res.json({ shops: client.shops || [] });
+  } catch (err) {
+    console.error('Lookup error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Auth — validates passwords against the specific client's config
@@ -369,52 +380,55 @@ app.post('/api/auth', authLimiter, async (req, res) => {
   console.log(`🔑 Auth Attempt: ${clientId} | Type: ${type} | Shop: ${shop}`);
 
   if (!clientId) return res.status(400).json({ error: 'Client ID required' });
-  
-  const client = await Client.findOne({ clientId });
-  if (!client) {
-    console.log(`❌ Auth Failed: Client "${clientId}" not found`);
-    return res.status(404).json({ error: 'Client not found' });
-  }
-  
-  const gatePass = client.gatePassword;
-  const adminPass = client.adminPassword;
-  const validShops = (client.shops || []).map(s => s.id);
 
-  // Step 1: gate check (no token issued — just confirms the gate password)
-  if (type === 'gate') {
-    const isOk = safeCompare(password, gatePass);
-    if (!isOk) console.log(`❌ Auth Failed: Gate password mismatch for ${clientId}`);
-    else console.log(`✅ Auth Success: Gate password verified for ${clientId}`);
-    return res.json({ ok: isOk });
-  }
-
-  // Step 2a: admin login
-  if (type === 'admin') {
-    if (!safeCompare(password, adminPass)) {
-      console.log(`❌ Auth Failed: Admin password mismatch for ${clientId}`);
-      return res.json({ ok: false });
+  try {
+    const client = await Client.findOne({ clientId });
+    if (!client) {
+      console.log(`❌ Auth Failed: Client "${clientId}" not found`);
+      return res.status(404).json({ error: 'Client not found' });
     }
-    const token = await createSession({ role: 'admin', shop: null, clientId, validShops });
-    console.log(`✅ Auth Success: Admin logged in for ${clientId}`);
-    return res.json({ ok: true, token, role: 'admin', shops: client.shops });
-  }
+    if (client.status === 'paused') return res.status(403).json({ error: 'Account paused' });
 
-  // Step 2b: shop login
-  if (type === 'shop') {
-    if (!safeCompare(password, gatePass)) {
-      console.log(`❌ Auth Failed: Shop gate password mismatch for ${clientId}`);
-      return res.json({ ok: false });
-    }
-    if (!validShops.includes(shop)) {
-      console.log(`❌ Auth Failed: Invalid shop "${shop}" for client ${clientId}`);
-      return res.status(400).json({ ok: false, error: 'Invalid shop' });
-    }
-    const token = await createSession({ role: 'shop', shop, clientId, validShops });
-    console.log(`✅ Auth Success: Shop "${shop}" logged in for ${clientId}`);
-    return res.json({ ok: true, token, role: 'shop', shop, shops: client.shops });
-  }
+    const gatePass = client.gatePassword;
+    const adminPass = client.adminPassword;
+    const validShops = (client.shops || []).map(s => s.id);
 
-  return res.status(400).json({ ok: false });
+    if (type === 'gate') {
+      const isOk = safeCompare(password, gatePass);
+      if (!isOk) console.log(`❌ Auth Failed: Gate password mismatch for ${clientId}`);
+      else console.log(`✅ Auth Success: Gate password verified for ${clientId}`);
+      return res.json({ ok: isOk });
+    }
+
+    if (type === 'admin') {
+      if (!safeCompare(password, adminPass)) {
+        console.log(`❌ Auth Failed: Admin password mismatch for ${clientId}`);
+        return res.json({ ok: false });
+      }
+      const token = await createSession({ role: 'admin', shop: null, clientId, validShops });
+      console.log(`✅ Auth Success: Admin logged in for ${clientId}`);
+      return res.json({ ok: true, token, role: 'admin', shops: client.shops });
+    }
+
+    if (type === 'shop') {
+      if (!safeCompare(password, gatePass)) {
+        console.log(`❌ Auth Failed: Shop gate password mismatch for ${clientId}`);
+        return res.json({ ok: false });
+      }
+      if (!validShops.includes(shop)) {
+        console.log(`❌ Auth Failed: Invalid shop "${shop}" for client ${clientId}`);
+        return res.status(400).json({ ok: false, error: 'Invalid shop' });
+      }
+      const token = await createSession({ role: 'shop', shop, clientId, validShops });
+      console.log(`✅ Auth Success: Shop "${shop}" logged in for ${clientId}`);
+      return res.json({ ok: true, token, role: 'shop', shop, shops: client.shops });
+    }
+
+    return res.status(400).json({ ok: false });
+  } catch (err) {
+    console.error('Auth error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Super Admin password verify (used by frontend to gate the UI)
@@ -428,7 +442,7 @@ app.post('/api/superadmin/verify', (req, res) => {
 
 // Super Admin endpoint to create clients
 app.post('/api/superadmin/clients', async (req, res) => {
-  const { superAdminPassword, clientId, adminPassword, gatePassword, shops } = req.body || {};
+  const { superAdminPassword, clientId, adminPassword, gatePassword, shops, status } = req.body || {};
   if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
@@ -439,13 +453,44 @@ app.post('/api/superadmin/clients', async (req, res) => {
       existing.adminPassword = adminPassword || existing.adminPassword;
       existing.gatePassword = gatePassword || existing.gatePassword;
       existing.shops = shops || existing.shops;
+      existing.status = status || existing.status;
       await existing.save();
       return res.json({ success: true, client: existing });
     }
     
-    const client = new Client({ clientId, adminPassword, gatePassword, shops });
+    const client = new Client({ clientId, adminPassword, gatePassword, shops, status: status || 'active' });
     await client.save();
     res.json({ success: true, client });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/superadmin/clients', async (req, res) => {
+  const { superAdminPassword } = req.query;
+  if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const clients = await Client.find({}, { adminPassword: 0, gatePassword: 0 });
+    res.json(clients);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/superadmin/clients/:clientId', async (req, res) => {
+  const { superAdminPassword } = req.body || {};
+  if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const { clientId } = req.params;
+    await Client.findOneAndDelete({ clientId });
+    // Also drop the tenant DB
+    const db = mongoose.connection.useDb(`tenant_${clientId}`);
+    await db.dropDatabase();
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
