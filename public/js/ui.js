@@ -34,32 +34,72 @@
       activeShop = s;
       clearPhoneSelection();
       document.querySelectorAll('.stab').forEach(t => t.classList.toggle('on', t.dataset.s === s));
-      const c = SHOP_COLOR[s] || 'var(--a5)'; const r = SHOP_RGBA[s] || '22,163,74';
-      const sObj = currentClientShops.find(x => x.id === s) || { name: s };
-      const label = s === 'HQ' ? 'Head Office' : (sObj.name || s);
+      var c = SHOP_COLOR[s] || 'var(--a5)'; var r = SHOP_RGBA[s] || '22,163,74';
+      var sObj = currentClientShops.find(x => x.id === s) || { name: s };
+      var label = s === 'HQ' ? 'Head Office' : (sObj.name || s);
       ['scan-shop-badge', 'imei-shop-badge', 'stock-badge'].forEach(id => {
-        const el = $(id); if (!el) return;
+        var el = $(id); if (!el) return;
         el.textContent = label;
         el.style.cssText = `background:rgba(${r},.1);border:1px solid rgba(${r},.3);color:${c};border-radius:20px;padding:2px 10px;`;
       });
-      const lbl = $('sb-lbl2');
+      var lbl = $('sb-lbl2');
       if (lbl) lbl.textContent = label.toUpperCase();
+
+      // Update shop-specific filters if they exist on the current page
+      var filters = {
+        expenses: 'exp-shop-filter',
+        saleslog: 'sl-shop',
+        history: 'hist-shop',
+        shipments: 'ship-shop-filter',
+        monthly: 'monthly-shop',
+        logs: 'log-shop',
+        reports: 'rpt-shop'
+      };
+      var filterId = filters[activePage];
+      if (filterId) {
+        var el = $(filterId);
+        if (el) {
+          if (s === 'HQ') {
+            // If clicking HQ, try to set to 'All' or empty if it's the first option
+            if (el.options[0] && (el.options[0].value === '' || el.options[0].value === 'ALL')) {
+              el.value = el.options[0].value;
+            } else {
+              el.value = s;
+            }
+          } else {
+            el.value = s;
+          }
+        }
+      }
+
+      // Refresh logic for the active page
       if (['scan', 'imeistock'].includes(activePage)) loadIMEIData();
-      if (activePage === 'stock') { dayState.shop = s; loadDay(); }
+      else if (activePage === 'stock') { dayState.shop = s; loadDay(); }
+      else if (activePage === 'expenses') renderShopExpenses();
+      else if (activePage === 'saleslog') loadSalesLog();
+      else if (activePage === 'history') loadAllDays();
+      else if (activePage === 'shipments') loadShipments();
+      else if (activePage === 'monthly') renderMonthly();
+      else if (activePage === 'ceo') renderCEO();
+      else if (activePage === 'analytics') renderAnalytics();
+      else if (activePage === 'logs') loadLogs();
+      else if (activePage === 'reports') loadReports();
+      else if (activePage === 'contacts') loadContacts();
+      else if (activePage === 'warehouse') loadWarehouse();
+
       loadSidebarStats();
     }
 
     async function loadSidebarStats() {
       try {
-        const sh = activeShop === 'HQ' ? null : activeShop;
-        const s = await api('GET', sh ? `/api/stats?shop=${sh}` : '/api/stats');
+        var sh = activeShop === 'HQ' ? null : activeShop;
+        var s = await api('GET', sh ? `/api/stats?shop=${sh}` : '/api/stats');
         $('sb-is').textContent = s.inStock;
         $('sb-sa').textContent = s.sold;
         $('sb-rv').textContent = s.totalRevenue > 0 ? pkr(s.totalRevenue) : '—';
-        const p = $('connPill'); p.classList.add('online'); $('connText').textContent = 'online';
+        var p = $('connPill'); p.classList.add('online'); $('connText').textContent = 'online';
       } catch (e) {
-        const p = $('connPill'); p.classList.remove('online'); $('connText').textContent = 'offline';
+        var p = $('connPill'); p.classList.remove('online'); $('connText').textContent = 'offline';
       }
     }
     setInterval(() => { if (authRole) loadSidebarStats(); }, 12000);
-
