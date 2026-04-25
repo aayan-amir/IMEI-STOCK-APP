@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -31,37 +32,6 @@ app.use(express.static('public'));
 
 // Rate limiting — 300 requests per minute per IP
 app.use('/api/', rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true, legacyHeaders: false }));
-
-// ── Multi-Tenant Middleware ────────────────────
-const tenantConnections = {};
-const getTenantModels = (clientId) => {
-  if (!tenantConnections[clientId]) {
-    tenantConnections[clientId] = mongoose.connection.useDb(`tenant_${clientId}`, { useCache: true });
-  }
-  const db = tenantConnections[clientId];
-  return {
-    Phone: db.model('Phone', PhoneSchema),
-    Sale: db.model('Sale', SaleSchema),
-    Day: db.model('Day', DaySchema),
-    Expense: db.model('Expense', ExpSchema),
-    Dispatch: db.model('Dispatch', DispatchSchema),
-    Shipment: db.model('Shipment', ShipmentSchema),
-    Log: db.model('Log', LogSchema),
-    Contact: db.model('Contact', ContactSchema)
-  };
-};
-
-app.use('/api/', (req, res, next) => {
-  const clientId = req.headers['x-client-id'];
-  if (!clientId && !req.path.startsWith('/clients/lookup') && !req.path.startsWith('/superadmin')) {
-    return res.status(400).json({ error: 'Missing X-Client-ID header' });
-  }
-  if (clientId) {
-    req.clientId = clientId;
-    req.models = getTenantModels(clientId);
-  }
-  next();
-});
 
 // Return 503 immediately when MongoDB is not ready (prevents 10 s buffer timeout)
 app.use('/api/', (req, res, next) => {
@@ -114,14 +84,6 @@ mongoose.connection.on('error', err => {
 connectMongo();
 
 
-// ── Master Client Model (Global) ────────────────
-const ClientSchema = new mongoose.Schema({
-  clientId: { type: String, unique: true, required: true },
-  adminPassword: { type: String, required: true },
-  gatePassword: { type: String, required: true },
-  shops: [{ id: String, name: String, color: String }]
-});
-const Client = mongoose.model('Client', ClientSchema);
 
 // ── Schemas ────────────────────────────────────
 const PhoneSchema = new mongoose.Schema({
@@ -350,8 +312,8 @@ const adminOnly = requireAuth(['admin']);
 const anyAuth   = requireAuth(['admin', 'shop']);
 
 // Fire-and-forget audit log writer
-function logAction(action, shop, role, details) {
-  req.models.AuditLog.create({ action, shop: shop || null, role: role || null, details })
+function logAction(models, action, shop, role, details) {
+  models.AuditLog.create({ action, shop: shop || null, role: role || null, details })
     .catch(err => console.error('Audit log error:', err));
 }
 
@@ -442,7 +404,7 @@ app.post('/api/superadmin/clients', async (req, res) => {
 // Lookup single phone by IMEI (used by scan/sell flow)
 app.get('/api/lookup/:imei', anyAuth, async (req, res) => {
   try {
-    const phone = await req.models.req.models.Phone.findOne({ imei: req.params.imei });
+    const phone = await req.models.Phone.findOne({ imei: req.params.imei });
     if (!phone) return res.json({});
     res.json(phone);
   } catch (err) {
@@ -463,7 +425,7 @@ app.get('/api/stock', anyAuth, async (req, res) => {
     delete query.shop; // query across all shops' stock, not just the requesting shop's
     query.soldByShop = req.query.soldByShop;
   }
-  const items = await req.models.req.models.Phone.find(query);
+  const items = await req.models.Phone.find(query);
   res.json(items);
 });
 
@@ -476,12 +438,12 @@ app.post('/api/stock/add', anyAuth, async (req, res) => {
   if (!imei) return res.status(400).json({ error: 'IMEI required' });
   if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
 
-  const exists = await req.models.req.models.Phone.findOne({ imei });
+  const exists = await req.models.Phone.findOne({ imei });
   if (exists) return res.status(409).json({ error: 'IMEI exists' });
 
   const phone = new req.models.Phone({ ...body, addedAt: new Date().toISOString() });
   await phone.save();
-  logAction('stock_add', body.shop || null, req.authRole, { imei, brand: body.brand, model: body.model, buyPrice: body.buyPrice });
+  logAction(req.models, 'stock_add', body.shop || null, req.authRole, { imei, brand: body.brand, model: body.model, buyPrice: body.buyPrice });
   res.json({ success: true, phone });
 });
 
@@ -496,7 +458,7 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       return res.status(400).json({ error: 'salePrice required' });
     }
 
-    const phone = await req.models.req.models.Phone.findOne({ imei });
+    const phone = await req.models.Phone.findOne({ imei });
 
     if (!phone) return res.status(404).json({ error: 'Not found' });
     if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
@@ -570,7 +532,7 @@ app.post('/api/stock/sell', anyAuth, async (req, res) => {
       }
     }
 
-    logAction('stock_sell', effectiveSoldByShop || phone.shop || null, req.authRole, { imei: phone.imei, brand: phone.brand, model: phone.model, salePrice: sp, profit, buyerName: buyerName || null, stockShop: phone.shop || null, soldByShop: effectiveSoldByShop });
+    logAction(req.models, 'stock_sell', effectiveSoldByShop || phone.shop || null, req.authRole, { imei: phone.imei, brand: phone.brand, model: phone.model, salePrice: sp, profit, buyerName: buyerName || null, stockShop: phone.shop || null, soldByShop: effectiveSoldByShop });
     res.json({ success: true, sale });
   } catch (err) {
     console.error('Sell endpoint error:', err);
@@ -590,7 +552,7 @@ function buildSalesByShopQuery(shop) {
 app.get('/api/sales', adminOnly, async (req, res) => {
   const shop = req.query.shop;
   const query = buildSalesByShopQuery(shop);
-  const sales = await req.models.req.models.Sale.find(query);
+  const sales = await req.models.Sale.find(query);
   res.json(sales);
 });
 
@@ -601,8 +563,8 @@ app.get('/api/stats', anyAuth, async (req, res) => {
   const stockQuery = shop ? { shop } : {};
   // Sales are attributed to the shop that performed the sale (soldByShop); fall back to shop field for older records
   const salesQuery = buildSalesByShopQuery(shop);
-  const stock = await req.models.req.models.Phone.find(stockQuery);
-  const sales = await req.models.req.models.Sale.find(salesQuery);
+  const stock = await req.models.Phone.find(stockQuery);
+  const sales = await req.models.Sale.find(salesQuery);
 
   res.json({
     inStock: stock.filter(p => p.status === 'in_stock').length,
@@ -650,8 +612,8 @@ app.put('/api/stock/batch', adminOnly, async (req, res) => {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    const result = await req.models.req.models.Phone.updateMany({ _id: { $in: validIds } }, { $set: allowed });
-    const updated = await req.models.req.models.Phone.find({ _id: { $in: validIds } });
+    const result = await req.models.Phone.updateMany({ _id: { $in: validIds } }, { $set: allowed });
+    const updated = await req.models.Phone.find({ _id: { $in: validIds } });
     res.json({
       success: true,
       matched: result.matchedCount ?? updated.length,
@@ -669,7 +631,7 @@ app.put('/api/stock/:id', adminOnly, async (req, res) => {
     const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body;
     const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
     Object.keys(allowed).forEach(k => allowed[k] === undefined && delete allowed[k]);
-    const phone = await req.models.req.models.Phone.findByIdAndUpdate(req.params.id, allowed, { returnDocument: 'after' });
+    const phone = await req.models.Phone.findByIdAndUpdate(req.params.id, allowed, { returnDocument: 'after' });
     if (!phone) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true, phone });
   } catch (err) {
@@ -685,10 +647,10 @@ app.delete('/api/stock/:id', adminOnly, async (req, res) => {
       return res.status(400).json({ error: 'Invalid phone id' });
     }
     // Retrieve the phone first so we can log its shop before deletion
-    const phone = await req.models.req.models.Phone.findById(id);
+    const phone = await req.models.Phone.findById(id);
     if (phone) {
-      await req.models.req.models.Phone.findByIdAndDelete(id);
-      logAction('stock_delete', phone.shop || null, req.authRole, { id, imei: phone.imei, brand: phone.brand, model: phone.model });
+      await req.models.Phone.findByIdAndDelete(id);
+      logAction(req.models, 'stock_delete', phone.shop || null, req.authRole, { id, imei: phone.imei, brand: phone.brand, model: phone.model });
     }
     res.json({ success: true });
   } catch (err) {
@@ -704,7 +666,7 @@ app.get('/api/days', adminOnly, async (req, res) => {
     const query = {};
     if (shop) query.shop = shop;
     if (month) query.date = { $regex: `^${month}` };
-    const days = await req.models.req.models.Day.find(query).sort({ date: -1 });
+    const days = await req.models.Day.find(query).sort({ date: -1 });
     res.json(days);
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -713,7 +675,7 @@ app.get('/api/days', adminOnly, async (req, res) => {
 
 app.get('/api/days/:shop/:date', adminOnly, async (req, res) => {
   try {
-    const day = await req.models.req.models.Day.findOne({ shop: req.params.shop, date: req.params.date });
+    const day = await req.models.Day.findOne({ shop: req.params.shop, date: req.params.date });
     res.json(day || {});
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -724,7 +686,7 @@ app.put('/api/days/:shop/:date', adminOnly, async (req, res) => {
   try {
     const { shop, date } = req.params;
     const update = { ...req.body, shop, date };
-    const day = await req.models.req.models.Day.findOneAndUpdate(
+    const day = await req.models.Day.findOneAndUpdate(
       { shop, date },
       update,
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
@@ -842,7 +804,7 @@ app.post('/api/shipments', adminOnly, async (req, res) => {
         payloadImeiSet.add(it.imei);
       }
 
-      const existingPhones = await req.models.req.models.Phone.find({ imei: { $in: [...payloadImeiSet] } }, { imei: 1 });
+      const existingPhones = await req.models.Phone.find({ imei: { $in: [...payloadImeiSet] } }, { imei: 1 });
       if (existingPhones.length) {
         return res.status(409).json({ error: `IMEI already exists in stock: ${existingPhones[0].imei}` });
       }
@@ -871,7 +833,7 @@ app.post('/api/shipments', adminOnly, async (req, res) => {
 
 app.get('/api/shipments', adminOnly, async (req, res) => {
   try {
-    const shipments = await req.models.req.models.Shipment.find().sort({ date: -1 });
+    const shipments = await req.models.Shipment.find().sort({ date: -1 });
     res.json(shipments);
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -880,7 +842,7 @@ app.get('/api/shipments', adminOnly, async (req, res) => {
 
 app.delete('/api/shipments/:id', adminOnly, async (req, res) => {
   try {
-    await req.models.req.models.Shipment.findByIdAndDelete(req.params.id);
+    await req.models.Shipment.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -903,7 +865,7 @@ app.post('/api/dispatches', adminOnly, async (req, res) => {
       const uniqImeis = [...new Set(normalizedImei)];
       if (uniqImeis.length !== normalizedImei.length) return res.status(409).json({ error: 'Duplicate IMEI in dispatch payload' });
 
-      const existing = await req.models.req.models.Phone.find({ imei: { $in: uniqImeis } }, { imei: 1 });
+      const existing = await req.models.Phone.find({ imei: { $in: uniqImeis } }, { imei: 1 });
       if (existing.length) return res.status(409).json({ error: `IMEI already exists in stock: ${existing[0].imei}` });
 
       const stock = await req.models.HQStockModel.findOne({ key: 'hq' });
@@ -933,7 +895,7 @@ app.post('/api/dispatches', adminOnly, async (req, res) => {
         };
       });
 
-      await req.models.req.models.Phone.insertMany(phonesToCreate, { ordered: true });
+      await req.models.Phone.insertMany(phonesToCreate, { ordered: true });
       const remaining = hqItems.filter(it => {
         const imei = String(it?.imei || '').replace(/\D/g, '');
         return !imei || !uniqImeis.includes(imei);
@@ -955,7 +917,7 @@ app.post('/api/dispatches', adminOnly, async (req, res) => {
 
 app.get('/api/dispatches', adminOnly, async (req, res) => {
   try {
-    const dispatches = await req.models.req.models.Dispatch.find().sort({ date: -1 });
+    const dispatches = await req.models.Dispatch.find().sort({ date: -1 });
     const allImeis = [...new Set(
       dispatches.flatMap(d => (d.items || [])
         .map(it => String(it?.imei || '').replace(/\D/g, ''))
@@ -963,7 +925,7 @@ app.get('/api/dispatches', adminOnly, async (req, res) => {
     )];
     let soldSet = new Set();
     if (allImeis.length) {
-      const soldPhones = await req.models.req.models.Phone.find(
+      const soldPhones = await req.models.Phone.find(
         { imei: { $in: allImeis }, status: 'sold' },
         { imei: 1, shop: 1 }
       );
@@ -984,7 +946,7 @@ app.get('/api/dispatches', adminOnly, async (req, res) => {
 
 app.delete('/api/dispatches/:id', adminOnly, async (req, res) => {
   try {
-    await req.models.req.models.Dispatch.findByIdAndDelete(req.params.id);
+    await req.models.Dispatch.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -1012,19 +974,19 @@ app.delete('/api/sales', adminOnly, async (req, res) => {
     const { shop } = req.query;
     // Filter by soldByShop (the shop that performed the sale); fall back to shop field for older records
     const query = buildSalesByShopQuery(shop);
-    const sales = await req.models.req.models.Sale.find(query);
+    const sales = await req.models.Sale.find(query);
     if (sales.length === 0) return res.json({ success: true, deleted: 0 });
 
     // Revert all associated phones to in_stock in one bulk write
     const imeis = [...new Set(sales.map(s => s.imei).filter(Boolean))];
     if (imeis.length) {
-      await req.models.req.models.Phone.updateMany(
+      await req.models.Phone.updateMany(
         { imei: { $in: imeis } },
         { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
       );
     }
 
-    const result = await req.models.req.models.Sale.deleteMany(query);
+    const result = await req.models.Sale.deleteMany(query);
     res.json({ success: true, deleted: result.deletedCount });
   } catch (err) {
     console.error('Bulk delete sales error:', err);
@@ -1035,15 +997,15 @@ app.delete('/api/sales', adminOnly, async (req, res) => {
 // ── DELETE SALE BY IMEI ──────────────────────────
 app.delete('/api/sales/by-imei/:imei', adminOnly, async (req, res) => {
   try {
-    const sale = await req.models.req.models.Sale.findOne({ imei: req.params.imei });
+    const sale = await req.models.Sale.findOne({ imei: req.params.imei });
     if (!sale) return res.status(404).json({ error: 'Sale not found' });
 
-    await req.models.req.models.Phone.findOneAndUpdate(
+    await req.models.Phone.findOneAndUpdate(
       { imei: sale.imei },
       { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
     );
 
-    await req.models.req.models.Sale.findByIdAndDelete(sale._id);
+    await req.models.Sale.findByIdAndDelete(sale._id);
     res.json({ success: true });
   } catch (err) {
     console.error('Delete sale by IMEI error:', err);
@@ -1054,16 +1016,16 @@ app.delete('/api/sales/by-imei/:imei', adminOnly, async (req, res) => {
 // ── DELETE SALE ─────────────────────────────────
 app.delete('/api/sales/:id', adminOnly, async (req, res) => {
   try {
-    const sale = await req.models.req.models.Sale.findById(req.params.id);
+    const sale = await req.models.Sale.findById(req.params.id);
     if (!sale) return res.status(404).json({ error: 'Sale not found' });
 
     // Revert the phone to in_stock
-    await req.models.req.models.Phone.findOneAndUpdate(
+    await req.models.Phone.findOneAndUpdate(
       { imei: sale.imei },
       { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } }
     );
 
-    await req.models.req.models.Sale.findByIdAndDelete(req.params.id);
+    await req.models.Sale.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
     console.error('Delete sale error:', err);
@@ -1138,8 +1100,8 @@ app.get('/api/analytics/models', adminOnly, async (req, res) => {
     const staleDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const [recentSales, staleStock] = await Promise.all([
-      req.models.req.models.Sale.find({ soldAt: { $gte: since } }),
-      req.models.req.models.Phone.find({ status: 'in_stock', addedAt: { $lte: staleDate } }),
+      req.models.Sale.find({ soldAt: { $gte: since } }),
+      req.models.Phone.find({ status: 'in_stock', addedAt: { $lte: staleDate } }),
     ]);
 
     // Top sold models
@@ -1186,10 +1148,10 @@ app.get('/api/ceo/summary', adminOnly, async (req, res) => {
     const prevMonth = prevDate.toISOString().slice(0, 7);
 
     const [currentSales, prevSales, currentExpenses, stock] = await Promise.all([
-      req.models.req.models.Sale.find({ soldAt: { $regex: `^${currentMonth}` } }),
-      req.models.req.models.Sale.find({ soldAt: { $regex: `^${prevMonth}` } }),
+      req.models.Sale.find({ soldAt: { $regex: `^${currentMonth}` } }),
+      req.models.Sale.find({ soldAt: { $regex: `^${prevMonth}` } }),
       req.models.ShopExpense.find({ month: currentMonth }),
-      req.models.req.models.Phone.find({ status: 'in_stock' }),
+      req.models.Phone.find({ status: 'in_stock' }),
     ]);
 
     // Per-shop breakdown
@@ -1279,8 +1241,8 @@ app.post('/api/reports/generate', adminOnly, async (req, res) => {
     if (type === 'daily') {
       const shopQ = shop === 'ALL' ? {} : buildSalesByShopQuery(shop);
       const [sales, day] = await Promise.all([
-        req.models.req.models.Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
-        shop === 'ALL' ? Promise.resolve(null) : req.models.req.models.Day.findOne({ shop, date: period }),
+        req.models.Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
+        shop === 'ALL' ? Promise.resolve(null) : req.models.Day.findOne({ shop, date: period }),
       ]);
       const expenses = (day?.expenses || []).reduce((s, e) => s + (e.amt || 0), 0);
       data = {
@@ -1303,7 +1265,7 @@ app.post('/api/reports/generate', adminOnly, async (req, res) => {
     } else if (type === 'monthly') {
       const shopQ = shop === 'ALL' ? {} : buildSalesByShopQuery(shop);
       const [sales, expenses] = await Promise.all([
-        req.models.req.models.Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
+        req.models.Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
         req.models.ShopExpense.find(shop === 'ALL' ? { month: period } : { shop, month: period }),
       ]);
       const grossProfit = sales.reduce((s, x) => s + (x.profit || 0), 0);
@@ -1347,13 +1309,13 @@ app.delete('/api/reports/:id', adminOnly, async (req, res) => {
 app.get('/api/backup', adminOnly, async (req, res) => {
   try {
     const [phones, sales, days, expenses, hqstock, shipments, dispatches] = await Promise.all([
-      req.models.req.models.Phone.find({}),
-      req.models.req.models.Sale.find({}),
-      req.models.req.models.Day.find({}),
+      req.models.Phone.find({}),
+      req.models.Sale.find({}),
+      req.models.Day.find({}),
       req.models.ShopExpense.find({}),
       req.models.HQStockModel.findOne({ key: 'hq' }),
-      req.models.req.models.Shipment.find({}),
-      req.models.req.models.Dispatch.find({}),
+      req.models.Shipment.find({}),
+      req.models.Dispatch.find({}),
     ]);
     res.json({
       version: 1,
@@ -1402,11 +1364,11 @@ app.post('/api/restore', adminOnly, express.json({ limit: '50mb' }), async (req,
       );
     }
     if (shipments?.length) {
-      await req.models.req.models.Shipment.insertMany(shipments, { ordered: false })
+      await req.models.Shipment.insertMany(shipments, { ordered: false })
         .catch(err => console.error('Restore: some shipments skipped:', err.message));
     }
     if (dispatches?.length) {
-      await req.models.req.models.Dispatch.insertMany(dispatches, { ordered: false })
+      await req.models.Dispatch.insertMany(dispatches, { ordered: false })
         .catch(err => console.error('Restore: some dispatches skipped:', err.message));
     }
     res.json({ success: true });
@@ -1422,23 +1384,3 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 
-// ── Client Management ──────────────────────────
-app.get('/api/clients/lookup', async (req, res) => {
-  const { clientId } = req.query;
-  const client = await Client.findOne({ clientId });
-  if (!client) return res.status(404).json({ error: 'Not found' });
-  res.json({ shops: client.shops });
-});
-
-app.post('/api/superadmin/clients', async (req, res) => {
-  const { superAdminPassword, clientId, adminPassword, gatePassword, shops } = req.body;
-  if (superAdminPassword !== (process.env.SUPER_ADMIN_PASSWORD || 'superadmin')) {
-    return res.status(403).json({ error: 'Invalid super admin password' });
-  }
-  await Client.findOneAndUpdate(
-    { clientId },
-    { clientId, adminPassword, gatePassword, shops },
-    { upsert: true }
-  );
-  res.json({ ok: true });
-});

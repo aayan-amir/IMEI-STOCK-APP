@@ -6299,25 +6299,32 @@
     async function checkClient() {
       const id = $('auth-client-input').value.trim();
       if (!id) return;
-      const res = await fetch(BASE + '/api/clients/lookup?clientId=' + encodeURIComponent(id));
-      if (res.status === 200) {
-        const data = await res.json();
-        currentClientId = id;
-        currentClientShops = data.shops || [];
-        sessionStorage.setItem('clientId', currentClientId);
-        sessionStorage.setItem('clientShops', JSON.stringify(currentClientShops));
-        $('auth-client').style.display = 'none';
-        $('auth-gate').style.display = '';
-        $('auth-gate-input').focus();
-        renderDynamicShops();
-      } else {
-        $('auth-client-err').style.display = 'block';
+      try {
+        const res = await fetch(BASE + '/api/clients/lookup?clientId=' + encodeURIComponent(id));
+        if (res.status === 200) {
+          const data = await res.json();
+          currentClientId = id;
+          currentClientShops = data.shops || [];
+          sessionStorage.setItem('clientId', currentClientId);
+          sessionStorage.setItem('clientShops', JSON.stringify(currentClientShops));
+          $('auth-client').style.display = 'none';
+          $('auth-gate').style.display = '';
+          $('auth-gate-input').focus();
+          renderDynamicShops();
+        } else if (res.status === 503) {
+          alert("Database is currently starting up or disconnected. Please try again in a few seconds.");
+        } else {
+          $('auth-client-err').style.display = 'block';
+        }
+      } catch (err) {
+        console.error("Login fetch error:", err);
+        alert("Failed to connect to the server. Please check your connection.");
       }
     }
 
     function showSuperAdmin() {
       $('auth-client').style.display = 'none';
-      $('auth-superadmin').style.display = '';
+      $('auth-superadmin').style.display = 'block';
     }
 
     function hideSuperAdmin() {
