@@ -408,6 +408,15 @@ app.post('/api/auth', authLimiter, async (req, res) => {
   return res.status(400).json({ ok: false });
 });
 
+// Super Admin password verify (used by frontend to gate the UI)
+app.post('/api/superadmin/verify', (req, res) => {
+  const { superAdminPassword } = req.body || {};
+  if (safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
+    return res.json({ ok: true });
+  }
+  return res.status(403).json({ ok: false });
+});
+
 // Super Admin endpoint to create clients
 app.post('/api/superadmin/clients', async (req, res) => {
   const { superAdminPassword, clientId, adminPassword, gatePassword, shops } = req.body || {};
