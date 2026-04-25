@@ -341,11 +341,15 @@ app.get('/api/clients/lookup', async (req, res) => {
 // Auth — validates passwords against the specific client's config
 app.post('/api/auth', authLimiter, async (req, res) => {
   const { type, password, shop, clientId } = req.body || {};
+  console.log(`🔑 Auth Attempt: ${clientId} | Type: ${type} | Shop: ${shop}`);
 
   if (!clientId) return res.status(400).json({ error: 'Client ID required' });
   
   const client = await Client.findOne({ clientId });
-  if (!client) return res.status(404).json({ error: 'Client not found' });
+  if (!client) {
+    console.log(`❌ Auth Failed: Client "${clientId}" not found`);
+    return res.status(404).json({ error: 'Client not found' });
+  }
   
   const gatePass = client.gatePassword;
   const adminPass = client.adminPassword;
@@ -353,23 +357,37 @@ app.post('/api/auth', authLimiter, async (req, res) => {
 
   // Step 1: gate check (no token issued — just confirms the gate password)
   if (type === 'gate') {
-    return res.json({ ok: safeCompare(password, gatePass) });
+    const isOk = safeCompare(password, gatePass);
+    if (!isOk) console.log(`❌ Auth Failed: Gate password mismatch for ${clientId}`);
+    else console.log(`✅ Auth Success: Gate password verified for ${clientId}`);
+    return res.json({ ok: isOk });
   }
 
   // Step 2a: admin login
   if (type === 'admin') {
-    if (!safeCompare(password, adminPass)) return res.json({ ok: false });
+    if (!safeCompare(password, adminPass)) {
+      console.log(`❌ Auth Failed: Admin password mismatch for ${clientId}`);
+      return res.json({ ok: false });
+    }
     const token = generateToken();
     tokenStore.set(token, { role: 'admin', shop: null, clientId, validShops, expiresAt: Date.now() + TOKEN_TTL });
+    console.log(`✅ Auth Success: Admin logged in for ${clientId}`);
     return res.json({ ok: true, token, role: 'admin', shops: client.shops });
   }
 
   // Step 2b: shop login
   if (type === 'shop') {
-    if (!safeCompare(password, gatePass)) return res.json({ ok: false });
-    if (!validShops.includes(shop)) return res.status(400).json({ ok: false, error: 'Invalid shop' });
+    if (!safeCompare(password, gatePass)) {
+      console.log(`❌ Auth Failed: Shop gate password mismatch for ${clientId}`);
+      return res.json({ ok: false });
+    }
+    if (!validShops.includes(shop)) {
+      console.log(`❌ Auth Failed: Invalid shop "${shop}" for client ${clientId}`);
+      return res.status(400).json({ ok: false, error: 'Invalid shop' });
+    }
     const token = generateToken();
     tokenStore.set(token, { role: 'shop', shop, clientId, validShops, expiresAt: Date.now() + TOKEN_TTL });
+    console.log(`✅ Auth Success: Shop "${shop}" logged in for ${clientId}`);
     return res.json({ ok: true, token, role: 'shop', shop, shops: client.shops });
   }
 

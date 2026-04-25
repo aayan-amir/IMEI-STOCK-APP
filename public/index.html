@@ -3494,12 +3494,12 @@
       try {
         const r = await fetch(BASE + url, opts);
         if (r.status === 401) {
-          // Session expired — clear and force re-auth
+          // Session expired — clear tokens but keep clientId for convenience
           sessionStorage.removeItem('authToken'); sessionStorage.removeItem('authRole'); sessionStorage.removeItem('authShop');
           authRole = null; authShop = null;
           $('auth-overlay').classList.remove('hidden');
-          $('auth-client').style.display = '';
-          $('auth-gate').style.display = 'none';
+          $('auth-client').style.display = 'none';
+          $('auth-gate').style.display = '';
           $('auth-role').style.display = 'none';
           showToast('Session expired — please sign in again', 'warn');
           return {};
