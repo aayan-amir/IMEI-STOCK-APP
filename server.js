@@ -83,6 +83,15 @@ mongoose.connection.on('error', err => {
 
 connectMongo();
 
+// Drop stale indexes left over from old schema versions
+mongoose.connection.once('open', async () => {
+  try {
+    await mongoose.connection.db.collection('clients').dropIndex('slug_1');
+    console.log('🧹 Dropped stale slug_1 index from clients');
+  } catch (e) {
+    // Index doesn't exist — that's fine
+  }
+});
 
 
 // ── Schemas ────────────────────────────────────
