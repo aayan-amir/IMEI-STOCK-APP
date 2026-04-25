@@ -663,20 +663,9 @@
       }
       const sh = activeShop === 'HQ' ? null : activeShop;
       try {
-        const [stockRes, salesRes] = await Promise.allSettled([
-          api('GET', sh ? `/api/stock?shop=${sh}&all=true` : '/api/stock?all=true'),
-          api('GET', sh ? `/api/sales?shop=${sh}` : '/api/sales')
-        ]);
-        
-        const stock = stockRes.status === 'fulfilled' ? stockRes.value : [];
-        const sales = salesRes.status === 'fulfilled' ? salesRes.value : [];
-        
-        if (stockRes.status === 'rejected') console.error('Stock load failed:', stockRes.reason);
-        if (salesRes.status === 'rejected') console.error('Sales load failed:', salesRes.reason);
-
+        const all = imeiFilter !== 'in_stock';
+        const stock = await api('GET', sh ? `/api/stock?shop=${sh}&all=${all}` : `/api/stock?all=${all}`);
         allIMEIStock = Array.isArray(stock) ? [...stock].reverse() : [];
-        allIMEISales = Array.isArray(sales) ? sales : [];
-        
         const validIds = new Set(allIMEIStock.map(p => p.id));
         selectedPhoneIds.forEach(id => { if (!validIds.has(id)) selectedPhoneIds.delete(id); });
         
@@ -1180,4 +1169,4 @@
       loadSidebarStats();
       loadIMEIData();
     }
-
+

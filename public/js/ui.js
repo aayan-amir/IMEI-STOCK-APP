@@ -73,19 +73,24 @@
       }
 
       // Refresh logic for the active page
-      if (['scan', 'imeistock'].includes(activePage)) loadIMEIData();
-      else if (activePage === 'stock') { dayState.shop = s; loadDay(); }
-      else if (activePage === 'expenses') renderShopExpenses();
-      else if (activePage === 'saleslog') loadSalesLog();
-      else if (activePage === 'history') loadAllDays();
-      else if (activePage === 'shipments') loadShipments();
-      else if (activePage === 'monthly') renderMonthly();
-      else if (activePage === 'ceo') renderCEO();
-      else if (activePage === 'analytics') renderAnalytics();
-      else if (activePage === 'logs') loadLogs();
-      else if (activePage === 'reports') loadReports();
-      else if (activePage === 'contacts') loadContacts();
-      else if (activePage === 'warehouse') loadWarehouse();
+      if (['scan', 'imeistock', 'stock', 'expenses', 'saleslog', 'history', 'shipments', 'monthly', 'ceo', 'analytics', 'logs', 'reports'].includes(activePage)) {
+        var pg = $('pg-' + activePage);
+        if (pg) pg.style.opacity = '0.5'; // Visual feedback
+      }
+
+      if (['scan', 'imeistock'].includes(activePage)) loadIMEIData().finally(() => { var pg = $('pg-' + activePage); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'stock') { dayState.shop = s; loadDay().finally(() => { var pg = $('pg-stock'); if (pg) pg.style.opacity = '1'; }); }
+      else if (activePage === 'expenses') renderShopExpenses().finally(() => { var pg = $('pg-expenses'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'saleslog') loadSalesLog().finally(() => { var pg = $('pg-saleslog'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'history') loadAllDays().finally(() => { var pg = $('pg-history'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'shipments') loadShipments().finally(() => { var pg = $('pg-shipments'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'monthly') renderMonthly().finally(() => { var pg = $('pg-monthly'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'ceo') renderCEO().finally(() => { var pg = $('pg-ceo'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'analytics') renderAnalytics().finally(() => { var pg = $('pg-analytics'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'logs') loadLogs().finally(() => { var pg = $('pg-logs'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'reports') loadReports().finally(() => { var pg = $('pg-reports'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'contacts') loadContacts().finally(() => { var pg = $('pg-contacts'); if (pg) pg.style.opacity = '1'; });
+      else if (activePage === 'warehouse') loadWarehouse().finally(() => { var pg = $('pg-warehouse'); if (pg) pg.style.opacity = '1'; });
 
       loadSidebarStats();
     }

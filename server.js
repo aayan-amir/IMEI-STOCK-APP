@@ -520,7 +520,7 @@ app.get('/api/stock', anyAuth, async (req, res) => {
     delete query.shop; // query across all shops' stock, not just the requesting shop's
     query.soldByShop = req.query.soldByShop;
   }
-  const items = await req.models.Phone.find(query);
+  const items = await req.models.Phone.find(query).lean();
   res.json(items);
 });
 
@@ -761,7 +761,7 @@ app.get('/api/days', adminOnly, async (req, res) => {
     const query = {};
     if (shop) query.shop = shop;
     if (month) query.date = { $regex: `^${month}` };
-    const days = await req.models.Day.find(query).sort({ date: -1 });
+    const days = await req.models.Day.find(query).sort({ date: -1 }).lean();
     res.json(days);
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -810,7 +810,7 @@ app.get('/api/shopexpenses', adminOnly, async (req, res) => {
     const query = {};
     if (shop) query.shop = shop;
     if (month) query.month = month;
-    const expenses = await req.models.ShopExpense.find(query).sort({ date: -1 });
+    const expenses = await req.models.ShopExpense.find(query).sort({ date: -1 }).lean();
     res.json(expenses.map(e => ({ ...e.toObject(), _key: e.id })));
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -1243,10 +1243,10 @@ app.get('/api/ceo/summary', adminOnly, async (req, res) => {
     const prevMonth = prevDate.toISOString().slice(0, 7);
 
     const [currentSales, prevSales, currentExpenses, stock] = await Promise.all([
-      req.models.Sale.find({ soldAt: { $regex: `^${currentMonth}` } }),
-      req.models.Sale.find({ soldAt: { $regex: `^${prevMonth}` } }),
-      req.models.ShopExpense.find({ month: currentMonth }),
-      req.models.Phone.find({ status: 'in_stock' }),
+      req.models.Sale.find({ soldAt: { $regex: `^${currentMonth}` } }).lean(),
+      req.models.Sale.find({ soldAt: { $regex: `^${prevMonth}` } }).lean(),
+      req.models.ShopExpense.find({ month: currentMonth }).lean(),
+      req.models.Phone.find({ status: 'in_stock' }).lean(),
     ]);
 
     // Per-shop breakdown
