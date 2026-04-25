@@ -6198,7 +6198,7 @@
     async function checkGate() {
       const pw = $('auth-gate-input').value;
       if (!pw) { $('auth-gate-input').focus(); return; }
-      const d = await _authPost({ type: 'gate', password: pw });
+      const d = await _authPost({ type: 'gate', password: pw, clientId: currentClientId });
       if (d.ok) {
         _pendingGatePassword = pw; // kept in memory only — never stored to sessionStorage
         $('auth-gate').style.display = 'none';
@@ -6214,7 +6214,7 @@
     async function checkAdmin() {
       const pw = $('auth-admin-input').value;
       if (!pw) { $('auth-admin-input').focus(); return; }
-      const d = await _authPost({ type: 'admin', password: pw });
+      const d = await _authPost({ type: 'admin', password: pw, clientId: currentClientId });
       if (d.ok) {
         sessionStorage.setItem('authToken', d.token);
         sessionStorage.setItem('authRole', 'admin');
@@ -6231,7 +6231,7 @@
 
     async function enterShopMode(shop) {
       // Shop auth requires the gate password to prevent gate bypass via direct API call
-      const d = await _authPost({ type: 'shop', password: _pendingGatePassword, shop });
+      const d = await _authPost({ type: 'shop', password: _pendingGatePassword, shop, clientId: currentClientId });
       if (!d.ok) { showToast('Auth error — please refresh and try again', 'error'); return; }
       sessionStorage.setItem('authToken', d.token);
       sessionStorage.setItem('authRole', 'shop');
