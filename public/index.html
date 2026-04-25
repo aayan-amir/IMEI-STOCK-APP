@@ -3494,6 +3494,7 @@
       try {
         const r = await fetch(BASE + url, opts);
         if (r.status === 401) {
+          console.warn(`[401] URL: ${url} | authRole: ${authRole}`);
           // Only treat as session expiry if we actually had a session
           if (authRole) {
             sessionStorage.removeItem('authToken'); sessionStorage.removeItem('authRole'); sessionStorage.removeItem('authShop');
