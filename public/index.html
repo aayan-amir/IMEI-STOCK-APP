@@ -3494,14 +3494,16 @@
       try {
         const r = await fetch(BASE + url, opts);
         if (r.status === 401) {
-          // Session expired — clear tokens but keep clientId for convenience
-          sessionStorage.removeItem('authToken'); sessionStorage.removeItem('authRole'); sessionStorage.removeItem('authShop');
-          authRole = null; authShop = null;
-          $('auth-overlay').classList.remove('hidden');
-          $('auth-client').style.display = 'none';
-          $('auth-gate').style.display = '';
-          $('auth-role').style.display = 'none';
-          showToast('Session expired — please sign in again', 'warn');
+          // Only treat as session expiry if we actually had a session
+          if (authRole) {
+            sessionStorage.removeItem('authToken'); sessionStorage.removeItem('authRole'); sessionStorage.removeItem('authShop');
+            authRole = null; authShop = null;
+            $('auth-overlay').classList.remove('hidden');
+            $('auth-client').style.display = 'none';
+            $('auth-gate').style.display = '';
+            $('auth-role').style.display = 'none';
+            showToast('Session expired — please sign in again', 'warn');
+          }
           return {};
         }
         try { return await r.json(); } catch (e) { return {}; }
@@ -3571,7 +3573,7 @@
         const p = $('connPill'); p.classList.remove('online'); $('connText').textContent = 'offline';
       }
     }
-    setInterval(loadSidebarStats, 12000);
+    setInterval(() => { if (authRole) loadSidebarStats(); }, 12000);
 
     // ── IMEI SCAN ──
     function setMode(m) {
