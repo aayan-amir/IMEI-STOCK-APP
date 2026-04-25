@@ -201,9 +201,20 @@ const ClientSchema = new mongoose.Schema({
   clientId: { type: String, unique: true, required: true },
   adminPassword: { type: String, required: true },
   gatePassword: { type: String, required: true },
-  shops: { type: Array, default: [] } // e.g. [{ id: '456', name: 'Shop 456', color: '#16a34a' }]
+  shops: { type: Array, default: [] }
 });
 const Client = mongoose.model('Client', ClientSchema);
+
+// ── Session Schema (persisted in MongoDB so all instances share sessions) ──
+const SessionSchema = new mongoose.Schema({
+  token:     { type: String, unique: true, required: true, index: true },
+  role:      String,
+  shop:      String,
+  clientId:  String,
+  validShops: [String],
+  expiresAt: { type: Date, index: { expires: 0 } }, // TTL index — Mongo auto-deletes
+});
+const Session = mongoose.model('Session', SessionSchema);
 
 // ── Tenant Connections ──────────────────────────
 const tenantConnections = new Map();
@@ -217,7 +228,7 @@ function getTenantDb(clientId) {
 }
 
 // ── Tenant Middleware ───────────────────────────
-app.use('/api', (req, res, next) => {
+app.use('/api', async (req, res, next) => {
   if (req.path === '/auth' || req.path.startsWith('/clients/lookup') || req.path.startsWith('/superadmin')) {
     return next();
   }
@@ -226,7 +237,7 @@ app.use('/api', (req, res, next) => {
   
   const header = req.headers['authorization'] || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const session = tokenStore.get(token);
+  const session = token ? await getSession(token) : null;
   if (session && session.clientId) {
     clientId = session.clientId;
   }
@@ -250,8 +261,7 @@ app.use('/api', (req, res, next) => {
     Report: tenantDb.model('Report', ReportSchema)
   };
   
-  // Attach valid shops to req for convenience
-  req.validShops = session ? session.validShops : [];
+  req.validShops = session ? (session.validShops || []) : [];
   next();
 });
 
@@ -259,21 +269,27 @@ app.use('/api', (req, res, next) => {
 // ── PASSWORDS AND SHOPS ARE NOW PER-TENANT ──
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || 'superadmin';
 
-// ── SESSION TOKENS ─────────────────────────────
-// Simple in-memory store: token -> { role, shop, expiresAt }
-const tokenStore = new Map();
-const TOKEN_TTL = 8 * 60 * 60 * 1000; // 8 hours
-
-// Expire old tokens periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [tok, data] of tokenStore) {
-    if (data.expiresAt < now) tokenStore.delete(tok);
-  }
-}, 60 * 60 * 1000);
+// ── SESSION TOKENS (MongoDB-backed — survives restarts & works across instances) ──
+const TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
+}
+
+async function createSession(data) {
+  const token = generateToken();
+  await Session.create({ token, ...data, expiresAt: new Date(Date.now() + TOKEN_TTL_MS) });
+  return token;
+}
+
+async function getSession(token) {
+  if (!token) return null;
+  const s = await Session.findOne({ token, expiresAt: { $gt: new Date() } });
+  return s || null;
+}
+
+async function deleteSession(token) {
+  await Session.deleteOne({ token });
 }
 
 // Constant-time string comparison to prevent timing attacks
@@ -289,21 +305,21 @@ function safeCompare(a, b) {
   } catch { return false; }
 }
 
-// Auth middleware — verifies Bearer token in Authorization header
+// Auth middleware — verifies Bearer token via MongoDB
 function requireAuth(roles = ['admin', 'shop']) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const header = req.headers['authorization'] || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-    const session = tokenStore.get(token);
-    if (!session || session.expiresAt < Date.now()) {
-      if (session) tokenStore.delete(token);
+    const session = await getSession(token);
+    if (!session) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     if (!roles.includes(session.role)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
     req.authRole = session.role;
-    req.authShop = session.shop; // null for admin
+    req.authShop = session.shop || null;
+    req.session = session;
     next();
   };
 }
@@ -369,8 +385,7 @@ app.post('/api/auth', authLimiter, async (req, res) => {
       console.log(`❌ Auth Failed: Admin password mismatch for ${clientId}`);
       return res.json({ ok: false });
     }
-    const token = generateToken();
-    tokenStore.set(token, { role: 'admin', shop: null, clientId, validShops, expiresAt: Date.now() + TOKEN_TTL });
+    const token = await createSession({ role: 'admin', shop: null, clientId, validShops });
     console.log(`✅ Auth Success: Admin logged in for ${clientId}`);
     return res.json({ ok: true, token, role: 'admin', shops: client.shops });
   }
@@ -385,8 +400,7 @@ app.post('/api/auth', authLimiter, async (req, res) => {
       console.log(`❌ Auth Failed: Invalid shop "${shop}" for client ${clientId}`);
       return res.status(400).json({ ok: false, error: 'Invalid shop' });
     }
-    const token = generateToken();
-    tokenStore.set(token, { role: 'shop', shop, clientId, validShops, expiresAt: Date.now() + TOKEN_TTL });
+    const token = await createSession({ role: 'shop', shop, clientId, validShops });
     console.log(`✅ Auth Success: Shop "${shop}" logged in for ${clientId}`);
     return res.json({ ok: true, token, role: 'shop', shop, shops: client.shops });
   }
