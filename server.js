@@ -744,6 +744,10 @@ app.delete('/api/stock/:id', adminOnly, async (req, res) => {
     // Retrieve the phone first so we can log its shop before deletion
     const phone = await req.models.Phone.findById(id);
     if (phone) {
+      // If the phone was sold, remove its sale record too so it doesn't show in CEO Dashboard
+      if (phone.status === 'sold' && phone.imei) {
+        await req.models.Sale.deleteMany({ imei: phone.imei });
+      }
       await req.models.Phone.findByIdAndDelete(id);
       logAction(req.models, 'stock_delete', phone.shop || null, req.authRole, { id, imei: phone.imei, brand: phone.brand, model: phone.model });
     }
