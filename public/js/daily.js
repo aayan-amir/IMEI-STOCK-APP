@@ -660,7 +660,10 @@
     async function renderMonthly() {
       const month = $('monthly-month').value, shopF = $('monthly-shop').value;
       if (!month) { $('monthly-body').innerHTML = `<div class="empty"><div class="empty-icon">—</div><h3>Select a month</h3></div>`; return; }
-      const [days, expenses] = await Promise.all([api('GET', `/api/days?month=${month}`), api('GET', `/api/shopexpenses?month=${month}`)]);
+      let [days, expenses] = await Promise.all([api('GET', `/api/days?month=${month}`), api('GET', `/api/shopexpenses?month=${month}`)]);
+      if (!Array.isArray(days)) days = [];
+      if (!Array.isArray(expenses)) expenses = [];
+
       const shops = shopF === 'ALL' ? SHOPS : [shopF]; let html = '';
       shops.forEach(sh => {
         const shD = days.filter(d => d.shop === sh), shE = expenses.filter(e => e.shop === sh);

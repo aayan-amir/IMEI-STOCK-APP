@@ -15,13 +15,13 @@
       $('ni-' + page)?.classList.add('on');
       ({
         scan: () => $('imeiInput')?.focus(),
-        imeistock: loadIMEIData,
+        imeistock: () => loadIMEIData(),
         saleslog: () => { $('sl-from').value = today(); $('sl-to').value = today(); loadSalesLog(); },
         stock: () => { $('work-date').value = $('work-date').value || today(); loadDay(); },
         expenses: () => { $('exp-month-filter').value = ym(today()); renderShopExpenses(); },
-        history: loadAllDays,
-        warehouse: loadWarehouse,
-        shipments: loadShipments,
+        history: () => loadAllDays(),
+        warehouse: () => loadWarehouse(),
+        shipments: () => loadShipments(),
         monthly: () => { $('monthly-month').value = ym(today()); renderMonthly(); },
         backup: () => { },
         ceo: () => { $('ceo-month').value = ym(today()); renderCEO(); },

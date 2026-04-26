@@ -697,7 +697,7 @@
 
       // Optimization: If the content is identical, don't update DOM to prevent flicker
       // (Simple check: compare length and first/last IDs)
-      const stateKey = `${items.length}-${groupedView}-${imeiFilter}-${items[0]?.id}-${items[items.length-1]?.id}`;
+      const stateKey = `${items.length}-${groupedView}-${imeiFilter}-${items[0]?.id || items[0]?._id}-${items[items.length-1]?.id || items[items.length-1]?._id}`;
       if (list._stateKey === stateKey) return;
       list._stateKey = stateKey;
 

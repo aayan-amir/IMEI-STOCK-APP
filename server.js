@@ -521,7 +521,7 @@ app.get('/api/stock', anyAuth, async (req, res) => {
     query.soldByShop = req.query.soldByShop;
   }
   const items = await req.models.Phone.find(query).lean();
-  res.json(items);
+  res.json(items.map(p => ({ ...p, id: p._id })));
 });
 
 // Add stock — shop users can only add to their own shop
@@ -811,7 +811,7 @@ app.get('/api/shopexpenses', adminOnly, async (req, res) => {
     if (shop) query.shop = shop;
     if (month) query.month = month;
     const expenses = await req.models.ShopExpense.find(query).sort({ date: -1 }).lean();
-    res.json(expenses.map(e => ({ ...e.toObject(), _key: e.id })));
+    res.json(expenses.map(e => ({ ...e, id: e._id, _key: e._id })));
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }

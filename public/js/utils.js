@@ -8,10 +8,21 @@
       var open = sb.classList.toggle('sb-open');
       ov.classList.toggle('sb-open', open);
     }
+    // ── MODAL MOVED TO UTILS.JS ──
+
     function closeSidebar() {
       document.getElementById('sb').classList.remove('sb-open');
       document.getElementById('sb-overlay').classList.remove('sb-open');
     }
+    function showModal(html, wide = false) { 
+      var m = $('modal');
+      if (!m) return;
+      m.innerHTML = html; 
+      m.style.maxWidth = wide ? '640px' : '520px'; 
+      $('modal-bg')?.classList.add('open'); 
+    }
+    function closeModal() { $('modal-bg')?.classList.remove('open'); }
+    document.addEventListener('click', e => { if (e.target === $('modal-bg')) closeModal(); });
     function pkr(n) { return 'Rs ' + (Number(n) || 0).toLocaleString('en-PK'); }
     function fmtDate(iso) { if (!iso) return ''; var d = new Date(iso); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }); }
     function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

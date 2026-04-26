@@ -781,10 +781,8 @@
       dlCSV(csv, `Report_${r.shop}_${r.period}.csv`);
     }
 
-    // ── MODAL ──
-    function showModal(html, wide = false) { $('modal').innerHTML = html; $('modal').style.maxWidth = wide ? '640px' : '520px'; $('modal-bg').classList.add('open'); }
-    function closeModal() { $('modal-bg').classList.remove('open'); }
-    $('modal-bg').addEventListener('click', e => { if (e.target === $('modal-bg')) closeModal(); });
+    // ── MODAL MOVED TO UTILS.JS ──
+
 
     function dlCSV(content, filename) { const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content); a.download = filename; a.click(); }
 
