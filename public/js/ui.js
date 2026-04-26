@@ -6,7 +6,10 @@
       if (IS_PHONE && authRole !== 'admin' && ADMIN_ONLY_PAGES.includes(page)) { showToast('Not available on phone mode', 'warn'); return; }
       closeSidebar(); // close mobile sidebar overlay on navigation
       activePage = page;
-      document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+      document.querySelectorAll('.pg').forEach(p => {
+        p.classList.remove('on');
+        p.style.opacity = ''; // Clear inline opacity from any previous 'switchShop' loading states
+      });
       document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
       $('pg-' + page)?.classList.add('on');
       $('ni-' + page)?.classList.add('on');
