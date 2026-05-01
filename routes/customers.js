@@ -40,7 +40,7 @@ router.put('/customers/:id', adminOnly, async (req, res) => {
     const { name, phone, email, notes } = req.body;
     const customer = await req.models.Customer.findByIdAndUpdate(
       req.params.id,
-      { name, phone, email, notes },
+      { $set: { name: String(name || ''), phone: String(phone || ''), email: String(email || ''), notes: String(notes || '') } },
       { returnDocument: 'after' },
     );
     if (!customer) return res.status(404).json({ error: 'Not found' });

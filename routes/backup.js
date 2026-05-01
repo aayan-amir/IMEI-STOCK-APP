@@ -64,7 +64,7 @@ router.post('/restore', adminOnly, express.json({ limit: '50mb' }), async (req, 
     if (hqstock) {
       await req.models.HQStockModel.findOneAndUpdate(
         { key: 'hq' },
-        { key: 'hq', items: Array.isArray(hqstock.items) ? hqstock.items : [], updatedAt: hqstock.updatedAt || undefined },
+        { $set: { key: 'hq', items: Array.isArray(hqstock.items) ? hqstock.items : [], updatedAt: hqstock.updatedAt || undefined } },
         { upsert: true },
       );
     }

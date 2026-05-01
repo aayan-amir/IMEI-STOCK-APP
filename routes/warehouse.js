@@ -21,7 +21,7 @@ router.put('/hqstock', adminOnly, async (req, res) => {
     const update = { key: 'hq', items: Array.isArray(items) ? items : [], updatedAt: new Date().toISOString() };
     const stock = await req.models.HQStockModel.findOneAndUpdate(
       { key: 'hq' },
-      update,
+      { $set: update },
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
     );
     res.json({ success: true, stock });

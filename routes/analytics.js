@@ -65,7 +65,7 @@ router.get('/ceo/summary', adminOnly, async (req, res) => {
     const [currentSales, prevSales, currentExpenses, stock] = await Promise.all([
       req.models.Sale.find({ soldAt: { $regex: `^${currentMonth}` } }).lean(),
       req.models.Sale.find({ soldAt: { $regex: `^${prevMonth}` } }).lean(),
-      req.models.ShopExpense.find({ month: currentMonth }).lean(),
+      req.models.ShopExpense.find({ month: String(currentMonth) }).lean(),
       req.models.Phone.find({ status: 'in_stock' }).lean(),
     ]);
 

@@ -44,7 +44,7 @@ router.put('/days/:shop/:date', adminOnly, async (req, res) => {
     if (carryForward !== undefined) update.carryForward = Number(carryForward) || 0;
     const day = await req.models.Day.findOneAndUpdate(
       { shop, date },
-      update,
+      { $set: update },
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
     );
     res.json({ success: true, day });
