@@ -8,8 +8,10 @@ const { adminOnly } = require('../middleware/auth');
 router.get('/customers', adminOnly, async (req, res) => {
   try {
     const { q } = req.query;
-    const query = q
-      ? { $or: [{ name: { $regex: q, $options: 'i' } }, { phone: { $regex: q } }] }
+    // Escape regex metacharacters to prevent ReDoS
+    const safeQ = q ? q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+    const query = safeQ
+      ? { $or: [{ name: { $regex: safeQ, $options: 'i' } }, { phone: { $regex: safeQ } }] }
       : {};
     const customers = await req.models.Customer.find(query).sort({ name: 1 });
     res.json(customers);

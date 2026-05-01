@@ -111,8 +111,11 @@ router.post('/superadmin/clients', async (req, res) => {
 });
 
 // ── Super Admin: list clients ──────────────────────────────────────────────
+// Accept the super admin password in the X-Super-Admin-Password header (preferred) or
+// fallback to the query string for backward compatibility. Using a header avoids logging
+// the password in server access logs or browser history.
 router.get('/superadmin/clients', async (req, res) => {
-  const { superAdminPassword } = req.query;
+  const superAdminPassword = req.headers['x-super-admin-password'] || req.query.superAdminPassword;
   if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
     return res.status(403).json({ error: 'Forbidden' });
   }

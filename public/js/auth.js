@@ -136,7 +136,9 @@ async function saveClient() {
 
 async function loadClientsList() {
   const pw = $('sa-pass').value;
-  const res = await fetch(BASE + `/api/superadmin/clients?superAdminPassword=${encodeURIComponent(pw)}`);
+  const res = await fetch(BASE + '/api/superadmin/clients', {
+    headers: { 'X-Super-Admin-Password': pw }
+  });
   if (!res.ok) return;
   const clients = await res.json();
   const list = $('sa-client-list');
