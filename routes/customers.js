@@ -38,9 +38,14 @@ router.post('/customers', adminOnly, async (req, res) => {
 router.put('/customers/:id', adminOnly, async (req, res) => {
   try {
     const { name, phone, email, notes } = req.body;
+    const fieldsToUpdate = {};
+    if (name  !== undefined) fieldsToUpdate.name  = String(name  || '');
+    if (phone !== undefined) fieldsToUpdate.phone = String(phone || '');
+    if (email !== undefined) fieldsToUpdate.email = String(email || '');
+    if (notes !== undefined) fieldsToUpdate.notes = String(notes || '');
     const customer = await req.models.Customer.findByIdAndUpdate(
       req.params.id,
-      { $set: { name: String(name || ''), phone: String(phone || ''), email: String(email || ''), notes: String(notes || '') } },
+      { $set: fieldsToUpdate },
       { returnDocument: 'after' },
     );
     if (!customer) return res.status(404).json({ error: 'Not found' });

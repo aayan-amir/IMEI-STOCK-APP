@@ -62,9 +62,11 @@ router.post('/restore', adminOnly, express.json({ limit: '50mb' }), async (req, 
         .catch(err => console.error('Restore: some expenses skipped:', err.message));
     }
     if (hqstock) {
+      const hqUpdate = { key: 'hq', items: Array.isArray(hqstock.items) ? hqstock.items : [] };
+      if (hqstock.updatedAt) hqUpdate.updatedAt = hqstock.updatedAt;
       await req.models.HQStockModel.findOneAndUpdate(
         { key: 'hq' },
-        { $set: { key: 'hq', items: Array.isArray(hqstock.items) ? hqstock.items : [], updatedAt: hqstock.updatedAt || undefined } },
+        { $set: hqUpdate },
         { upsert: true },
       );
     }
