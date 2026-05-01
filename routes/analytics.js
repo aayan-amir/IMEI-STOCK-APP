@@ -54,6 +54,9 @@ router.get('/analytics/models', adminOnly, async (req, res) => {
 router.get('/ceo/summary', adminOnly, async (req, res) => {
   try {
     const { month } = req.query;
+    if (month && !/^\d{4}-\d{2}$/.test(month)) {
+      return res.status(400).json({ error: 'Invalid month format (YYYY-MM required)' });
+    }
     const currentMonth = month || new Date().toISOString().slice(0, 7);
     const [y, m]       = currentMonth.split('-').map(Number);
     const prevDate     = new Date(y, m - 2, 1);

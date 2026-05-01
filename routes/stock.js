@@ -51,7 +51,7 @@ router.post('/stock/add', anyAuth, async (req, res) => {
   if (!imei) return res.status(400).json({ error: 'IMEI required' });
   if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
 
-  const exists = await req.models.Phone.findOne({ imei });
+  const exists = await req.models.Phone.findOne({ imei: String(imei) });
   if (exists) return res.status(409).json({ error: 'IMEI exists' });
 
   const phone = new req.models.Phone({ ...body, addedAt: new Date().toISOString() });
@@ -73,7 +73,7 @@ router.post('/stock/sell', anyAuth, async (req, res) => {
       return res.status(400).json({ error: 'salePrice required' });
     }
 
-    const phone = await req.models.Phone.findOne({ imei });
+    const phone = await req.models.Phone.findOne({ imei: String(imei) });
     if (!phone) return res.status(404).json({ error: 'Not found' });
     if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
 
@@ -230,7 +230,7 @@ router.put('/stock/:id', adminOnly, async (req, res) => {
     const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body;
     const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
     Object.keys(allowed).forEach(k => allowed[k] === undefined && delete allowed[k]);
-    const phone = await req.models.Phone.findByIdAndUpdate(req.params.id, allowed, { returnDocument: 'after' });
+    const phone = await req.models.Phone.findByIdAndUpdate(req.params.id, { $set: allowed }, { returnDocument: 'after' });
     if (!phone) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true, phone });
   } catch (err) {

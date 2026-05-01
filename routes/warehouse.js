@@ -17,7 +17,8 @@ router.get('/hqstock', adminOnly, async (req, res) => {
 // ── Replace HQ warehouse stock ─────────────────────────────────────────────
 router.put('/hqstock', adminOnly, async (req, res) => {
   try {
-    const update = { ...req.body, key: 'hq', updatedAt: new Date().toISOString() };
+    const { items } = req.body || {};
+    const update = { key: 'hq', items: Array.isArray(items) ? items : [], updatedAt: new Date().toISOString() };
     const stock = await req.models.HQStockModel.findOneAndUpdate(
       { key: 'hq' },
       update,

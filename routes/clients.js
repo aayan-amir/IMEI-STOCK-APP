@@ -7,7 +7,7 @@ const { safeCompare, createSession, authLimiter, SUPER_ADMIN_PASSWORD } = requir
 
 // ── Public: lookup a client's shops ───────────────────────────────────────
 router.get('/clients/lookup', async (req, res) => {
-  const { clientId } = req.query;
+  const clientId = String(req.query.clientId || '');
   if (!clientId) return res.status(400).json({ error: 'clientId required' });
   try {
     const client = await Client.findOne({ clientId });
@@ -22,7 +22,8 @@ router.get('/clients/lookup', async (req, res) => {
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 router.post('/auth', authLimiter, async (req, res) => {
-  const { type, password, shop, clientId } = req.body || {};
+  const { type, password, shop } = req.body || {};
+  const clientId = String((req.body || {}).clientId || '');
   console.log(`🔑 Auth Attempt: ${clientId} | Type: ${type} | Shop: ${shop}`);
 
   if (!clientId) return res.status(400).json({ error: 'Client ID required' });
@@ -93,7 +94,7 @@ router.post('/superadmin/clients', async (req, res) => {
     return res.status(403).json({ error: 'Forbidden' });
   }
   try {
-    const existing = await Client.findOne({ clientId });
+    const existing = await Client.findOne({ clientId: String(clientId) });
     if (existing) {
       existing.adminPassword = adminPassword || existing.adminPassword;
       existing.gatePassword  = gatePassword  || existing.gatePassword;
@@ -111,11 +112,10 @@ router.post('/superadmin/clients', async (req, res) => {
 });
 
 // ── Super Admin: list clients ──────────────────────────────────────────────
-// Accept the super admin password in the X-Super-Admin-Password header (preferred) or
-// fallback to the query string for backward compatibility. Using a header avoids logging
-// the password in server access logs or browser history.
+// Accept the super admin password in the X-Super-Admin-Password header only.
+// Using a header avoids logging the password in server access logs or browser history.
 router.get('/superadmin/clients', async (req, res) => {
-  const superAdminPassword = req.headers['x-super-admin-password'] || req.query.superAdminPassword;
+  const superAdminPassword = req.headers['x-super-admin-password'];
   if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
     return res.status(403).json({ error: 'Forbidden' });
   }

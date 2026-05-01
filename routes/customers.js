@@ -8,8 +8,9 @@ const { adminOnly } = require('../middleware/auth');
 router.get('/customers', adminOnly, async (req, res) => {
   try {
     const { q } = req.query;
-    // Escape regex metacharacters to prevent ReDoS
-    const safeQ = q ? q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+    // Ensure q is a plain string, then escape regex metacharacters to prevent ReDoS
+    const rawQ = typeof q === 'string' ? q.slice(0, 200) : '';
+    const safeQ = rawQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const query = safeQ
       ? { $or: [{ name: { $regex: safeQ, $options: 'i' } }, { phone: { $regex: safeQ } }] }
       : {};

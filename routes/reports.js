@@ -10,8 +10,8 @@ router.get('/reports', adminOnly, async (req, res) => {
   try {
     const { shop, type } = req.query;
     const query = {};
-    if (shop) query.shop = shop;
-    if (type) query.type = type;
+    if (shop) query.shop = String(shop);
+    if (type) query.type = String(type);
     const reports = await req.models.Report.find(query).sort({ period: -1 }).limit(100);
     res.json(reports);
   } catch (err) {
@@ -22,8 +22,12 @@ router.get('/reports', adminOnly, async (req, res) => {
 // ── Generate and persist a report ─────────────────────────────────────────
 router.post('/reports/generate', adminOnly, async (req, res) => {
   try {
-    const { type, shop, period } = req.body;
+    const { type: rawType, shop: rawShop, period: rawPeriod } = req.body || {};
+    const type   = String(rawType   || '');
+    const shop   = String(rawShop   || '');
+    const period = String(rawPeriod || '');
     if (!type || !shop || !period) return res.status(400).json({ error: 'type, shop, period required' });
+    if (!/^\d{4}-\d{2}(-\d{2})?$/.test(period)) return res.status(400).json({ error: 'Invalid period format (YYYY-MM or YYYY-MM-DD required)' });
 
     let data = {};
 

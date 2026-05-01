@@ -9,8 +9,8 @@ router.get('/shopexpenses', adminOnly, async (req, res) => {
   try {
     const { shop, month } = req.query;
     const query = {};
-    if (shop)  query.shop  = shop;
-    if (month) query.month = month;
+    if (shop)  query.shop  = String(shop);
+    if (month) query.month = String(month);
     const expenses = await req.models.ShopExpense.find(query).sort({ date: -1 }).lean();
     res.json(expenses.map(e => ({ ...e, id: e._id, _key: e._id })));
   } catch (err) {
