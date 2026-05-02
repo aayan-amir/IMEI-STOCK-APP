@@ -29,6 +29,12 @@ function esc(s) { var d = document.createElement('div'); d.textContent = s; retu
 function titleCase(s) { return (s || '').toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase()); }
 function fmtPhoneName(brand, model) { var b = titleCase(brand || 'Unknown'); var m = titleCase(model || ''); return esc((b + ' ' + m).trim()); }
 function showToast(msg, type = 'success') { var t = $('toast'); t.textContent = msg; t.className = `show ${type}`; clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3200); }
+async function _authPost(payload) {
+  try {
+    const r = await fetch(BASE + '/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    return await r.json();
+  } catch (e) { return { ok: false, error: 'Connection failed' }; }
+}
 async function api(method, url, body) {
   var opts = { method, headers: { 'Content-Type': 'application/json' } };
   var tok = sessionStorage.getItem('authToken');

@@ -790,13 +790,6 @@ function dlCSV(content, filename) { const a = document.createElement('a'); a.hre
 
 // ── AUTH ──────────────────────────────────────────────────────────
 
-async function _authPost(payload) {
-  try {
-    const r = await fetch(BASE + '/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    return await r.json();
-  } catch (e) { return { ok: false }; }
-}
-
 async function checkGate() {
   const pw = $('auth-gate-input').value;
   if (!pw) { $('auth-gate-input').focus(); return; }

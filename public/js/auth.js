@@ -12,13 +12,19 @@ async function checkClientAndGate() {
   if (!id || !pw) { $('auth-client-err').textContent = 'Please enter both Client ID and password.'; $('auth-client-err').style.display = 'block'; return; }
   try {
     const res = await fetch(BASE + '/api/clients/lookup?clientId=' + encodeURIComponent(id));
-    if (res.status === 503) { alert('Database starting up. Please try again in a few seconds.'); return; }
-    if (res.status === 403) { $('auth-client-err').textContent = 'This account is paused. Please contact administration.'; $('auth-client-err').style.display = 'block'; return; }
-    if (!res.ok) { $('auth-client-err').textContent = 'Client not found.'; $('auth-client-err').style.display = 'block'; return; }
     const data = await res.json();
+    if (!res.ok) { 
+      $('auth-client-err').textContent = data.error || 'Client not found.'; 
+      $('auth-client-err').style.display = 'block'; 
+      return; 
+    }
     // Verify gate password
     const gateRes = await _authPost({ type: 'gate', password: pw, clientId: id });
-    if (!gateRes.ok) { $('auth-client-err').textContent = 'Incorrect site password.'; $('auth-client-err').style.display = 'block'; return; }
+    if (!gateRes.ok) { 
+      $('auth-client-err').textContent = gateRes.error || 'Incorrect site password.'; 
+      $('auth-client-err').style.display = 'block'; 
+      return; 
+    }
     // Success — store client and move to role selection
     currentClientId = id;
     currentClientShops = data.shops || [];
@@ -32,7 +38,8 @@ async function checkClientAndGate() {
     setTimeout(() => $('auth-admin-input')?.focus(), 80);
   } catch (err) {
     console.error('Login error:', err);
-    alert('Failed to connect to server.');
+    $('auth-client-err').textContent = 'Cannot reach server. Check your connection.';
+    $('auth-client-err').style.display = 'block';
   }
 }
 

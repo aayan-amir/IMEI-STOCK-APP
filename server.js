@@ -53,9 +53,11 @@ app.use(helmet({
       "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       "font-src": ["'self'", "https://fonts.gstatic.com"],
       "img-src": ["'self'", "data:"],
+      "upgrade-insecure-requests": null, // Disable to allow local http
     },
   },
 }));
+
 
 app.use(express.json());
 app.use(express.static('public'));
