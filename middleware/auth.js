@@ -82,10 +82,19 @@ function logAction(models, action, shop, role, details) {
 // Strict rate limiter for the auth endpoint: 10 attempts per 15 minutes
 const authLimiter = rateLimit({
   windowMs: 15 * 60_000,
-  max: 100, // Increased for testing
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { ok: false, error: 'Too many attempts, please try again later.' },
+});
+
+// Extremely strict rate limiter for superadmin: 5 attempts per 15 minutes
+const superAdminLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Too many superadmin attempts, locked for 15 minutes.' },
 });
 
 
@@ -139,5 +148,6 @@ module.exports = {
   anyAuth,
   logAction,
   authLimiter,
+  superAdminLimiter,
   tenantMiddleware,
 };
