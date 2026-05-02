@@ -15,6 +15,7 @@ const {
   CustomerSchema,
   AuditLogSchema,
   ReportSchema,
+  ProductSchema,
 } = require('../db');
 
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || 'superadmin';
@@ -121,6 +122,7 @@ async function tenantMiddleware(req, res, next) {
     Customer:     tenantDb.model('Customer',    CustomerSchema),
     AuditLog:     tenantDb.model('AuditLog',    AuditLogSchema),
     Report:       tenantDb.model('Report',      ReportSchema),
+    Product:      tenantDb.model('Product',     ProductSchema),
   };
   req.validShops = session ? (session.validShops || []) : [];
   next();

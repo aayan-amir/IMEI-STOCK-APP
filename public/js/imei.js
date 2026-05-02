@@ -7,10 +7,15 @@ function setMode(m) {
   $('modeAdd').classList.toggle('active', m === 'add');
   $('modeBatch').classList.toggle('active', m === 'batch');
   $('modeSell').classList.toggle('active', m === 'sell');
+  $('modeProduct').classList.toggle('active', m === 'product');
   cancelForm();
   if (m === 'batch') {
     $('batchForm').style.display = 'block';
     setTimeout(() => $('bBrand')?.focus(), 80);
+  } else if (m === 'product') {
+    $('productForm').style.display = 'block';
+    loadProducts();
+    setTimeout(() => $('pName')?.focus(), 80);
   } else {
     $('imeiInput')?.focus();
   }
@@ -20,23 +25,14 @@ function setMode(m) {
 var batchQueue = []; // [{imei1, imei2, color}]
 
 function addToBatchQueue() {
-  const isManual = $('manualImeiToggle')?.checked;
-  let imei1 = $('bImei1').value.trim();
-  let imei2 = $('bImei2').value.trim();
-  if (!isManual) {
-    imei1 = imei1.replace(/\D/g, '');
-    imei2 = imei2.replace(/\D/g, '');
-  }
+  const imei1 = $('bImei1').value.trim().replace(/\D/g, '');
+  const imei2 = $('bImei2').value.trim().replace(/\D/g, '');
   const entryColor = $('bEntryColor').value.trim();
   const sharedColor = $('bColor').value.trim();
-  if (!isManual) {
-    if (!imei1) { showToast('IMEI 1 is required', 'error'); $('bImei1').focus(); return; }
-    if (imei1.length !== 15) { showToast('IMEI 1 must be exactly 15 digits', 'error'); return; }
-    if (imei2 && imei2.length !== 15) { showToast('IMEI 2 must be exactly 15 digits', 'error'); return; }
-  } else {
-    if (!imei1) { showToast('Manual ID is required', 'error'); $('bImei1').focus(); return; }
-  }
-  if (!entryColor && !sharedColor && !isManual) { showToast('Set color for this phone (or set a shared color)', 'error'); $('bEntryColor').focus(); return; }
+  if (!imei1) { showToast('IMEI 1 is required', 'error'); $('bImei1').focus(); return; }
+  if (imei1.length !== 15) { showToast('IMEI 1 must be exactly 15 digits', 'error'); return; }
+  if (imei2 && imei2.length !== 15) { showToast('IMEI 2 must be exactly 15 digits', 'error'); return; }
+  if (!entryColor && !sharedColor) { showToast('Set color for this phone (or set a shared color)', 'error'); $('bEntryColor').focus(); return; }
   // Check for duplicates in queue
   const dup = batchQueue.find(e =>
     e.imei1 === imei1 ||
@@ -164,27 +160,10 @@ async function submitBatch() {
   setTimeout(() => $('bImei1')?.focus(), 100);
 }
 
-function toggleManualImei(isManual) {
-  const input = $('imeiInput');
-  if (isManual) {
-    input.placeholder = 'Enter Product ID or Name…';
-    input.removeAttribute('inputmode');
-    input.oninput = null; // remove numeric-only filter
-  } else {
-    input.placeholder = 'Scan barcode or type 15-digit IMEI…';
-    input.setAttribute('inputmode', 'numeric');
-    input.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
-  }
-}
-
 async function handleImeiSubmit() {
-  const isManual = $('manualImeiToggle')?.checked;
-  let raw = $('imeiInput').value.trim();
-  if (!isManual) raw = raw.replace(/\D/g, '');
-  
-  if (!raw) { showToast(isManual ? 'Enter a Product ID' : 'Enter or scan an IMEI', 'error'); return; }
-  if (!isManual && raw.length !== 15) { showToast(`IMEI must be exactly 15 digits (got ${raw.length})`, 'error'); return; }
-  
+  const raw = $('imeiInput').value.trim().replace(/\D/g, '');
+  if (!raw) { showToast('Enter or scan an IMEI', 'error'); return; }
+  if (raw.length !== 15) { showToast(`IMEI must be exactly 15 digits (got ${raw.length})`, 'error'); return; }
   pendingIMEI = raw; $('imeiInput').value = '';
   if (scanMode === 'add') {
     try {
@@ -221,24 +200,12 @@ async function handleImeiSubmit() {
 
 function showAddForm() {
   hidePreview();
-  const isManual = $('manualImeiToggle')?.checked;
-  const pairSection = document.querySelector('.imei-pair');
-  if (pairSection) pairSection.style.display = isManual ? 'none' : 'block';
-  
   $('fImei1').value = pendingIMEI;
   $('fImei2').value = '';
-  if (isManual) {
-    $('fCat').value = 'ACCESSORY';
-    autoBrandFromCat('fCat', 'fBrand');
-  }
-  
   $('addForm').style.display = 'block';
   $('addForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  if (!isManual) autoBrandFromCat('fCat', 'fBrand'); 
-  setTimeout(() => {
-    if (isManual) $('fBrand')?.focus();
-    else $('fImei2')?.focus();
-  }, 150);
+  autoBrandFromCat('fCat', 'fBrand'); // auto-fill brand based on current category
+  setTimeout(() => $('fImei2')?.focus(), 150);
 }
 function showSellForm(phone) {
   hidePreview();
@@ -296,6 +263,7 @@ function cancelForm() {
   $('addForm').style.display = 'none';
   $('sellForm').style.display = 'none';
   $('batchForm').style.display = 'none';
+  if ($('productForm')) $('productForm').style.display = 'none';
   hidePreview();
   pendingIMEI = '';
   batchQueue = [];
@@ -1234,3 +1202,86 @@ async function clearAllSales() {
   loadIMEIData();
 }
 
+// ── PRODUCTS (non-IMEI items) ──────────────────────────────────────────────
+var allProducts = [];
+
+async function submitProduct() {
+  const name = ($('pName')?.value || '').trim();
+  const qty = parseInt($('pQty')?.value) || 1;
+  const buyPrice = $('pBuyPrice')?.value !== '' ? Number($('pBuyPrice').value) : undefined;
+  const notes = ($('pNotes')?.value || '').trim();
+  if (!name) { showToast('Product name is required', 'error'); $('pName')?.focus(); return; }
+
+  const shop = activeShop === 'HQ' ? null : activeShop;
+  const d = await api('POST', '/api/products', { name, quantity: qty, buyPrice, notes, shop });
+  if (d.error) { showToast(d.error, 'error'); return; }
+
+  const mergedMsg = d.merged ? ` (merged — total now ${d.product.quantity})` : '';
+  showToast(`${name} ×${qty} added!${mergedMsg}`, 'success');
+
+  // Clear inputs
+  $('pName').value = '';
+  $('pQty').value = '1';
+  $('pBuyPrice').value = '';
+  $('pNotes').value = '';
+  $('pName')?.focus();
+  loadProducts();
+}
+
+async function loadProducts() {
+  const shop = activeShop === 'HQ' ? '' : activeShop;
+  const url = shop ? `/api/products?shop=${shop}` : '/api/products';
+  allProducts = await api('GET', url);
+  if (!Array.isArray(allProducts)) allProducts = [];
+  renderProducts();
+}
+
+function renderProducts() {
+  const el = $('productList');
+  if (!el) return;
+  if (!allProducts.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:.68rem;text-align:center;padding:12px;">No products yet — add one above.</div>';
+    return;
+  }
+  el.innerHTML = `
+<div style="font-size:.6rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Current Products</div>
+${allProducts.map(p => `
+<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:5px;">
+  <div style="flex:1;min-width:0;">
+    <div style="font-weight:600;font-size:.78rem;color:var(--white);">${esc(p.name)}</div>
+    <div style="font-size:.62rem;color:var(--text2);margin-top:2px;">
+      Qty: <b style="color:var(--a1)">${p.quantity || 0}</b>
+      ${p.buyPrice ? ' · ' + pkr(p.buyPrice) + '/each' : ''}
+      ${p.notes ? ' · ' + esc(p.notes) : ''}
+    </div>
+  </div>
+  <button class="btn bo" style="font-size:.58rem;padding:.14rem .4rem;" onclick="editProductQty('${p._id || p.id}','${esc(p.name)}',${p.quantity || 0})">Edit</button>
+  <button class="bx" onclick="deleteProduct('${p._id || p.id}','${esc(p.name)}')">✕</button>
+</div>`).join('')}`;
+}
+
+function editProductQty(id, name, currentQty) {
+  showModal(`<h3>Edit ${esc(name)}</h3>
+<div class="fc">
+  <div class="fi"><label>New Quantity</label><input type="number" id="ep-qty" value="${currentQty}" min="0"></div>
+</div>
+<div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveProductQty('${id}')">Save</button></div>`);
+  setTimeout(() => $('ep-qty')?.focus(), 100);
+}
+
+async function saveProductQty(id) {
+  const qty = parseInt($('ep-qty')?.value) || 0;
+  const d = await api('PUT', `/api/products/${id}`, { quantity: qty });
+  if (d.error) { showToast(d.error, 'error'); return; }
+  closeModal();
+  showToast('Quantity updated', 'success');
+  loadProducts();
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`Delete "${name}" from products?`)) return;
+  const d = await api('DELETE', `/api/products/${id}`);
+  if (d.error) { showToast(d.error, 'error'); return; }
+  showToast(`${name} deleted`, 'warn');
+  loadProducts();
+}

@@ -48,11 +48,8 @@ router.post('/stock/add', anyAuth, async (req, res) => {
   if (req.authRole === 'shop') body.shop = req.authShop;
 
   const { imei } = body;
-  if (!imei) return res.status(400).json({ error: 'IMEI / Product ID required' });
-  const imeiClean = String(imei).replace(/\D/g, '');
-  if (imeiClean.length >= 10 && /^\d+$/.test(String(imei).trim()) && imeiClean.length !== 15) {
-    return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
-  }
+  if (!imei) return res.status(400).json({ error: 'IMEI required' });
+  if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
 
   const exists = await req.models.Phone.findOne({ imei: String(imei) });
   if (exists) return res.status(409).json({ error: 'IMEI exists' });
@@ -70,11 +67,8 @@ router.post('/stock/sell', anyAuth, async (req, res) => {
   try {
     const { imei, salePrice, buyerName, buyerPhone, notes, soldByShop } = req.body;
 
-    if (!imei) return res.status(400).json({ error: 'IMEI / Product ID required' });
-    const imeiClean = String(imei).replace(/\D/g, '');
-    if (imeiClean.length >= 10 && /^\d+$/.test(String(imei).trim()) && imeiClean.length !== 15) {
-      return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
-    }
+    if (!imei) return res.status(400).json({ error: 'IMEI required' });
+    if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
     if (salePrice === undefined || salePrice === null || salePrice === '') {
       return res.status(400).json({ error: 'salePrice required' });
     }

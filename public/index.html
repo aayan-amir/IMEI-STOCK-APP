@@ -234,10 +234,11 @@
           <button class="btn bb" onclick="openCamera()" style="font-size:.7rem;">Scan Barcode</button>
         </div>
         <div class="stock-scroll" style="padding:16px;">
-          <div class="mode-toggle" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="mode-toggle" style="grid-template-columns:1fr 1fr 1fr 1fr;">
             <button class="mode-btn active" id="modeAdd" onclick="setMode('add')">+ Add</button>
             <button class="mode-btn" id="modeBatch" onclick="setMode('batch')">Batch Add</button>
             <button class="mode-btn sell" id="modeSell" onclick="setMode('sell')">Sell</button>
+            <button class="mode-btn" id="modeProduct" onclick="setMode('product')" style="color:var(--a6)">Product</button>
           </div>
           <div class="scan-section">
             <h2>Scan or Enter IMEI</h2>
@@ -248,11 +249,6 @@
                 onkeydown="if(event.key==='Enter')handleImeiSubmit()">
               <button class="btn bo" onclick="openCamera('imei1')" title="Use camera">Cam</button>
               <button class="btn bg" onclick="handleImeiSubmit()">Go</button>
-            </div>
-            <div style="margin-top:8px;display:flex;align-items:center;gap:12px;">
-              <label style="display:flex;align-items:center;gap:6px;font-size:.65rem;font-weight:600;color:var(--text2);cursor:pointer;">
-                <input type="checkbox" id="manualImeiToggle" onchange="toggleManualImei(this.checked)"> Manual ID / Non-IMEI
-              </label>
             </div>
             <p style="font-size:.62rem;color:var(--text2);margin-top:7px;font-family:var(--mono)">Hardware scanner
               auto-submits on Enter · Scan IMEI 1, details form appears</p>
@@ -355,6 +351,22 @@
               <button class="btn br" onclick="submitSell()">Confirm Sale</button>
               <button class="btn bo" onclick="cancelForm()">Cancel</button>
             </div>
+          </div>
+          <!-- QUICK ADD PRODUCT (non-IMEI) -->
+          <div class="scan-section" id="productForm" style="display:none">
+            <h2>Quick Add Product</h2>
+            <p style="font-size:.68rem;color:var(--text2);margin-bottom:12px;line-height:1.5">Add items that don't have IMEIs — chargers, cases, cables, etc.</p>
+            <div class="form-grid">
+              <div class="form-group"><label>Product Name</label><input type="text" id="pName" placeholder="e.g. Apple 20W Charger" onkeydown="if(event.key==='Enter')submitProduct()"></div>
+              <div class="form-group"><label>Quantity</label><input type="number" id="pQty" value="1" min="1" placeholder="1"></div>
+              <div class="form-group"><label>Buy Price (each, PKR)</label><input type="number" id="pBuyPrice" placeholder="Cost per unit"></div>
+              <div class="form-group full"><label>Notes</label><input type="text" id="pNotes" placeholder="Optional notes"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button class="btn bv" onclick="submitProduct()">Add to Stock</button>
+              <button class="btn bo" onclick="cancelForm()">Cancel</button>
+            </div>
+            <div id="productList" style="margin-top:16px;"></div>
           </div>
           <!-- BATCH ADD FORM -->
           <div class="scan-section" id="batchForm" style="display:none">

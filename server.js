@@ -94,6 +94,7 @@ app.use('/api', require('./routes/logs'));
 app.use('/api', require('./routes/analytics'));
 app.use('/api', require('./routes/reports'));
 app.use('/api', require('./routes/backup'));
+app.use('/api', require('./routes/products'));
 
 // ── Start ──────────────────────────────────────────────────────────────────
 connectMongo();
