@@ -38,10 +38,12 @@ async function loadDay() {
   const stockUrl = shop ? `/api/stock?shop=${shop}&all=true` : '/api/stock?all=true';
   // Also fetch phones from other shops' stock sold by this shop (cross-shop sales)
   const crossShopUrl = `/api/stock?soldByShop=${shop}&all=true`;
-  const [saved, stockItems, crossShopItems] = await Promise.all([
+  const productsUrl = shop ? `/api/products?shop=${shop}` : '/api/products';
+  const [saved, stockItems, crossShopItems, products] = await Promise.all([
     api('GET', `/api/days/${shop}/${date}`),
     api('GET', stockUrl),
-    api('GET', crossShopUrl)
+    api('GET', crossShopUrl),
+    api('GET', productsUrl)
   ]);
 
   // Group IMEI stock by category → model, computing OP, sold today, IN
@@ -105,6 +107,21 @@ async function loadDay() {
       boughtFor: 0,
     });
   });
+
+  if (Array.isArray(products)) {
+    products.forEach(p => {
+      if (!dayState.cats.PRODUCT) dayState.cats.PRODUCT = { rows: [] };
+      dayState.cats.PRODUCT.rows.push({
+        name: p.name,
+        op: p.quantity,
+        inQty: 0,
+        out: 0,
+        soldFor: 0,
+        costPerUnit: p.buyPrice || 0,
+        boughtFor: 0,
+      });
+    });
+  }
 
   renderStock(); renderExpenses(); renderPurchases(); renderTransfers();
   $('cf-carry').value = dayState.carryForward || ''; recalc();
