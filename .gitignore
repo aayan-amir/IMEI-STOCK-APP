@@ -3,3 +3,5 @@ data/stock.json
 .env
 certs/
 .vs/
+.gitnexus/lbug
+.gitnexus/lbug.wal

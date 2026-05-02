@@ -870,7 +870,7 @@ function openEditPhone(id) {
   m.innerHTML = `<h3>Edit Phone</h3>
 <div class="fc">
   <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:.72rem;color:var(--text2);">
-    IMEI 1: <span style="color:var(--white)">${p.imei}</span>${p.imei2 ? `<br>IMEI 2: <span style="color:var(--white)">${p.imei2}</span>` : ''}
+    IMEI 1: <span style="color:var(--white)">${esc(p.imei)}</span>${p.imei2 ? `<br>IMEI 2: <span style="color:var(--white)">${esc(p.imei2)}</span>` : ''}
   </div>
   <div class="f2">
     <div class="fi"><label>Category</label>

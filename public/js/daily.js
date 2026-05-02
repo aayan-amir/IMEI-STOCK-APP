@@ -613,16 +613,18 @@ function renderHistory() {
     // Build sold-items list for the expanded view
     const soldItems = Object.entries(d.cats || {}).flatMap(([ck, cv]) => {
       if (CATS[ck]?.isExtra) return [];
-      return (cv.rows || []).filter(r => r.out > 0).map(r => `<div style="display:flex;gap:.6rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="flex:1;color:var(--white)">${r.name || '—'}</span><span style="color:var(--text2)">×${r.out}</span>${r.soldFor ? `<span style="color:var(--success)">${pkr(r.soldFor)}</span>` : ''}</div>`);
+      return (cv.rows || []).filter(r => r.out > 0).map(r => `<div style="display:flex;gap:.6rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="flex:1;color:var(--white)">${esc(r.name || '—')}</span><span style="color:var(--text2)">×${r.out}</span>${r.soldFor ? `<span style="color:var(--success)">${pkr(r.soldFor)}</span>` : ''}</div>`);
+
     });
     const extraItems = Object.entries(d.cats || {}).flatMap(([ck, cv]) => {
       if (!CATS[ck]?.isExtra) return [];
-      return (cv.rows || []).filter(r => r.soldFor > 0).map(r => `<div style="display:flex;gap:.6rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="flex:1;color:var(--white)">${r.name || '—'}</span><span style="color:var(--success)">${pkr(r.soldFor)}</span></div>`);
+      return (cv.rows || []).filter(r => r.soldFor > 0).map(r => `<div style="display:flex;gap:.6rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="flex:1;color:var(--white)">${esc(r.name || '—')}</span><span style="color:var(--success)">${pkr(r.soldFor)}</span></div>`);
+
     });
     const allSoldItems = [...soldItems, ...extraItems];
     return `<div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:.5rem;overflow:hidden;">
   <div style="padding:.5rem .85rem;display:flex;align-items:center;gap:.6rem;cursor:pointer;transition:background .15s;" onclick="toggleHistCard(this)" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background=''">
-    <span style="font-size:.82rem;font-weight:700;color:${c}">Shop ${d.shop}</span>
+    <span style="font-size:.82rem;font-weight:700;color:${c}">Shop ${esc(d.shop)}</span>
     <span style="font-family:var(--mono);font-size:.68rem;color:var(--text2)">${d.date}</span>
     <span style="margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--success)">${pkr(tSales)}</span>
     <span style="font-size:.62rem;color:var(--text2);margin-right:4px">${sold} sold</span>
@@ -672,7 +674,8 @@ async function renderMonthly() {
     shD.forEach(d => { Object.entries(d.cats || {}).forEach(([ck, cv]) => { const rows = cv.rows || []; if (CATS[ck]?.isExtra) { tSales += rows.reduce((a, r) => a + (r.soldFor || 0), 0); gPL += rows.reduce((a, r) => a + (r.soldFor || 0) - (r.boughtFor || 0), 0); } else { tSales += rows.reduce((a, r) => a + (r.soldFor || 0), 0); const tc = rows.reduce((a, r) => a + (r.costPerUnit || 0) * (r.out || 0), 0); tCost += tc; gPL += rows.reduce((a, r) => a + (r.soldFor || 0), 0) - tc; sold += rows.reduce((a, r) => a + (r.out || 0), 0); } }); expT += (d.expenses || []).reduce((a, e) => a + (e.amt || 0), 0); });
     expT += shE.reduce((a, e) => a + (e.amount || 0), 0);
     const netPL = gPL - expT; const c = SHOP_COLOR[sh] || 'var(--a5)'; const r = SHOP_RGBA[sh] || '22,163,74';
-    html += `<div class="shop-card"><div class="shop-card-hd" style="border-left:3px solid ${c}"><div class="shop-card-name" style="color:${c}">Shop ${sh}</div><div style="font-size:.6rem;color:var(--text2)">${shD.length} days</div></div><div class="shop-card-body"><div class="shop-stat"><span>Total Sales</span><span style="color:var(--success);font-family:var(--mono)">${pkr(tSales)}</span></div><div class="shop-stat"><span>Cost of Sold</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(tCost)}</span></div><div class="shop-stat"><span>Gross P/L</span><span style="color:${gPL >= 0 ? 'var(--success)' : 'var(--danger)'};font-family:var(--mono)">${pkr(gPL)}</span></div><div class="shop-stat"><span>Total Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(expT)}</span></div><div class="shop-stat" style="border-top:1px solid var(--border);margin-top:3px;padding-top:4px"><span style="font-weight:700">Net P/L</span><span style="color:${netPL >= 0 ? 'var(--success)' : 'var(--danger)'};font-family:var(--mono);font-weight:700">${pkr(netPL)}</span></div><div class="shop-stat"><span>Units Sold</span><span style="color:var(--a1)">${sold}</span></div></div></div>`;
+    html += `<div class="shop-card"><div class="shop-card-hd" style="border-left:3px solid ${c}"><div class="shop-card-name" style="color:${c}">Shop ${esc(sh)}</div><div style="font-size:.6rem;color:var(--text2)">${shD.length} days</div></div><div class="shop-card-body"><div class="shop-stat"><span>Total Sales</span><span style="color:var(--success);font-family:var(--mono)">${pkr(tSales)}</span></div><div class="shop-stat"><span>Cost of Sold</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(tCost)}</span></div><div class="shop-stat"><span>Gross P/L</span><span style="color:${gPL >= 0 ? 'var(--success)' : 'var(--danger)'};font-family:var(--mono)">${pkr(gPL)}</span></div><div class="shop-stat"><span>Total Expenses</span><span style="color:var(--danger);font-family:var(--mono)">${pkr(expT)}</span></div><div class="shop-stat" style="border-top:1px solid var(--border);margin-top:3px;padding-top:4px"><span style="font-weight:700">Net P/L</span><span style="color:${netPL >= 0 ? 'var(--success)' : 'var(--danger)'};font-family:var(--mono);font-weight:700">${pkr(netPL)}</span></div><div class="shop-stat"><span>Units Sold</span><span style="color:var(--a1)">${sold}</span></div></div></div>`;
+
   });
   if (!html) html = `<div class="empty"><div class="empty-icon">—</div><h3>No data for ${month}</h3></div>`;
   $('monthly-body').innerHTML = html;

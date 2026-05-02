@@ -1,6 +1,9 @@
 'use strict';
 
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = 10;
+
 
 // ── MongoDB Connection ─────────────────────────────────────────────────────
 const MONGO_OPTS = {
@@ -165,7 +168,27 @@ const ClientSchema = new mongoose.Schema({
   shops: { type: Array, default: [] },
   status: { type: String, default: 'active', enum: ['active', 'paused'] },
 });
+
+ClientSchema.pre('save', async function(next) {
+  if (this.isModified('adminPassword')) {
+    this.adminPassword = await bcrypt.hash(this.adminPassword, SALT_ROUNDS);
+  }
+  if (this.isModified('gatePassword')) {
+    this.gatePassword = await bcrypt.hash(this.gatePassword, SALT_ROUNDS);
+  }
+  next();
+});
+
+ClientSchema.methods.compareAdminPassword = function(candidate) {
+  return bcrypt.compare(candidate, this.adminPassword);
+};
+
+ClientSchema.methods.compareGatePassword = function(candidate) {
+  return bcrypt.compare(candidate, this.gatePassword);
+};
+
 const Client = mongoose.model('Client', ClientSchema);
+
 
 // ── Session Schema (persisted in MongoDB — survives restarts, shared across instances) ──
 const SessionSchema = new mongoose.Schema({

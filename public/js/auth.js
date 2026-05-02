@@ -98,9 +98,10 @@ function renderShopTags() {
   container.innerHTML = _saShops.map(s => `
     <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;background:${s.color}22;border:1px solid ${s.color};color:${s.color};font-size:.85rem;font-weight:600;">
       <span style="width:8px;height:8px;border-radius:50%;background:${s.color};display:inline-block;"></span>
-      ${s.name}
-      <span onclick="removeShopTag('${s.id}')" style="cursor:pointer;margin-left:2px;opacity:.7;font-size:1rem;line-height:1;">&times;</span>
+      ${esc(s.name)}
+      <span onclick="removeShopTag('${esc(s.id)}')" style="cursor:pointer;margin-left:2px;opacity:.7;font-size:1rem;line-height:1;">&times;</span>
     </span>`).join('');
+
 }
 
 async function saveClient() {
@@ -146,17 +147,20 @@ async function loadClientsList() {
   list.innerHTML = clients.map(c => `
     <div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
       <div>
-        <div style="font-weight:700;font-size:.9rem;color:var(--text);">${c.clientId}</div>
+        <div style="font-weight:700;font-size:.9rem;color:var(--text);">${esc(c.clientId)}</div>
         <div style="font-size:.7rem;color:var(--text3);margin-top:2px;">
+
           ${c.shops.length} Shops • 
           <span style="color:${c.status === 'active' ? 'var(--success)' : 'var(--danger)'};font-weight:700;">${c.status.toUpperCase()}</span>
         </div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="toggleClientStatus('${c.clientId}', '${c.status}')" style="background:var(--s3);border:1px solid var(--border);padding:5px 8px;border-radius:6px;color:var(--text2);font-size:.65rem;cursor:pointer;">
+        <button onclick="toggleClientStatus('${esc(c.clientId)}', '${esc(c.status)}')" style="background:var(--s3);border:1px solid var(--border);padding:5px 8px;border-radius:6px;color:var(--text2);font-size:.65rem;cursor:pointer;">
+
           ${c.status === 'active' ? 'Pause' : 'Resume'}
         </button>
-        <button onclick="deleteClient('${c.clientId}')" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);padding:5px 8px;border-radius:6px;color:var(--danger);font-size:.65rem;cursor:pointer;">
+        <button onclick="deleteClient('${esc(c.clientId)}')" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);padding:5px 8px;border-radius:6px;color:var(--danger);font-size:.65rem;cursor:pointer;">
+
           Delete
         </button>
       </div>
@@ -263,7 +267,8 @@ function renderDynamicShops() {
     if (!el) return;
     const currentVal = el.value;
     const firstOpt = el.options[0] && (el.options[0].value === '' || el.options[0].value === 'ALL') ? el.options[0].outerHTML : '';
-    el.innerHTML = firstOpt + currentClientShops.map(s => `<option value="${s.id}">${s.name || s.id}</option>`).join('');
+    el.innerHTML = firstOpt + currentClientShops.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)}</option>`).join('');
+
     if (currentVal) el.value = currentVal;
   });
 

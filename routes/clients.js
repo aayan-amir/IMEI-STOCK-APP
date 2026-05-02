@@ -41,14 +41,15 @@ router.post('/auth', authLimiter, async (req, res) => {
     const validShops = (client.shops || []).map(s => s.id);
 
     if (type === 'gate') {
-      const isOk = safeCompare(password, gatePass);
+      const isOk = await client.compareGatePassword(password);
       if (!isOk) console.log(`❌ Auth Failed: Gate password mismatch for ${clientId}`);
       else       console.log(`✅ Auth Success: Gate password verified for ${clientId}`);
       return res.json({ ok: isOk });
     }
 
     if (type === 'admin') {
-      if (!safeCompare(password, adminPass)) {
+      const isOk = await client.compareAdminPassword(password);
+      if (!isOk) {
         console.log(`❌ Auth Failed: Admin password mismatch for ${clientId}`);
         return res.json({ ok: false });
       }
@@ -58,7 +59,8 @@ router.post('/auth', authLimiter, async (req, res) => {
     }
 
     if (type === 'shop') {
-      if (!safeCompare(password, gatePass)) {
+      const isOk = await client.compareGatePassword(password);
+      if (!isOk) {
         console.log(`❌ Auth Failed: Shop gate password mismatch for ${clientId}`);
         return res.json({ ok: false });
       }

@@ -5,6 +5,8 @@ require('dotenv').config();
 const express   = require('express');
 const cors      = require('cors');
 const rateLimit = require('express-rate-limit');
+const helmet    = require('helmet');
+
 
 const { mongoose, connectMongo } = require('./db');
 const { tenantMiddleware }       = require('./middleware/auth');
@@ -32,12 +34,45 @@ if (trustProxy !== undefined) {
 }
 
 // ── Global Middleware ──────────────────────────────────────────────────────
-app.use(cors());
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      "font-src": ["'self'", "https://fonts.gstatic.com"],
+      "img-src": ["'self'", "data:"],
+    },
+  },
+}));
+
 app.use(express.json());
 app.use(express.static('public'));
 
+
 // Rate limiting — 300 requests per minute per IP
 app.use('/api/', rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true, legacyHeaders: false }));
+
+// Stricter rate limit for client lookup
+app.use('/api/clients/lookup', rateLimit({
+  windowMs: 15 * 60_000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many lookup attempts, please try again later.' }
+}));
+
 
 // Return 503 immediately when MongoDB is not ready (prevents 10 s buffer timeout)
 app.use('/api/', (req, res, next) => {

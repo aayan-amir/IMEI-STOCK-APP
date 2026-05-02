@@ -38,31 +38,58 @@ router.post('/restore', adminOnly, express.json({ limit: '50mb' }), async (req, 
   try {
     const { phones, sales, days, expenses, hqstock, shipments, dispatches } = req.body;
 
+    const pick = (obj, fields) => {
+      const out = {};
+      fields.forEach(f => { if (obj[f] !== undefined) out[f] = obj[f]; });
+      return out;
+    };
+
     if (phones?.length) {
+      const phoneFields = ['imei', 'imei2', 'cat', 'brand', 'model', 'color', 'storage', 'status', 'buyPrice', 'salePrice', 'addedAt', 'soldAt', 'shop'];
       await req.models.Phone.bulkWrite(phones.map(p => ({
-        updateOne: { filter: { imei: p.imei }, update: { $set: p }, upsert: true },
-      })));
-    }
-    if (sales?.length) {
-      await req.models.Sale.bulkWrite(sales.map(s => ({
-        updateOne: {
-          filter: s._id ? { _id: s._id } : { imei: s.imei, soldAt: s.soldAt },
-          update:  { $set: s },
-          upsert:  true,
+        updateOne: { 
+          filter: { imei: String(p.imei) }, 
+          update: { $set: pick(p, phoneFields) }, 
+          upsert: true 
         },
       })));
     }
-    if (days?.length) {
-      await req.models.Day.bulkWrite(days.map(d => ({
-        updateOne: { filter: { shop: d.shop, date: d.date }, update: { $set: d }, upsert: true },
+
+    if (sales?.length) {
+      const saleFields = ['imei', 'imei2', 'brand', 'model', 'cat', 'color', 'storage', 'buyPrice', 'salePrice', 'profit', 'buyerName', 'buyerPhone', 'soldAt', 'shop'];
+      await req.models.Sale.bulkWrite(sales.map(s => ({
+        updateOne: {
+          filter: s._id ? { _id: s._id } : { imei: s.imei, soldAt: s.soldAt },
+          update: { $set: pick(s, saleFields) },
+          upsert: true,
+        },
       })));
     }
+
+    if (days?.length) {
+      const dayFields = ['shop', 'date', 'cats', 'expenses', 'purchases', 'transfers', 'tSales', 'tCost', 'tExp', 'netPL', 'lastUpdated'];
+      await req.models.Day.bulkWrite(days.map(d => ({
+        updateOne: { 
+          filter: { shop: d.shop, date: d.date }, 
+          update: { $set: pick(d, dayFields) }, 
+          upsert: true 
+        },
+      })));
+    }
+
     if (expenses?.length) {
-      await req.models.ShopExpense.insertMany(expenses, { ordered: false })
+      const expFields = ['shop', 'date', 'category', 'description', 'amount', 'addedAt'];
+      const sanitizedExp = expenses.map(e => pick(e, expFields));
+      await req.models.ShopExpense.insertMany(sanitizedExp, { ordered: false })
         .catch(err => console.error('Restore: some expenses skipped:', err.message));
     }
+
     if (hqstock) {
-      const hqUpdate = { key: 'hq', items: Array.isArray(hqstock.items) ? hqstock.items : [] };
+      const hqItemsFields = ['imei', 'imei2', 'cat', 'brand', 'model', 'color', 'storage', 'buyPrice', 'costPerUnit', 'notes', 'addedAt'];
+      const hqUpdate = { 
+        key: 'hq', 
+        items: Array.isArray(hqstock.items) ? hqstock.items.map(i => pick(i, hqItemsFields)) : [] 
+      };
       if (hqstock.updatedAt) hqUpdate.updatedAt = hqstock.updatedAt;
       await req.models.HQStockModel.findOneAndUpdate(
         { key: 'hq' },
@@ -70,12 +97,18 @@ router.post('/restore', adminOnly, express.json({ limit: '50mb' }), async (req, 
         { upsert: true },
       );
     }
+
     if (shipments?.length) {
-      await req.models.Shipment.insertMany(shipments, { ordered: false })
+      const shipFields = ['source', 'toShop', 'items', 'date', 'supplier', 'ref', 'note'];
+      const sanitizedShip = shipments.map(s => pick(s, shipFields));
+      await req.models.Shipment.insertMany(sanitizedShip, { ordered: false })
         .catch(err => console.error('Restore: some shipments skipped:', err.message));
     }
+
     if (dispatches?.length) {
-      await req.models.Dispatch.insertMany(dispatches, { ordered: false })
+      const dispatchFields = ['source', 'toShop', 'items', 'date', 'note', 'soldPhones'];
+      const sanitizedDisp = dispatches.map(d => pick(d, dispatchFields));
+      await req.models.Dispatch.insertMany(sanitizedDisp, { ordered: false })
         .catch(err => console.error('Restore: some dispatches skipped:', err.message));
     }
 
@@ -85,5 +118,6 @@ router.post('/restore', adminOnly, express.json({ limit: '50mb' }), async (req, 
     res.status(500).json({ error: 'Restore failed: ' + err.message });
   }
 });
+
 
 module.exports = router;
