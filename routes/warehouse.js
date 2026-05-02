@@ -104,8 +104,14 @@ router.post('/shipments', adminOnly, async (req, res) => {
         addedAt:  new Date().toISOString(),
       }));
 
-      const invalid = normalized.find(it => !/^\d{15}$/.test(it.imei));
-      if (invalid) return res.status(400).json({ error: `Invalid IMEI: ${invalid.imei || '(empty)'}` });
+      const invalid = normalized.find(it => {
+        const imei = String(it.imei || '').replace(/\D/g, '');
+        // If it looks like an IMEI (all digits and long), it must be 15
+        if (imei.length >= 10 && /^\d+$/.test(String(it.imei).trim()) && imei.length !== 15) return true;
+        // Otherwise allow it (it's a manual ID or accessory)
+        return false;
+      });
+      if (invalid) return res.status(400).json({ error: `Invalid IMEI (must be 15 digits): ${invalid.imei}` });
 
       const payloadImeiSet = new Set();
       for (const it of normalized) {

@@ -11,6 +11,7 @@ function guessCat(brand, model, cat) {
   if (b.includes('apple') || b.includes('iphone') || m.includes('iphone')) return 'IPHONE';
   if (b.includes('samsung') || m.includes('samsung') || m.includes('galaxy')) return 'SAMSUNG';
   if (b.includes('google') || m.includes('pixel')) return 'GOOGLE';
+  if (b.includes('charger') || b.includes('cable') || b.includes('adapter') || b.includes('accessory') || m.includes('charger') || m.includes('cable')) return 'ACCESSORY';
   return 'OTHER';
 }
 
@@ -21,7 +22,7 @@ function autoSelectCat(brandVal, selectId) {
   if (cat) sel.value = cat;
 }
 
-var CAT_BRANDS = { IPHONE: 'Apple', SAMSUNG: 'Samsung', GOOGLE: 'Google', BOX: '', OTHER: '', EXTRA: '' };
+var CAT_BRANDS = { IPHONE: 'Apple', SAMSUNG: 'Samsung', GOOGLE: 'Google', BOX: '', OTHER: '', ACCESSORY: '', EXTRA: '' };
 function autoBrandFromCat(catId, brandId) {
   const cat = $(catId)?.value, brandEl = $(brandId);
   if (!brandEl) return;
@@ -680,4 +681,4 @@ async function renderMonthly() {
   if (!html) html = `<div class="empty"><div class="empty-icon">—</div><h3>No data for ${month}</h3></div>`;
   $('monthly-body').innerHTML = html;
 }
-
+

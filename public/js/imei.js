@@ -20,14 +20,23 @@ function setMode(m) {
 var batchQueue = []; // [{imei1, imei2, color}]
 
 function addToBatchQueue() {
-  const imei1 = $('bImei1').value.trim().replace(/\D/g, '');
-  const imei2 = $('bImei2').value.trim().replace(/\D/g, '');
+  const isManual = $('manualImeiToggle')?.checked;
+  let imei1 = $('bImei1').value.trim();
+  let imei2 = $('bImei2').value.trim();
+  if (!isManual) {
+    imei1 = imei1.replace(/\D/g, '');
+    imei2 = imei2.replace(/\D/g, '');
+  }
   const entryColor = $('bEntryColor').value.trim();
   const sharedColor = $('bColor').value.trim();
-  if (!imei1) { showToast('IMEI 1 is required', 'error'); $('bImei1').focus(); return; }
-  if (imei1.length !== 15) { showToast('IMEI 1 must be exactly 15 digits', 'error'); return; }
-  if (imei2 && imei2.length !== 15) { showToast('IMEI 2 must be exactly 15 digits', 'error'); return; }
-  if (!entryColor && !sharedColor) { showToast('Set color for this phone (or set a shared color)', 'error'); $('bEntryColor').focus(); return; }
+  if (!isManual) {
+    if (!imei1) { showToast('IMEI 1 is required', 'error'); $('bImei1').focus(); return; }
+    if (imei1.length !== 15) { showToast('IMEI 1 must be exactly 15 digits', 'error'); return; }
+    if (imei2 && imei2.length !== 15) { showToast('IMEI 2 must be exactly 15 digits', 'error'); return; }
+  } else {
+    if (!imei1) { showToast('Manual ID is required', 'error'); $('bImei1').focus(); return; }
+  }
+  if (!entryColor && !sharedColor && !isManual) { showToast('Set color for this phone (or set a shared color)', 'error'); $('bEntryColor').focus(); return; }
   // Check for duplicates in queue
   const dup = batchQueue.find(e =>
     e.imei1 === imei1 ||
@@ -155,10 +164,27 @@ async function submitBatch() {
   setTimeout(() => $('bImei1')?.focus(), 100);
 }
 
+function toggleManualImei(isManual) {
+  const input = $('imeiInput');
+  if (isManual) {
+    input.placeholder = 'Enter Product ID or Name…';
+    input.removeAttribute('inputmode');
+    input.oninput = null; // remove numeric-only filter
+  } else {
+    input.placeholder = 'Scan barcode or type 15-digit IMEI…';
+    input.setAttribute('inputmode', 'numeric');
+    input.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
+  }
+}
+
 async function handleImeiSubmit() {
-  const raw = $('imeiInput').value.trim().replace(/\D/g, '');
-  if (!raw) { showToast('Enter or scan an IMEI', 'error'); return; }
-  if (raw.length !== 15) { showToast(`IMEI must be exactly 15 digits (got ${raw.length})`, 'error'); return; }
+  const isManual = $('manualImeiToggle')?.checked;
+  let raw = $('imeiInput').value.trim();
+  if (!isManual) raw = raw.replace(/\D/g, '');
+  
+  if (!raw) { showToast(isManual ? 'Enter a Product ID' : 'Enter or scan an IMEI', 'error'); return; }
+  if (!isManual && raw.length !== 15) { showToast(`IMEI must be exactly 15 digits (got ${raw.length})`, 'error'); return; }
+  
   pendingIMEI = raw; $('imeiInput').value = '';
   if (scanMode === 'add') {
     try {
@@ -195,12 +221,24 @@ async function handleImeiSubmit() {
 
 function showAddForm() {
   hidePreview();
+  const isManual = $('manualImeiToggle')?.checked;
+  const pairSection = document.querySelector('.imei-pair');
+  if (pairSection) pairSection.style.display = isManual ? 'none' : 'block';
+  
   $('fImei1').value = pendingIMEI;
   $('fImei2').value = '';
+  if (isManual) {
+    $('fCat').value = 'ACCESSORY';
+    autoBrandFromCat('fCat', 'fBrand');
+  }
+  
   $('addForm').style.display = 'block';
   $('addForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  autoBrandFromCat('fCat', 'fBrand'); // auto-fill brand based on current category
-  setTimeout(() => $('fImei2')?.focus(), 150);
+  if (!isManual) autoBrandFromCat('fCat', 'fBrand'); 
+  setTimeout(() => {
+    if (isManual) $('fBrand')?.focus();
+    else $('fImei2')?.focus();
+  }, 150);
 }
 function showSellForm(phone) {
   hidePreview();
@@ -660,11 +698,11 @@ var initialLoad = true;
 
 function expandAllGroups() {
   Object.keys(groupedStockMap).forEach(uid => groupOpenState[uid] = true);
-  renderIMEIStock();
+  renderIMEIStock(true);
 }
 function collapseAllGroups() {
   Object.keys(groupedStockMap).forEach(uid => groupOpenState[uid] = false);
-  renderIMEIStock();
+  renderIMEIStock(true);
 }
 async function loadIMEIData() {
   const list = $('imeiList');
@@ -690,7 +728,7 @@ async function loadIMEIData() {
 function setIMEIFilter(f, el) { imeiFilter = f; document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active')); el.classList.add('active'); renderIMEIStock(); }
 function toggleGrouped() { groupedView = !groupedView; $('groupBtn').textContent = groupedView ? 'Flat List' : 'Group by Model'; renderIMEIStock(); }
 
-function renderIMEIStock() {
+function renderIMEIStock(force = false) {
   const q = $('imeiSearch').value.toLowerCase();
   let items = allIMEIStock.filter(p => {
     if (imeiFilter !== 'all' && p.status !== imeiFilter) return false;
@@ -709,7 +747,7 @@ function renderIMEIStock() {
   // Optimization: If the content is identical, don't update DOM to prevent flicker
   // (Simple check: compare length and first/last IDs)
   const stateKey = `${items.length}-${groupedView}-${imeiFilter}-${items[0]?.id || items[0]?._id}-${items[items.length-1]?.id || items[items.length-1]?._id}`;
-  if (list._stateKey === stateKey) return;
+  if (!force && list._stateKey === stateKey) return;
   list._stateKey = stateKey;
 
   if (!groupedView) {

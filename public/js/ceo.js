@@ -38,18 +38,25 @@ function openReceiveModal() {
     <div class="form-group full"><label>Shared Notes</label><input id="rc-notes" type="text" placeholder="Condition, accessories, box status…"></div>
   </div>
   <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:10px;margin-bottom:10px;">
-    <div style="font-size:.6rem;font-weight:700;color:var(--a1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Scan Next IMEI Pair</div>
-    <div class="imei-pair-grid" style="margin-bottom:8px;">
+    <div style="display:flex;gap:12px;margin-bottom:12px;align-items:center;background:rgba(2,132,199,.05);padding:8px;border-radius:8px;border:1px solid rgba(2,132,199,.1)">
+      <label style="display:flex;align-items:center;gap:8px;font-size:.7rem;font-weight:600;color:var(--a1);cursor:pointer;">
+        <input type="checkbox" id="rc-is-non-imei" onchange="toggleReceiveNonImei(this.checked)"> Non-IMEI / Accessory
+      </label>
+      <div id="rc-qty-wrap" style="display:none;flex:1;display:flex;align-items:center;gap:8px;">
+        <label style="font-size:.65rem;color:var(--text2)">Qty</label>
+        <input type="number" id="rc-qty" value="1" min="1" style="width:60px;padding:4px 8px;font-size:.75rem;">
+      </div>
+    </div>
+    <div class="imei-pair-grid" style="margin-bottom:8px;" id="rc-imei-section">
       <div>
-        <div style="font-size:.58rem;font-weight:700;color:var(--a1);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 1</div>
+        <div style="font-size:.58rem;font-weight:700;color:var(--a1);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em" id="rc-label-i1">IMEI 1</div>
         <div style="display:flex;gap:5px;">
           <input type="text" id="rc-next-i1" placeholder="Scan IMEI 1…" inputmode="numeric" class="imei2-field" style="flex:1"
-            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('rc-next-i2').focus();}">
+            onkeydown="if(event.key==='Enter'){event.preventDefault(); if(document.getElementById('rc-is-non-imei').checked){addToReceiveQueue();}else{document.getElementById('rc-next-i2').focus();}}">
           <button class="btn bo" onclick="openCamera('rc1:next')" style="padding:6px 9px;font-size:.75rem;flex-shrink:0;">Cam</button>
         </div>
       </div>
-      <div>
+      <div id="rc-i2-wrap">
         <div style="font-size:.58rem;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">IMEI 2 (optional)</div>
         <div style="display:flex;gap:5px;">
           <input type="text" id="rc-next-i2" placeholder="Scan IMEI 2…" inputmode="numeric" class="imei2-field" style="flex:1"
@@ -60,10 +67,10 @@ function openReceiveModal() {
       </div>
     </div>
     <div class="form-group" style="margin-bottom:8px;">
-      <label>This phone color (optional)</label>
-      <input type="text" id="rc-next-color" placeholder="Overrides shared color for this phone only">
+      <label>Item Color (optional)</label>
+      <input type="text" id="rc-next-color" placeholder="Overrides shared color">
     </div>
-    <button class="btn bb" onclick="addToReceiveQueue()" style="width:100%;font-size:.75rem;">+ Add This Phone to Queue</button>
+    <button class="btn bb" onclick="addToReceiveQueue()" style="width:100%;font-size:.75rem;">+ Add to Queue</button>
   </div>
   <div id="rc-queue" style="display:none;">
     <div style="font-size:.62rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
@@ -76,9 +83,28 @@ function openReceiveModal() {
 <div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" id="rc-save-btn" onclick="saveReceive()" disabled>Save All</button></div>`);
   $('rc-brand')?.focus();
 }
+function toggleReceiveNonImei(isNon) {
+  $('rc-i2-wrap').style.display = isNon ? 'none' : '';
+  $('rc-qty-wrap').style.display = isNon ? 'flex' : 'none';
+  $('rc-label-i1').textContent = isNon ? 'Product ID / Name' : 'IMEI 1';
+  $('rc-next-i1').placeholder = isNon ? 'Charger, Adapter, ACC-123…' : 'Scan IMEI 1…';
+  if (isNon) {
+    $('rc-cat').value = 'ACCESSORY';
+    $('rc-next-i1').removeAttribute('inputmode');
+  } else {
+    $('rc-cat').value = 'IPHONE';
+    $('rc-next-i1').setAttribute('inputmode', 'numeric');
+  }
+}
+
 function addToReceiveQueue() {
-  const imei1 = ($('rc-next-i1')?.value || '').trim().replace(/\D/g, '');
-  const imei2 = ($('rc-next-i2')?.value || '').trim().replace(/\D/g, '');
+  const isNon = $('rc-is-non-imei')?.checked;
+  let imei1 = ($('rc-next-i1')?.value || '').trim();
+  const imei2 = isNon ? '' : ($('rc-next-i2')?.value || '').trim().replace(/\D/g, '');
+  const qty = isNon ? (parseInt($('rc-qty')?.value) || 1) : 1;
+  
+  if (!isNon) imei1 = imei1.replace(/\D/g, '');
+
   const entryColor = ($('rc-next-color')?.value || '').trim();
   const sharedColor = ($('rc-color')?.value || '').trim();
   const cat = ($('rc-cat')?.value || '').trim();
@@ -87,17 +113,31 @@ function addToReceiveQueue() {
   const storage = ($('rc-storage')?.value || '').trim();
   const buyPrice = Number(($('rc-buy')?.value || '').trim()) || 0;
   const notes = ($('rc-notes')?.value || '').trim();
-  if (!imei1) { showToast('IMEI 1 is required', 'error'); $('rc-next-i1')?.focus(); return; }
-  if (imei1.length !== 15) { showToast('IMEI 1 must be exactly 15 digits', 'error'); return; }
-  if (imei2 && imei2.length !== 15) { showToast('IMEI 2, if provided, must be exactly 15 digits', 'error'); return; }
+
+  if (!imei1 && !isNon) { showToast('IMEI 1 is required', 'error'); $('rc-next-i1')?.focus(); return; }
+  if (!isNon && imei1.length !== 15) { showToast('IMEI 1 must be exactly 15 digits', 'error'); return; }
+  if (!isNon && imei2 && imei2.length !== 15) { showToast('IMEI 2, if provided, must be exactly 15 digits', 'error'); return; }
   if (!brand && !model) { showToast('Brand or Model is required', 'error'); $('rc-brand')?.focus(); return; }
-  const duplicateEntry = rcItems.find(e =>
-    e.imei === imei1 ||
-    e.imei2 === imei1 ||
-    (imei2 && (e.imei === imei2 || e.imei2 === imei2))
-  );
-  if (duplicateEntry) { showToast('This IMEI is already in the queue', 'warn'); return; }
-  rcItems.push({ imei: imei1, imei2, cat, brand, model, color: entryColor || sharedColor, storage, buyPrice, notes });
+
+  for (let i = 0; i < qty; i++) {
+    let finalImei = imei1;
+    // If no ID for accessory, generate one
+    if (isNon && !imei1) {
+      finalImei = 'ACC-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random()*1000);
+    } else if (isNon && qty > 1) {
+      // If multiple, add suffix
+      finalImei = imei1 + '-' + (i+1);
+    }
+
+    const duplicateEntry = rcItems.find(e =>
+      (e.imei && e.imei === finalImei) ||
+      (e.imei2 && e.imei2 === finalImei) ||
+      (imei2 && (e.imei === imei2 || e.imei2 === imei2))
+    );
+    if (duplicateEntry) { showToast(`ID ${finalImei} is already in the queue`, 'warn'); continue; }
+    
+    rcItems.push({ imei: finalImei, imei2, cat, brand, model, color: entryColor || sharedColor, storage, buyPrice, notes, isNonImei: isNon });
+  }
   const nextI1 = $('rc-next-i1'); if (nextI1) nextI1.value = '';
   const nextI2 = $('rc-next-i2'); if (nextI2) nextI2.value = '';
   const nextColor = $('rc-next-color'); if (nextColor) nextColor.value = '';
