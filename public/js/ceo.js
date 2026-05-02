@@ -12,7 +12,7 @@ function renderWarehouse() {
   const body = $('wh-body');
   if (!items.length) { body.innerHTML = `<div class="empty"><div class="empty-icon">—</div><h3>Warehouse empty</h3><p>Click + Receive Stock to add items</p></div>`; return; }
   const byCat = {}; items.forEach(it => { const cat = it.cat || guessCat(it.brand, it.model, it.cat); if (!byCat[cat]) byCat[cat] = []; byCat[cat].push(it); });
-  body.innerHTML = `<div style="padding:.9rem">${Object.entries(byCat).map(([cat, rows]) => { const c = CATS[cat]; return `<div class="cb ${c ? c.cls : 'cot'}" style="margin-bottom:.65rem"><div class="ch"><div class="cl">${esc(c ? c.label : cat)}</div><div class="cts"><span>Phones:<b>${rows.length}</b></span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.45rem">${rows.map(it => { const name = [it.brand, it.model, it.storage].filter(Boolean).join(' ') || it.name || 'Phone'; return `<div class="wh-card"><div class="wh-cat">${esc(it.cat || cat)}</div><div class="wh-name">${esc(name)}</div><div class="wh-meta" style="margin-top:3px;color:var(--text2);font-family:var(--mono);font-size:.62rem">${esc(it.imei || '')}</div>${it.imei2 ? `<div class="wh-meta" style="font-family:var(--mono);font-size:.62rem;color:var(--text3)">IMEI2: ${esc(it.imei2)}</div>` : ''}<div class="wh-meta">${it.costPerUnit ? pkr(it.costPerUnit) : it.buyPrice ? pkr(it.buyPrice) : ''}</div>${it.imei ? `<div style="margin-top:6px;display:flex;justify-content:flex-end"><button class="btn" style="font-size:.58rem;padding:.14rem .45rem;background:var(--danger);border-color:var(--danger);color:#fff" onclick="deleteWarehouseImei('${esc(it.imei || '')}')">Delete</button></div>` : ''}</div>`; }).join('')}</div></div>`; }).join('')}</div>`;
+  body.innerHTML = `<div style="padding:.9rem">${Object.entries(byCat).map(([cat, rows]) => { const c = CATS[cat]; return `<div class="cb ${c ? c.cls : 'cot'}" style="margin-bottom:.65rem"><div class="ch"><div class="cl">${esc(c ? c.label : cat)}</div><div class="cts"><span>Phones:<b>${rows.length}</b></span></div></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.45rem">${rows.map((it, idx) => { const name = [it.brand, it.model, it.storage].filter(Boolean).join(' ') || it.name || 'Phone'; return `<div class="wh-card"><div class="wh-cat">${esc(it.cat || cat)}</div><div class="wh-name">${esc(name)}</div><div class="wh-meta" style="margin-top:3px;color:var(--text2);font-family:var(--mono);font-size:.62rem">${esc(it.imei || '')}</div>${it.imei2 ? `<div class="wh-meta" style="font-family:var(--mono);font-size:.62rem;color:var(--text3)">IMEI2: ${esc(it.imei2)}</div>` : ''}<div class="wh-meta">${it.costPerUnit ? pkr(it.costPerUnit) : it.buyPrice ? pkr(it.buyPrice) : ''}</div><div style="margin-top:6px;display:flex;justify-content:flex-end"><button class="btn" style="font-size:.58rem;padding:.14rem .45rem;background:var(--danger);border-color:var(--danger);color:#fff" onclick="deleteWarehouseImei('${esc(it.imei || '')}', ${idx})">Delete</button></div></div>`; }).join('')}</div></div>`; }).join('')}</div>`;
 
 }
 
@@ -252,13 +252,15 @@ async function deleteShipmentRecord(type, id) {
   else showToast(r.error || 'Delete failed', 'error');
 }
 
-async function deleteWarehouseImei(imei) {
-  const raw = String(imei || '').replace(/\D/g, '');
-  if (raw.length !== 15) { showToast('Invalid IMEI', 'error'); return; }
-  if (!confirm(`Delete IMEI ${raw} from warehouse?`)) return;
-  const r = await api('DELETE', `/api/hqstock/${raw}`);
-  if (r.success) { loadWarehouse(); showToast('Warehouse phone deleted', 'warn'); }
-  else showToast(r.error || 'Delete failed', 'error');
+async function deleteWarehouseImei(imei, index) {
+  const raw = String(imei || "").replace(/\D/g, "");
+  const label = (raw && raw.length === 15) ? `IMEI ${raw}` : `this item`;
+  if (!confirm(`Delete ${label} from warehouse?`)) return;
+  
+  const endpoint = (raw.length === 15) ? `/api/hqstock/${raw}` : `/api/hqstock/at/${index}`;
+  const r = await api("DELETE", endpoint);
+  if (r.success) { loadWarehouse(); showToast("Warehouse phone deleted", "warn"); }
+  else showToast(r.error || "Delete failed", "error");
 }
 
 // ── CEO DASHBOARD ────────────────────────────────
@@ -873,4 +875,5 @@ function applyShopMode(shop) {
     _nav(page);
   };
 }
-
+
+

@@ -656,6 +656,16 @@ async function startScanning() {
 var groupedView = true; // default: grouped by model
 var groupedStockMap = {};
 var groupOpenState = {};
+var initialLoad = true;
+
+function expandAllGroups() {
+  Object.keys(groupedStockMap).forEach(uid => groupOpenState[uid] = true);
+  renderIMEIStock();
+}
+function collapseAllGroups() {
+  Object.keys(groupedStockMap).forEach(uid => groupOpenState[uid] = false);
+  renderIMEIStock();
+}
 async function loadIMEIData() {
   const list = $('imeiList');
   if (list && !list.innerHTML.includes('card')) {
@@ -671,6 +681,7 @@ async function loadIMEIData() {
     
     renderIMEIStock();
     updateBulkActions();
+    initialLoad = false;
   } catch (err) {
     console.error('loadIMEIData error:', err);
     if (list) list.innerHTML = '<div class="empty">Error loading data. Try refreshing.</div>';
@@ -706,16 +717,23 @@ function renderIMEIStock() {
     return;
   }
 
-  // Group by category+brand+model+storage only (NOT status)
+  // Group by category+brand+model only (Combining different storages)
   const groups = {};
   groupedStockMap = {};
   items.forEach(p => {
     const category = guessCat(p.brand, p.model, p.cat);
-    const key = `${category}|${(p.brand || '').toLowerCase()}|${(p.model || '').toLowerCase()}|${(p.storage || '').toLowerCase()}`;
-    if (!groups[key]) groups[key] = { phones: [], cat: category, brand: p.brand, model: p.model, storage: p.storage, buyPrice: p.buyPrice, colors: new Set() };
+    const key = `${category}|${(p.brand || '').toLowerCase()}|${(p.model || '').toLowerCase()}`;
+    if (!groups[key]) {
+      groups[key] = { 
+        phones: [], cat: category, brand: p.brand, model: p.model, 
+        buyPrice: p.buyPrice, colors: new Set(), storages: new Set() 
+      };
+    }
     groups[key].phones.push(p);
     const clr = (p.color || '').trim();
     if (clr) groups[key].colors.add(clr.toLowerCase());
+    const str = (p.storage || '').trim();
+    if (str) groups[key].storages.add(str);
   });
 
   list.innerHTML = Object.entries(groups).map(([key, g], idx) => {
@@ -723,9 +741,17 @@ function renderIMEIStock() {
     const inStockCount = g.phones.filter(p => p.status === 'in_stock').length;
     const soldCount = g.phones.filter(p => p.status === 'sold').length;
     const uid = `g${idx}`;
-    const isOpen = count === 1 ? true : !!groupOpenState[uid];
+    
+    // Collapse all by default on initial load
+    if (initialLoad && !groupOpenState.hasOwnProperty(uid)) {
+      groupOpenState[uid] = false;
+    }
+    
+    const isOpen = !!groupOpenState[uid];
     groupedStockMap[uid] = g.phones.map(p => p.id).filter(Boolean);
-    groupOpenState[uid] = isOpen;
+    
+    const storageArr = [...g.storages];
+    const storageLabel = storageArr.length === 1 ? storageArr[0] : (storageArr.length > 1 ? 'Multiple Storages' : '');
     // Always show group header — never silently hide phones
     return `
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;">
@@ -741,7 +767,7 @@ function renderIMEIStock() {
           <span class="badge badge-blue">${esc((CATS[g.cat]?.label) || titleCase(g.cat || 'Other'))}</span>
           <span class="badge ${isOpen ? 'badge-green' : 'badge-gray'}" id="grp-state-${uid}">${isOpen ? 'Open' : 'Closed'}</span>
           ${(g.colors && g.colors.size === 1) ? `<span class="badge badge-gray">${esc(titleCase([...g.colors][0]))}</span>` : (g.colors && g.colors.size > 1 ? `<span class="badge badge-gray">Multiple Colors</span>` : '')}
-          ${g.storage ? `<span class="badge badge-purple">${g.storage}</span>` : ''}
+          ${storageLabel ? `<span class="badge badge-purple">${storageLabel}</span>` : ''}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0;">

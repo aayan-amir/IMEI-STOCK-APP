@@ -33,13 +33,47 @@ router.put('/hqstock', adminOnly, async (req, res) => {
 // ── Delete a single IMEI from HQ warehouse ────────────────────────────────
 router.delete('/hqstock/:imei', adminOnly, async (req, res) => {
   try {
-    const imei = String(req.params.imei || '').replace(/\D/g, '');
-    if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'Invalid IMEI' });
+    const raw = String(req.params.imei || '');
     const stock = await req.models.HQStockModel.findOne({ key: 'hq' });
     if (!stock) return res.json({ success: true });
-    stock.items    = (stock.items || []).filter(it => String(it?.imei || '').replace(/\D/g, '') !== imei);
+    
+    const imeiToMatch = raw.replace(/\D/g, '');
+    const isStandardImei = /^\d{15}$/.test(imeiToMatch);
+
+    stock.items = (stock.items || []).filter(it => {
+      const itImei = String(it?.imei || '');
+      const itImeiClean = itImei.replace(/\D/g, '');
+      
+      // If it's a standard 15-digit IMEI, match strictly on digits
+      if (isStandardImei && itImeiClean === imeiToMatch) return false;
+      // Otherwise match on raw string
+      if (itImei === raw) return false;
+      
+      return true;
+    });
+
     stock.updatedAt = new Date().toISOString();
     await stock.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Delete from HQ warehouse by index ──────────────────────────────────────
+router.delete('/hqstock/at/:index', adminOnly, async (req, res) => {
+  try {
+    const idx = parseInt(req.params.index);
+    if (isNaN(idx)) return res.status(400).json({ error: 'Invalid index' });
+
+    const stock = await req.models.HQStockModel.findOne({ key: 'hq' });
+    if (!stock || !Array.isArray(stock.items)) return res.json({ success: true });
+
+    if (idx >= 0 && idx < stock.items.length) {
+      stock.items.splice(idx, 1);
+      stock.updatedAt = new Date().toISOString();
+      await stock.save();
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
