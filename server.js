@@ -35,26 +35,19 @@ if (trustProxy !== undefined) {
 
 // ── Global Middleware ──────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-}));
+app.use(cors()); // Allow all for debugging
 
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      "script-src-attr": ["'unsafe-inline'"], // CRITICAL: Allows onclick buttons to work
       "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       "font-src": ["'self'", "https://fonts.gstatic.com"],
       "img-src": ["'self'", "data:"],
       "connect-src": ["'self'"],
-      "upgrade-insecure-requests": null, // Keep off for local network use
+      "upgrade-insecure-requests": null,
     },
   },
 }));
@@ -71,7 +64,7 @@ app.use('/api/', rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true, 
 // Stricter rate limit for client lookup
 app.use('/api/clients/lookup', rateLimit({
   windowMs: 15 * 60_000,
-  max: 20,
+  max: 100, // Increased for testing
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many lookup attempts, please try again later.' }

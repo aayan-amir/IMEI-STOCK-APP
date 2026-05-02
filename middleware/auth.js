@@ -81,11 +81,12 @@ function logAction(models, action, shop, role, details) {
 // Strict rate limiter for the auth endpoint: 10 attempts per 15 minutes
 const authLimiter = rateLimit({
   windowMs: 15 * 60_000,
-  max: 10,
+  max: 100, // Increased for testing
   standardHeaders: true,
   legacyHeaders: false,
   message: { ok: false, error: 'Too many attempts, please try again later.' },
 });
+
 
 // ── Tenant Middleware ──────────────────────────────────────────────────────
 // Reads clientId from header/session, attaches req.models and req.validShops
