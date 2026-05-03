@@ -680,4 +680,4 @@ async function renderMonthly() {
   if (!html) html = `<div class="empty"><div class="empty-icon">—</div><h3>No data for ${month}</h3></div>`;
   $('monthly-body').innerHTML = html;
 }
-
+

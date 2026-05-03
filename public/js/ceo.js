@@ -222,7 +222,7 @@ function renderShipments() {
 
 // ── BACKUP ──
 async function doBackup() {
-  const tok = sessionStorage.getItem('authToken');
+  const tok = localStorage.getItem('authToken');
   if (!tok) { showToast('Please sign in again', 'error'); return; }
   try {
     const r = await fetch(BASE + '/api/backup', { headers: { Authorization: 'Bearer ' + tok } });
@@ -570,9 +570,18 @@ async function loadLogs() {
 
 // ── PRINT / PDF HELPER ──
 function printSection(title, htmlContent) {
-  const w = window.open('', '_blank', 'width=900,height=700');
-  if (!w) return;
-  w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>
+  // Mobile/WebView workaround: Use a hidden iframe instead of window.open
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.write(`<!DOCTYPE html><html><head><title>${title}</title><style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;font-size:11pt;color:#111;padding:20px 28px;background:#fff}
 h1{font-size:15pt;margin-bottom:6px;border-bottom:2px solid #333;padding-bottom:6px}
@@ -592,8 +601,14 @@ tr:nth-child(even){background:#fafafa}
 .stat-lbl{font-size:8pt;color:#666;text-transform:uppercase;letter-spacing:.06em}
 .stat-val{font-size:14pt;font-weight:700;margin-top:2px;font-family:monospace}
 @media print{body{padding:10px 16px}button{display:none}}
-  </style></head><body>${htmlContent}<br><script>setTimeout(()=>{window.print();},300);<\/script></body></html>`);
-  w.document.close();
+  </style></head><body>${htmlContent}<br></body></html>`);
+  doc.close();
+
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => document.body.removeChild(iframe), 2000);
+  }, 500);
 }
 
 // ── REPORTS / INVOICES ───────────────────────────
@@ -795,7 +810,7 @@ async function checkGate() {
   if (!pw) { $('auth-gate-input').focus(); return; }
   const d = await _authPost({ type: 'gate', password: pw, clientId: currentClientId });
   if (d.ok) {
-    _pendingGatePassword = pw; // kept in memory only — never stored to sessionStorage
+    _pendingGatePassword = pw; // kept in memory only — never stored to localStorage
     $('auth-gate').style.display = 'none';
     $('auth-role').style.display = '';
     setTimeout(() => $('auth-admin-input')?.focus(), 80);
@@ -811,9 +826,9 @@ async function checkAdmin() {
   if (!pw) { $('auth-admin-input').focus(); return; }
   const d = await _authPost({ type: 'admin', password: pw, clientId: currentClientId });
   if (d.ok) {
-    sessionStorage.setItem('authToken', d.token);
-    sessionStorage.setItem('authRole', 'admin');
-    sessionStorage.removeItem('authShop');
+    localStorage.setItem('authToken', d.token);
+    localStorage.setItem('authRole', 'admin');
+    localStorage.removeItem('authShop');
     authRole = 'admin'; authShop = null;
     $('auth-overlay').classList.add('hidden');
     await bootApp();
@@ -828,18 +843,18 @@ async function enterShopMode(shop) {
   // Shop auth requires the gate password to prevent gate bypass via direct API call
   const d = await _authPost({ type: 'shop', password: _pendingGatePassword, shop, clientId: currentClientId });
   if (!d.ok) { showToast('Auth error — please refresh and try again', 'error'); return; }
-  sessionStorage.setItem('authToken', d.token);
-  sessionStorage.setItem('authRole', 'shop');
-  sessionStorage.setItem('authShop', shop);
+  localStorage.setItem('authToken', d.token);
+  localStorage.setItem('authRole', 'shop');
+  localStorage.setItem('authShop', shop);
   authRole = 'shop'; authShop = shop;
   $('auth-overlay').classList.add('hidden');
   await bootApp();
 }
 
 function logout() {
-  sessionStorage.removeItem('authToken');
-  sessionStorage.removeItem('authRole');
-  sessionStorage.removeItem('authShop');
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('authRole');
+  localStorage.removeItem('authShop');
   authRole = null; authShop = null;
   location.reload();
 }
@@ -873,4 +888,4 @@ function applyShopMode(shop) {
     _nav(page);
   };
 }
-
+

@@ -19,14 +19,14 @@ async function bootApp() {
 // ── INITIALIZE ──
 // Override auth check to show Client ID box first if not set
 (async () => {
-  const token = sessionStorage.getItem('authToken');
-  const role = sessionStorage.getItem('authRole');
-  const shop = sessionStorage.getItem('authShop');
-  const clientId = sessionStorage.getItem('clientId');
+  const token = localStorage.getItem('authToken');
+  const role = localStorage.getItem('authRole');
+  const shop = localStorage.getItem('authShop');
+  const clientId = localStorage.getItem('clientId');
 
   if (token && role && clientId) {
     currentClientId = clientId;
-    currentClientShops = JSON.parse(sessionStorage.getItem('clientShops') || '[]');
+    currentClientShops = JSON.parse(localStorage.getItem('clientShops') || '[]');
     renderDynamicShops();
     authRole = role; authShop = shop || null;
     $('auth-overlay').classList.add('hidden');
@@ -35,7 +35,7 @@ async function bootApp() {
     // If we have clientId, skip to gate
     if (clientId) {
       currentClientId = clientId;
-      currentClientShops = JSON.parse(sessionStorage.getItem('clientShops') || '[]');
+      currentClientShops = JSON.parse(localStorage.getItem('clientShops') || '[]');
       renderDynamicShops();
       $('auth-client').style.display = 'none';
       $('auth-gate').style.display = '';

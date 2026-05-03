@@ -1,7 +1,9 @@
 /* ── Shared global state and constants ── */
 /* Auto-split from index.html — 2026-04-25T15:26:28.690Z */
 
-var BASE = window.location.origin;
+var BASE = (window.location.origin.includes('localhost') || window.location.origin.includes('capacitor'))
+               ? "https://www.stock-ly.app"
+               : window.location.origin;
 function today() { return new Date().toISOString().slice(0, 10); }
 function ym(d) { return d ? d.slice(0, 7) : ''; }
 var SHOPS = [];

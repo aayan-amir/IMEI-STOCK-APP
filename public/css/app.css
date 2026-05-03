@@ -35,6 +35,8 @@
     body {
       height: 100%;
       overflow: hidden;
+      position: fixed;
+      width: 100%;
     }
 
     body {
@@ -44,6 +46,14 @@
       font-size: 13px;
       display: flex;
       flex-direction: column;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    input, textarea, [contenteditable="true"] {
+      -webkit-user-select: text;
+      user-select: text;
     }
 
     /* ── TOPBAR ── */

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Stock-ly</string>
+    <string name="title_activity_main">Stock-ly</string>
+    <string name="package_name">app.stockly.android</string>
+    <string name="custom_url_scheme">app.stockly.android</string>
+</resources>

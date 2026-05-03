@@ -1,0 +1,10 @@
+{
+  "appId": "app.stockly.android",
+  "appName": "Stock-ly",
+  "webDir": "public",
+  "plugins": {
+    "Keyboard": {
+      "resize": "native"
+    }
+  }
+}

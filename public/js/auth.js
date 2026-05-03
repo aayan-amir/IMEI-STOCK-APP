@@ -3,8 +3,8 @@
 
 // ── AUTH CHECK ──
 // --- Client Multi-Tenant Logic ---
-var currentClientId = sessionStorage.getItem('clientId') || '';
-var currentClientShops = JSON.parse(sessionStorage.getItem('clientShops') || '[]');
+var currentClientId = localStorage.getItem('clientId') || '';
+var currentClientShops = JSON.parse(localStorage.getItem('clientShops') || '[]');
 
 async function checkClientAndGate() {
   const id = $('auth-client-input').value.trim();
@@ -28,8 +28,8 @@ async function checkClientAndGate() {
     // Success — store client and move to role selection
     currentClientId = id;
     currentClientShops = data.shops || [];
-    sessionStorage.setItem('clientId', currentClientId);
-    sessionStorage.setItem('clientShops', JSON.stringify(currentClientShops));
+    localStorage.setItem('clientId', currentClientId);
+    localStorage.setItem('clientShops', JSON.stringify(currentClientShops));
     _pendingGatePassword = pw;
     $('auth-client-err').style.display = 'none';
     $('auth-client').style.display = 'none';

@@ -37,9 +37,9 @@ async function _authPost(payload) {
 }
 async function api(method, url, body) {
   var opts = { method, headers: { 'Content-Type': 'application/json' } };
-  var tok = sessionStorage.getItem('authToken');
+  var tok = localStorage.getItem('authToken');
   if (tok) opts.headers['Authorization'] = 'Bearer ' + tok;
-  var clientId = sessionStorage.getItem('clientId');
+  var clientId = localStorage.getItem('clientId');
   if (clientId) opts.headers['X-Client-ID'] = clientId;
   if (body) opts.body = JSON.stringify(body);
   try {
@@ -48,7 +48,7 @@ async function api(method, url, body) {
       console.warn(`[401] URL: ${url} | authRole: ${authRole}`);
       // Only treat as session expiry if we actually had a session
       if (authRole) {
-        sessionStorage.removeItem('authToken'); sessionStorage.removeItem('authRole'); sessionStorage.removeItem('authShop');
+        localStorage.removeItem('authToken'); localStorage.removeItem('authRole'); localStorage.removeItem('authShop');
         authRole = null; authShop = null;
         $('auth-overlay').classList.remove('hidden');
         $('auth-client').style.display = 'none';
