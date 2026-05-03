@@ -7,10 +7,15 @@ function setMode(m) {
   $('modeAdd').classList.toggle('active', m === 'add');
   $('modeBatch').classList.toggle('active', m === 'batch');
   $('modeSell').classList.toggle('active', m === 'sell');
+  $('modeProduct').classList.toggle('active', m === 'product');
   cancelForm();
   if (m === 'batch') {
     $('batchForm').style.display = 'block';
     setTimeout(() => $('bBrand')?.focus(), 80);
+  } else if (m === 'product') {
+    $('productForm').style.display = 'block';
+    loadProducts();
+    setTimeout(() => $('pName')?.focus(), 80);
   } else {
     $('imeiInput')?.focus();
   }
@@ -258,6 +263,7 @@ function cancelForm() {
   $('addForm').style.display = 'none';
   $('sellForm').style.display = 'none';
   $('batchForm').style.display = 'none';
+  if ($('productForm')) $('productForm').style.display = 'none';
   hidePreview();
   pendingIMEI = '';
   batchQueue = [];
@@ -656,6 +662,16 @@ async function startScanning() {
 var groupedView = true; // default: grouped by model
 var groupedStockMap = {};
 var groupOpenState = {};
+var initialLoad = true;
+
+function expandAllGroups() {
+  Object.keys(groupedStockMap).forEach(uid => groupOpenState[uid] = true);
+  renderIMEIStock(true);
+}
+function collapseAllGroups() {
+  Object.keys(groupedStockMap).forEach(uid => groupOpenState[uid] = false);
+  renderIMEIStock(true);
+}
 async function loadIMEIData() {
   const list = $('imeiList');
   if (list && !list.innerHTML.includes('card')) {
@@ -671,6 +687,7 @@ async function loadIMEIData() {
     
     renderIMEIStock();
     updateBulkActions();
+    initialLoad = false;
   } catch (err) {
     console.error('loadIMEIData error:', err);
     if (list) list.innerHTML = '<div class="empty">Error loading data. Try refreshing.</div>';
@@ -679,7 +696,7 @@ async function loadIMEIData() {
 function setIMEIFilter(f, el) { imeiFilter = f; document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active')); el.classList.add('active'); renderIMEIStock(); }
 function toggleGrouped() { groupedView = !groupedView; $('groupBtn').textContent = groupedView ? 'Flat List' : 'Group by Model'; renderIMEIStock(); }
 
-function renderIMEIStock() {
+function renderIMEIStock(force = false) {
   const q = $('imeiSearch').value.toLowerCase();
   let items = allIMEIStock.filter(p => {
     if (imeiFilter !== 'all' && p.status !== imeiFilter) return false;
@@ -698,7 +715,7 @@ function renderIMEIStock() {
   // Optimization: If the content is identical, don't update DOM to prevent flicker
   // (Simple check: compare length and first/last IDs)
   const stateKey = `${items.length}-${groupedView}-${imeiFilter}-${items[0]?.id || items[0]?._id}-${items[items.length-1]?.id || items[items.length-1]?._id}`;
-  if (list._stateKey === stateKey) return;
+  if (!force && list._stateKey === stateKey) return;
   list._stateKey = stateKey;
 
   if (!groupedView) {
@@ -706,16 +723,23 @@ function renderIMEIStock() {
     return;
   }
 
-  // Group by category+brand+model+storage only (NOT status)
+  // Group by category+brand+model only (Combining different storages)
   const groups = {};
   groupedStockMap = {};
   items.forEach(p => {
     const category = guessCat(p.brand, p.model, p.cat);
-    const key = `${category}|${(p.brand || '').toLowerCase()}|${(p.model || '').toLowerCase()}|${(p.storage || '').toLowerCase()}`;
-    if (!groups[key]) groups[key] = { phones: [], cat: category, brand: p.brand, model: p.model, storage: p.storage, buyPrice: p.buyPrice, colors: new Set() };
+    const key = `${category}|${(p.brand || '').toLowerCase()}|${(p.model || '').toLowerCase()}`;
+    if (!groups[key]) {
+      groups[key] = { 
+        phones: [], cat: category, brand: p.brand, model: p.model, 
+        buyPrice: p.buyPrice, colors: new Set(), storages: new Set() 
+      };
+    }
     groups[key].phones.push(p);
     const clr = (p.color || '').trim();
     if (clr) groups[key].colors.add(clr.toLowerCase());
+    const str = (p.storage || '').trim();
+    if (str) groups[key].storages.add(str);
   });
 
   list.innerHTML = Object.entries(groups).map(([key, g], idx) => {
@@ -723,9 +747,17 @@ function renderIMEIStock() {
     const inStockCount = g.phones.filter(p => p.status === 'in_stock').length;
     const soldCount = g.phones.filter(p => p.status === 'sold').length;
     const uid = `g${idx}`;
-    const isOpen = count === 1 ? true : !!groupOpenState[uid];
+    
+    // Collapse all by default on initial load
+    if (initialLoad && !groupOpenState.hasOwnProperty(uid)) {
+      groupOpenState[uid] = false;
+    }
+    
+    const isOpen = !!groupOpenState[uid];
     groupedStockMap[uid] = g.phones.map(p => p.id).filter(Boolean);
-    groupOpenState[uid] = isOpen;
+    
+    const storageArr = [...g.storages];
+    const storageLabel = storageArr.length === 1 ? storageArr[0] : (storageArr.length > 1 ? 'Multiple Storages' : '');
     // Always show group header — never silently hide phones
     return `
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;">
@@ -741,7 +773,7 @@ function renderIMEIStock() {
           <span class="badge badge-blue">${esc((CATS[g.cat]?.label) || titleCase(g.cat || 'Other'))}</span>
           <span class="badge ${isOpen ? 'badge-green' : 'badge-gray'}" id="grp-state-${uid}">${isOpen ? 'Open' : 'Closed'}</span>
           ${(g.colors && g.colors.size === 1) ? `<span class="badge badge-gray">${esc(titleCase([...g.colors][0]))}</span>` : (g.colors && g.colors.size > 1 ? `<span class="badge badge-gray">Multiple Colors</span>` : '')}
-          ${g.storage ? `<span class="badge badge-purple">${g.storage}</span>` : ''}
+          ${storageLabel ? `<span class="badge badge-purple">${storageLabel}</span>` : ''}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0;">
@@ -1170,3 +1202,86 @@ async function clearAllSales() {
   loadIMEIData();
 }
 
+// ── PRODUCTS (non-IMEI items) ──────────────────────────────────────────────
+var allProducts = [];
+
+async function submitProduct() {
+  const name = ($('pName')?.value || '').trim();
+  const qty = parseInt($('pQty')?.value) || 1;
+  const buyPrice = $('pBuyPrice')?.value !== '' ? Number($('pBuyPrice').value) : undefined;
+  const notes = ($('pNotes')?.value || '').trim();
+  if (!name) { showToast('Product name is required', 'error'); $('pName')?.focus(); return; }
+
+  const shop = activeShop === 'HQ' ? null : activeShop;
+  const d = await api('POST', '/api/products', { name, quantity: qty, buyPrice, notes, shop });
+  if (d.error) { showToast(d.error, 'error'); return; }
+
+  const mergedMsg = d.merged ? ` (merged — total now ${d.product.quantity})` : '';
+  showToast(`${name} ×${qty} added!${mergedMsg}`, 'success');
+
+  // Clear inputs
+  $('pName').value = '';
+  $('pQty').value = '1';
+  $('pBuyPrice').value = '';
+  $('pNotes').value = '';
+  $('pName')?.focus();
+  loadProducts();
+}
+
+async function loadProducts() {
+  const shop = activeShop === 'HQ' ? '' : activeShop;
+  const url = shop ? `/api/products?shop=${shop}` : '/api/products';
+  allProducts = await api('GET', url);
+  if (!Array.isArray(allProducts)) allProducts = [];
+  renderProducts();
+}
+
+function renderProducts() {
+  const el = $('productList');
+  if (!el) return;
+  if (!allProducts.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:.68rem;text-align:center;padding:12px;">No products yet — add one above.</div>';
+    return;
+  }
+  el.innerHTML = `
+<div style="font-size:.6rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Current Products</div>
+${allProducts.map(p => `
+<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:5px;">
+  <div style="flex:1;min-width:0;">
+    <div style="font-weight:600;font-size:.78rem;color:var(--white);">${esc(p.name)}</div>
+    <div style="font-size:.62rem;color:var(--text2);margin-top:2px;">
+      Qty: <b style="color:var(--a1)">${p.quantity || 0}</b>
+      ${p.buyPrice ? ' · ' + pkr(p.buyPrice) + '/each' : ''}
+      ${p.notes ? ' · ' + esc(p.notes) : ''}
+    </div>
+  </div>
+  <button class="btn bo" style="font-size:.58rem;padding:.14rem .4rem;" onclick="editProductQty('${p._id || p.id}','${esc(p.name)}',${p.quantity || 0})">Edit</button>
+  <button class="bx" onclick="deleteProduct('${p._id || p.id}','${esc(p.name)}')">✕</button>
+</div>`).join('')}`;
+}
+
+function editProductQty(id, name, currentQty) {
+  showModal(`<h3>Edit ${esc(name)}</h3>
+<div class="fc">
+  <div class="fi"><label>New Quantity</label><input type="number" id="ep-qty" value="${currentQty}" min="0"></div>
+</div>
+<div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" onclick="saveProductQty('${id}')">Save</button></div>`);
+  setTimeout(() => $('ep-qty')?.focus(), 100);
+}
+
+async function saveProductQty(id) {
+  const qty = parseInt($('ep-qty')?.value) || 0;
+  const d = await api('PUT', `/api/products/${id}`, { quantity: qty });
+  if (d.error) { showToast(d.error, 'error'); return; }
+  closeModal();
+  showToast('Quantity updated', 'success');
+  loadProducts();
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`Delete "${name}" from products?`)) return;
+  const d = await api('DELETE', `/api/products/${id}`);
+  if (d.error) { showToast(d.error, 'error'); return; }
+  showToast(`${name} deleted`, 'warn');
+  loadProducts();
+}

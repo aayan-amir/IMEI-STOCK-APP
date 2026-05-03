@@ -160,6 +160,15 @@ const ReportSchema = new mongoose.Schema({
   generatedAt: String,
 });
 
+const ProductSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  quantity: { type: Number, default: 0 },
+  buyPrice: Number,
+  shop: String,
+  notes: String,
+  addedAt: String,
+});
+
 // ── Master Client Schema ───────────────────────────────────────────────────
 const ClientSchema = new mongoose.Schema({
   clientId: { type: String, unique: true, required: true },
@@ -227,6 +236,7 @@ module.exports = {
   CustomerSchema,
   AuditLogSchema,
   ReportSchema,
+  ProductSchema,
   // Shared (non-tenant) models
   Client,
   Session,

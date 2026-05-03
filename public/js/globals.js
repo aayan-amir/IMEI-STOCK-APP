@@ -15,6 +15,7 @@ var CATS = {
   SAMSUNG: { label: 'Samsung', cls: 'csm' },
   OTHER: { label: 'Other', cls: 'cot' },
   BOX: { label: 'Box / Sealed', cls: 'cbx' },
+  PRODUCT: { label: 'Products / Accessories', cls: 'cpr' },
   EXTRA: { label: 'Extra / Misc', cls: 'cex', isExtra: true },
 };
 var EXP_CATS = ['General', 'Salary', 'Rent', 'Utilities', 'Transport', 'Repairs', 'Marketing', 'Other'];

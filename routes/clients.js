@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const { Client, mongoose } = require('../db');
-const { safeCompare, createSession, authLimiter, SUPER_ADMIN_PASSWORD } = require('../middleware/auth');
+const { safeCompare, createSession, authLimiter, superAdminLimiter, SUPER_ADMIN_PASSWORD } = require('../middleware/auth');
 
 // ── Public: lookup a client's shops ───────────────────────────────────────
 router.get('/clients/lookup', async (req, res) => {
@@ -80,8 +80,36 @@ router.post('/auth', authLimiter, async (req, res) => {
   }
 });
 
+// ── Admin: update own passwords ───────────────────────────────────────────
+const { adminOnly } = require('../middleware/auth');
+router.put('/auth/password', authLimiter, adminOnly, async (req, res) => {
+  const { currentPassword, newAdminPassword, newGatePassword } = req.body || {};
+  const clientId = req.session ? req.session.clientId : null;
+  
+  if (!clientId) return res.status(400).json({ error: 'Not authenticated' });
+
+  try {
+    const client = await Client.findOne({ clientId });
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    
+    // Verify current admin password
+    const isOk = await client.compareAdminPassword(currentPassword);
+    if (!isOk) return res.status(403).json({ error: 'Incorrect current admin password' });
+
+    // Update passwords
+    if (newAdminPassword) client.adminPassword = newAdminPassword;
+    if (newGatePassword) client.gatePassword = newGatePassword;
+    
+    await client.save();
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Update password error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── Super Admin: verify password ───────────────────────────────────────────
-router.post('/superadmin/verify', (req, res) => {
+router.post('/superadmin/verify', superAdminLimiter, (req, res) => {
   const { superAdminPassword } = req.body || {};
   if (safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
     return res.json({ ok: true });
@@ -90,7 +118,7 @@ router.post('/superadmin/verify', (req, res) => {
 });
 
 // ── Super Admin: create / update client ───────────────────────────────────
-router.post('/superadmin/clients', async (req, res) => {
+router.post('/superadmin/clients', superAdminLimiter, async (req, res) => {
   const { superAdminPassword, clientId, adminPassword, gatePassword, shops, status } = req.body || {};
   if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
     return res.status(403).json({ error: 'Forbidden' });
@@ -116,7 +144,7 @@ router.post('/superadmin/clients', async (req, res) => {
 // ── Super Admin: list clients ──────────────────────────────────────────────
 // Accept the super admin password in the X-Super-Admin-Password header only.
 // Using a header avoids logging the password in server access logs or browser history.
-router.get('/superadmin/clients', async (req, res) => {
+router.get('/superadmin/clients', superAdminLimiter, async (req, res) => {
   const superAdminPassword = req.headers['x-super-admin-password'];
   if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
     return res.status(403).json({ error: 'Forbidden' });
@@ -130,7 +158,7 @@ router.get('/superadmin/clients', async (req, res) => {
 });
 
 // ── Super Admin: delete client ─────────────────────────────────────────────
-router.delete('/superadmin/clients/:clientId', async (req, res) => {
+router.delete('/superadmin/clients/:clientId', superAdminLimiter, async (req, res) => {
   const { superAdminPassword } = req.body || {};
   if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) {
     return res.status(403).json({ error: 'Forbidden' });
