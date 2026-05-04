@@ -6,5 +6,6 @@
     "Keyboard": {
       "resize": "native"
     }
-  }
+  },
+  "backgroundColor": "#0f1115"
 }
