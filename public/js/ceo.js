@@ -809,7 +809,7 @@ async function checkGate() {
   const pw = $('auth-gate-input').value;
   if (!pw) { $('auth-gate-input').focus(); return; }
   if (_rlLocked('gate')) {
-    const e = $('auth-gate-err'); e.textContent = _RL_MSG; e.classList.add('show');
+    const e = $('auth-gate-err'); e.textContent = _rlLockedMsg('gate'); e.classList.add('show');
     return;
   }
   const d = await _authPost({ type: 'gate', password: pw, clientId: currentClientId });
@@ -822,7 +822,7 @@ async function checkGate() {
   } else {
     _rlFail('gate');
     const e = $('auth-gate-err');
-    e.textContent = _rlLocked('gate') ? _RL_MSG : 'Incorrect password. Try again.';
+    e.textContent = _rlErrMsg('gate', 'Incorrect password. Try again.');
     e.classList.add('show');
     $('auth-gate-input').value = ''; $('auth-gate-input').focus();
     if (!_rlLocked('gate')) setTimeout(() => e.classList.remove('show'), 3000);
@@ -833,7 +833,7 @@ async function checkAdmin() {
   const pw = $('auth-admin-input').value;
   if (!pw) { $('auth-admin-input').focus(); return; }
   if (_rlLocked('admin')) {
-    const e = $('auth-admin-err'); e.textContent = _RL_MSG; e.classList.add('show');
+    const e = $('auth-admin-err'); e.textContent = _rlLockedMsg('admin'); e.classList.add('show');
     return;
   }
   const d = await _authPost({ type: 'admin', password: pw, clientId: currentClientId });
@@ -848,7 +848,7 @@ async function checkAdmin() {
   } else {
     _rlFail('admin');
     const e = $('auth-admin-err');
-    e.textContent = _rlLocked('admin') ? _RL_MSG : 'Incorrect admin password.';
+    e.textContent = _rlErrMsg('admin', 'Incorrect admin password.');
     e.classList.add('show');
     $('auth-admin-input').value = ''; $('auth-admin-input').focus();
     if (!_rlLocked('admin')) setTimeout(() => e.classList.remove('show'), 3000);
@@ -873,6 +873,8 @@ function logout() {
   localStorage.removeItem('authShop');
   localStorage.removeItem('clientId');
   localStorage.removeItem('clientShops');
+  // Clear rate-limit counters so next user starts clean on this device
+  Object.keys(_RL_LOCK_LABELS).forEach(function(k) { _rlClear(k); });
   authRole = null; authShop = null;
   location.reload();
 }
