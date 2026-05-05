@@ -1,12 +1,36 @@
 /* ── Auth, Session, Super Admin, Dynamic Shops ── */
 /* Auto-split from index.html — 2026-04-25T15:26:28.701Z */
 
+// ── RATE LIMITING ──
+var _RL_MAX = 5;
+var _RL_MS  = 30 * 60 * 1000;
+var _RL_MSG = 'Too many failed attempts. Contact 03043648597 to reset your password.';
+
+function _rlGet(key) {
+  try { return JSON.parse(localStorage.getItem('rl_' + key)) || { n: 0, until: 0 }; }
+  catch (e) { return { n: 0, until: 0 }; }
+}
+function _rlFail(key) {
+  var d = _rlGet(key);
+  if (d.until && Date.now() < d.until) return;
+  d.n = (d.n || 0) + 1;
+  if (d.n >= _RL_MAX) d.until = Date.now() + _RL_MS;
+  localStorage.setItem('rl_' + key, JSON.stringify(d));
+}
+function _rlClear(key) { localStorage.removeItem('rl_' + key); }
+function _rlLocked(key) { var d = _rlGet(key); return d.until && Date.now() < d.until; }
+
 // ── AUTH CHECK ──
 // --- Client Multi-Tenant Logic ---
 var currentClientId = localStorage.getItem('clientId') || '';
 var currentClientShops = JSON.parse(localStorage.getItem('clientShops') || '[]');
 
 async function checkClientAndGate() {
+  if (_rlLocked('client')) {
+    $('auth-client-err').textContent = _RL_MSG;
+    $('auth-client-err').style.display = 'block';
+    return;
+  }
   const id = $('auth-client-input').value.trim();
   const pw = $('auth-gate-input-combined').value;
   if (!id || !pw) { $('auth-client-err').textContent = 'Please enter both Client ID and password.'; $('auth-client-err').style.display = 'block'; return; }
@@ -20,12 +44,14 @@ async function checkClientAndGate() {
     }
     // Verify gate password
     const gateRes = await _authPost({ type: 'gate', password: pw, clientId: id });
-    if (!gateRes.ok) { 
-      $('auth-client-err').textContent = gateRes.error || 'Incorrect site password.'; 
+    if (!gateRes.ok) {
+      _rlFail('client');
+      $('auth-client-err').textContent = _rlLocked('client') ? _RL_MSG : (gateRes.error || 'Incorrect site password.');
       $('auth-client-err').style.display = 'block'; 
       return; 
     }
     // Success — store client and move to role selection
+    _rlClear('client');
     currentClientId = id;
     currentClientShops = data.shops || [];
     localStorage.setItem('clientId', currentClientId);
@@ -46,17 +72,25 @@ async function checkClientAndGate() {
 async function verifySuperAdmin() {
   const pw = $('sa-pass').value;
   if (!pw) return;
+  if (_rlLocked('sa')) {
+    $('sa-gate-err').textContent = _RL_MSG;
+    $('sa-gate-err').style.display = 'block';
+    return;
+  }
   const r = await fetch(BASE + '/api/superadmin/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ superAdminPassword: pw })
   });
   if (r.ok) {
+    _rlClear('sa');
     $('sa-gate-err').style.display = 'none';
     $('sa-gate').style.display = 'none';
     $('sa-form').style.display = '';
     loadClientsList();
   } else {
+    _rlFail('sa');
+    $('sa-gate-err').textContent = _rlLocked('sa') ? _RL_MSG : 'Incorrect super admin password.';
     $('sa-gate-err').style.display = 'block';
     $('sa-pass').value = '';
     $('sa-pass').focus();

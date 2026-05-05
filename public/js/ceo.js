@@ -808,24 +808,37 @@ function dlCSV(content, filename) { const a = document.createElement('a'); a.hre
 async function checkGate() {
   const pw = $('auth-gate-input').value;
   if (!pw) { $('auth-gate-input').focus(); return; }
+  if (_rlLocked('gate')) {
+    const e = $('auth-gate-err'); e.textContent = _RL_MSG; e.classList.add('show');
+    return;
+  }
   const d = await _authPost({ type: 'gate', password: pw, clientId: currentClientId });
   if (d.ok) {
+    _rlClear('gate');
     _pendingGatePassword = pw; // kept in memory only — never stored to localStorage
     $('auth-gate').style.display = 'none';
     $('auth-role').style.display = '';
     setTimeout(() => $('auth-admin-input')?.focus(), 80);
   } else {
-    const e = $('auth-gate-err'); e.classList.add('show');
+    _rlFail('gate');
+    const e = $('auth-gate-err');
+    e.textContent = _rlLocked('gate') ? _RL_MSG : 'Incorrect password. Try again.';
+    e.classList.add('show');
     $('auth-gate-input').value = ''; $('auth-gate-input').focus();
-    setTimeout(() => e.classList.remove('show'), 3000);
+    if (!_rlLocked('gate')) setTimeout(() => e.classList.remove('show'), 3000);
   }
 }
 
 async function checkAdmin() {
   const pw = $('auth-admin-input').value;
   if (!pw) { $('auth-admin-input').focus(); return; }
+  if (_rlLocked('admin')) {
+    const e = $('auth-admin-err'); e.textContent = _RL_MSG; e.classList.add('show');
+    return;
+  }
   const d = await _authPost({ type: 'admin', password: pw, clientId: currentClientId });
   if (d.ok) {
+    _rlClear('admin');
     localStorage.setItem('authToken', d.token);
     localStorage.setItem('authRole', 'admin');
     localStorage.removeItem('authShop');
@@ -833,9 +846,12 @@ async function checkAdmin() {
     $('auth-overlay').classList.add('hidden');
     await bootApp();
   } else {
-    const e = $('auth-admin-err'); e.classList.add('show');
+    _rlFail('admin');
+    const e = $('auth-admin-err');
+    e.textContent = _rlLocked('admin') ? _RL_MSG : 'Incorrect admin password.';
+    e.classList.add('show');
     $('auth-admin-input').value = ''; $('auth-admin-input').focus();
-    setTimeout(() => e.classList.remove('show'), 3000);
+    if (!_rlLocked('admin')) setTimeout(() => e.classList.remove('show'), 3000);
   }
 }
 
@@ -855,6 +871,8 @@ function logout() {
   localStorage.removeItem('authToken');
   localStorage.removeItem('authRole');
   localStorage.removeItem('authShop');
+  localStorage.removeItem('clientId');
+  localStorage.removeItem('clientShops');
   authRole = null; authShop = null;
   location.reload();
 }
