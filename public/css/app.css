@@ -23,6 +23,7 @@
       --success: #16a34a;
       --danger: #dc2626;
       --warn: #c2690a;
+      --keyboard-height: 0px;
     }
 
     * {
@@ -48,6 +49,8 @@
       -webkit-user-select: none;
       -webkit-touch-callout: none;
       user-select: none;
+      /* Shrink body when keyboard is open — keyboard-height is set by JS */
+      height: calc(100% - var(--keyboard-height, 0px));
     }
 
     input, textarea, [contenteditable="true"] {
@@ -57,13 +60,16 @@
 
     /* ── TOPBAR ── */
     #topbar {
-      height: 52px;
+      height: calc(52px + env(safe-area-inset-top, 0px));
       background: #1a1a18;
       border-bottom: none;
       box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
       display: flex;
       align-items: center;
-      padding: 0 1.2rem;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-left: 1.2rem;
+      padding-right: 1.2rem;
+      padding-bottom: 0;
       gap: .8rem;
       flex-shrink: 0;
       z-index: 100;
@@ -185,6 +191,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     .sb-sec {
@@ -299,6 +306,7 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     .pg {
@@ -2306,9 +2314,9 @@
       /* Larger base font for readability */
       body { font-size: 14px; }
 
-      /* Topbar: hide clock, shrink padding */
+      /* Topbar: hide clock, shrink padding, preserve safe-area */
       #clk { display: none; }
-      #topbar { padding: 0 .75rem; gap: .5rem; overflow-x: auto; }
+      #topbar { padding: env(safe-area-inset-top, 0px) .75rem 0 .75rem; gap: .5rem; overflow-x: auto; }
 
       /* Stock scroll padding */
       .stock-scroll { padding: .5rem .5rem .75rem; }
@@ -2344,8 +2352,8 @@
       .bpanels { max-height: 220px; overflow-y: auto; }
       .expbar { gap: .4rem; padding: .35rem .5rem; flex-wrap: wrap; }
 
-      /* Auth overlay: full-screen on mobile */
-      #auth-overlay { padding: .5rem; align-items: flex-start; padding-top: 3rem; }
+      /* Auth overlay: full-screen on mobile, respect safe areas */
+      #auth-overlay { padding: .5rem; align-items: flex-start; padding-top: calc(3rem + env(safe-area-inset-top, 0px)); }
       .auth-box { border-radius: 14px; padding: 1.5rem 1.25rem 1.4rem; }
       .auth-btn { padding: .9rem; font-size: .9rem; min-height: 48px; }
       .auth-input { padding: .85rem 1rem; font-size: 16px !important; }
@@ -2383,6 +2391,8 @@
       align-items: center;
       justify-content: center;
       padding: 1rem;
+      padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     }
 
     #auth-overlay.hidden {

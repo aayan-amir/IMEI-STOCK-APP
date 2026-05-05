@@ -4,8 +4,11 @@
   "webDir": "public",
   "plugins": {
     "Keyboard": {
-      "resize": "native"
+      "resize": "none",
+      "resizeOnFullScreen": true
     }
   },
-  "backgroundColor": "#0f1115"
+  "android": {
+    "backgroundColor": "#f5f3ee"
+  }
 }
