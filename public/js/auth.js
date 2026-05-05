@@ -1,12 +1,80 @@
 /* ── Auth, Session, Super Admin, Dynamic Shops ── */
 /* Auto-split from index.html — 2026-04-25T15:26:28.701Z */
 
+// ── RATE LIMITING ──
+var _RL_MAX = 5;
+var _RL_MS  = 30 * 60 * 1000;
+var _RL_MSG = 'Too many failed attempts. Contact 03043648597 to reset your password.';
+
+function _rlGet(key) {
+  try { return JSON.parse(localStorage.getItem('rl_' + key)) || { n: 0, until: 0 }; }
+  catch (e) { return { n: 0, until: 0 }; }
+}
+function _rlFail(key) {
+  var d = _rlGet(key);
+  if (d.until && Date.now() < d.until) return;
+  d.n = (d.n || 0) + 1;
+  if (d.n >= _RL_MAX) d.until = Date.now() + _RL_MS;
+  localStorage.setItem('rl_' + key, JSON.stringify(d));
+}
+function _rlClear(key) { localStorage.removeItem('rl_' + key); }
+function _rlLocked(key) { var d = _rlGet(key); return d.until && Date.now() < d.until; }
+function _rlTimeLeft(key) { var d = _rlGet(key); return (!d.until || Date.now() >= d.until) ? 0 : d.until - Date.now(); }
+function _rlRemaining(key) { var d = _rlGet(key); return _rlLocked(key) ? 0 : Math.max(0, _RL_MAX - (d.n || 0)); }
+function _rlLockedMsg(key) {
+  var mins = Math.ceil(_rlTimeLeft(key) / 60000);
+  return 'Too many failed attempts. Try again in ' + mins + ' minute' + (mins !== 1 ? 's' : '') + '. Contact 03043648597 to reset.';
+}
+function _rlErrMsg(key, defaultMsg) {
+  if (_rlLocked(key)) return _rlLockedMsg(key);
+  var rem = _rlRemaining(key);
+  if (rem > 0 && rem <= 2) return defaultMsg + ' ' + rem + ' attempt' + (rem !== 1 ? 's' : '') + ' remaining.';
+  return defaultMsg;
+}
+
+var _RL_LOCK_LABELS = { client: 'Client Login', gate: 'Gate Password', admin: 'Admin Login', sa: 'Super Admin' };
+
+function renderLockStatus() {
+  var locks = Object.keys(_RL_LOCK_LABELS).map(function(key) { return { key: key, label: _RL_LOCK_LABELS[key] }; });
+  var list = $('sa-lock-list');
+  if (!list) return;
+  list.innerHTML = locks.map(function(l) {
+    var locked = _rlLocked(l.key);
+    var d = _rlGet(l.key);
+    var n = d.n || 0;
+    var mins = locked ? Math.ceil(_rlTimeLeft(l.key) / 60000) : 0;
+    var statusText = locked
+      ? ('🔒 Locked — ' + mins + 'm remaining')
+      : n > 0 ? ('⚠️ ' + n + '/' + _RL_MAX + ' failed attempts')
+      : '✅ OK';
+    var statusColor = locked ? 'var(--danger)' : n > 0 ? '#f59e0b' : 'var(--success)';
+    return '<div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div>' +
+        '<div style="font-weight:700;font-size:.85rem;color:var(--text);">' + l.label + '</div>' +
+        '<div style="font-size:.7rem;color:' + statusColor + ';margin-top:2px;">' + statusText + '</div>' +
+      '</div>' +
+      '<button onclick="resetLock(\'' + l.key + '\')" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);padding:5px 10px;border-radius:6px;color:var(--danger);font-size:.65rem;cursor:pointer;">Reset</button>' +
+    '</div>';
+  }).join('');
+}
+
+function resetLock(key) {
+  _rlClear(key);
+  renderLockStatus();
+  showToast('Lock reset: ' + (_RL_LOCK_LABELS[key] || key), 'success');
+}
+
 // ── AUTH CHECK ──
 // --- Client Multi-Tenant Logic ---
 var currentClientId = localStorage.getItem('clientId') || '';
 var currentClientShops = JSON.parse(localStorage.getItem('clientShops') || '[]');
 
 async function checkClientAndGate() {
+  if (_rlLocked('client')) {
+    $('auth-client-err').textContent = _rlLockedMsg('client');
+    $('auth-client-err').style.display = 'block';
+    return;
+  }
   const id = $('auth-client-input').value.trim();
   const pw = $('auth-gate-input-combined').value;
   if (!id || !pw) { $('auth-client-err').textContent = 'Please enter both Client ID and password.'; $('auth-client-err').style.display = 'block'; return; }
@@ -20,12 +88,14 @@ async function checkClientAndGate() {
     }
     // Verify gate password
     const gateRes = await _authPost({ type: 'gate', password: pw, clientId: id });
-    if (!gateRes.ok) { 
-      $('auth-client-err').textContent = gateRes.error || 'Incorrect site password.'; 
+    if (!gateRes.ok) {
+      _rlFail('client');
+      $('auth-client-err').textContent = _rlErrMsg('client', gateRes.error || 'Incorrect site password.');
       $('auth-client-err').style.display = 'block'; 
       return; 
     }
     // Success — store client and move to role selection
+    _rlClear('client');
     currentClientId = id;
     currentClientShops = data.shops || [];
     localStorage.setItem('clientId', currentClientId);
@@ -46,17 +116,25 @@ async function checkClientAndGate() {
 async function verifySuperAdmin() {
   const pw = $('sa-pass').value;
   if (!pw) return;
+  if (_rlLocked('sa')) {
+    $('sa-gate-err').textContent = _rlLockedMsg('sa');
+    $('sa-gate-err').style.display = 'block';
+    return;
+  }
   const r = await fetch(BASE + '/api/superadmin/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ superAdminPassword: pw })
   });
   if (r.ok) {
+    _rlClear('sa');
     $('sa-gate-err').style.display = 'none';
     $('sa-gate').style.display = 'none';
     $('sa-form').style.display = '';
     loadClientsList();
   } else {
+    _rlFail('sa');
+    $('sa-gate-err').textContent = _rlErrMsg('sa', 'Incorrect super admin password.');
     $('sa-gate-err').style.display = 'block';
     $('sa-pass').value = '';
     $('sa-pass').focus();
@@ -173,6 +251,7 @@ async function loadClientsList() {
       </div>
     </div>
   `).join('') || '<div style="font-size:.75rem;color:var(--text3);text-align:center;">No clients yet.</div>';
+  renderLockStatus();
 }
 
 async function toggleClientStatus(clientId, currentStatus) {
