@@ -1,4 +1,4 @@
-# Mobile HQ — IMEI Stock Management App
+# stock-ly.com — IMEI Stock Management App
 
 A web-based stock management system for mobile phone shops. Track inventory by IMEI, record sales, manage expenses, view analytics, and run multi-shop operations — all from a single-page interface that works on desktop and mobile.
 
@@ -183,4 +183,3 @@ Key points:
 - The server **refuses to start** if `GATE_PASSWORD` or `ADMIN_PASSWORD` are missing.
 - In-memory tokens are cleared on restart — users will need to log in again after a redeploy.
 - The `certs/` directory is gitignored; do not commit TLS private keys.
-
