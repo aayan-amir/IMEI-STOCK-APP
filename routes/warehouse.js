@@ -214,11 +214,11 @@ router.post('/dispatches', adminOnly, async (req, res) => {
         };
       });
 
-      const movedSet = new Set(uniqImeis);
+      const imeiSet = new Set(uniqImeis);
       await req.models.Phone.insertMany(phonesToCreate, { ordered: true });
       const remaining = hqItems.filter(it => {
         const imei = normalizeImei(it?.imei);
-        return !imei || !movedSet.has(imei);
+        return !imei || !imeiSet.has(imei);
       });
       await req.models.HQStockModel.findOneAndUpdate(
         { key: 'hq' },

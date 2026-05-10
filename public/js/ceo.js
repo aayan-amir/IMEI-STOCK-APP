@@ -595,7 +595,10 @@ async function loadLogs(reset) {
   const page = Array.isArray(data) ? data : [];
   allLogsData = shouldReset ? page : allLogsData.concat(page);
   logsHasMore = page.length === LOG_PAGE_LIMIT;
-  if (allLogsData.length) logsBeforeCursor = allLogsData[allLogsData.length - 1]?._id || allLogsData[allLogsData.length - 1]?.ts || logsBeforeCursor;
+  if (allLogsData.length) {
+    const lastLog = allLogsData[allLogsData.length - 1];
+    logsBeforeCursor = lastLog?._id || lastLog?.ts || logsBeforeCursor;
+  }
   const body = $('logs-body');
   if (!allLogsData.length) {
     body.innerHTML = `<div class="empty"><div class="empty-icon">—</div><h3>No activity yet</h3><p>Actions will appear here once the system is in use</p></div>`;
@@ -805,7 +808,7 @@ function printReport(id) {
 
 function toggleReportBody(uid) {
   const el = $('rpt-body-' + uid); if (!el) return;
-  const open = el.style.display !== 'none';
+  const open = el.style.display !== 'none' && el.style.display !== '';
   if (!open) {
     if (!reportBodyCache[uid]) {
       const report = allReports.find(x => x._id === uid);
@@ -833,6 +836,7 @@ async function deleteReport(id) {
   if (!confirm('Delete this report?')) return;
   const d = await api('DELETE', `/api/reports/${id}`);
   if (d.error) { showToast(d.error, 'error'); return; }
+  delete reportBodyCache[id];
   showToast('Report deleted', 'warn');
   loadReports();
 }

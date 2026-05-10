@@ -22,14 +22,14 @@ router.get('/logs', adminOnly, async (req, res) => {
         if (beforeLog?.ts) {
           const olderByTs = { ts: { $lt: beforeLog.ts } };
           const olderById = { ts: beforeLog.ts, _id: { $lt: beforeLog._id } };
-          if (shopVal) {
-            query = { $or: [{ shop: shopVal, ...olderByTs }, { shop: shopVal, ...olderById }] };
-          } else {
-            query = { $or: [olderByTs, olderById] };
-          }
+          query = shopVal ? { shop: shopVal, $or: [olderByTs, olderById] } : { $or: [olderByTs, olderById] };
         }
       } else {
-        query.ts = { $lt: beforeRaw };
+        const parsedBefore = Date.parse(beforeRaw);
+        if (!Number.isFinite(parsedBefore)) {
+          return res.status(400).json({ error: 'Invalid before cursor' });
+        }
+        query.ts = { $lt: new Date(parsedBefore).toISOString() };
       }
     }
 
