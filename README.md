@@ -1,4 +1,4 @@
-# stock-ly.com — IMEI Stock Management App
+# stock-ly — IMEI Stock Management App
 
 A multi-tenant inventory and operations app for phone businesses.
 

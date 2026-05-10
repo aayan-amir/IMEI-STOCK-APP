@@ -6,7 +6,7 @@
 
 ## Overview
 
-**stock-ly.com** is a multi-tenant phone stock management web app.  
+**stock-ly** is a multi-tenant phone stock management web app.  
 - **Backend**: Node.js + Express + MongoDB (Mongoose), single `server.js` entry point.  
 - **Frontend**: Single-page app in `public/index.html`, split into modular JS files loaded via `<script>` tags.  
 - **Multi-tenancy**: Each client has isolated data in its own MongoDB database (`tenant_<clientId>`).
