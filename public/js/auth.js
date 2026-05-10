@@ -5,10 +5,20 @@
 var _RL_MAX = 5;
 var _RL_MS  = 30 * 60 * 1000;
 var _RL_MSG = 'Too many failed attempts. Contact 03043648597 to reset your password.';
+var _rlCache = Object.create(null);
 
 function _rlGet(key) {
-  try { return JSON.parse(localStorage.getItem('rl_' + key)) || { n: 0, until: 0 }; }
-  catch (e) { return { n: 0, until: 0 }; }
+  if (_rlCache[key]) return _rlCache[key];
+  let data = { n: 0, until: 0 };
+  try {
+    const raw = localStorage.getItem('rl_' + key);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === 'object') {
+      data = { n: Number(parsed.n) || 0, until: Number(parsed.until) || 0 };
+    }
+  } catch (e) { data = { n: 0, until: 0 }; }
+  _rlCache[key] = data;
+  return data;
 }
 function _rlFail(key) {
   var d = _rlGet(key);
@@ -16,8 +26,9 @@ function _rlFail(key) {
   d.n = (d.n || 0) + 1;
   if (d.n >= _RL_MAX) d.until = Date.now() + _RL_MS;
   localStorage.setItem('rl_' + key, JSON.stringify(d));
+  _rlCache[key] = d;
 }
-function _rlClear(key) { localStorage.removeItem('rl_' + key); }
+function _rlClear(key) { localStorage.removeItem('rl_' + key); delete _rlCache[key]; }
 function _rlLocked(key) { var d = _rlGet(key); return d.until && Date.now() < d.until; }
 function _rlTimeLeft(key) { var d = _rlGet(key); return (!d.until || Date.now() >= d.until) ? 0 : d.until - Date.now(); }
 function _rlRemaining(key) { var d = _rlGet(key); return _rlLocked(key) ? 0 : Math.max(0, _RL_MAX - (d.n || 0)); }
@@ -39,10 +50,11 @@ function renderLockStatus() {
   var list = $('sa-lock-list');
   if (!list) return;
   list.innerHTML = locks.map(function(l) {
-    var locked = _rlLocked(l.key);
     var d = _rlGet(l.key);
+    var now = Date.now();
+    var locked = !!(d.until && now < d.until);
     var n = d.n || 0;
-    var mins = locked ? Math.ceil(_rlTimeLeft(l.key) / 60000) : 0;
+    var mins = locked ? Math.ceil((d.until - now) / 60000) : 0;
     var statusText = locked
       ? ('🔒 Locked — ' + mins + 'm remaining')
       : n > 0 ? ('⚠️ ' + n + '/' + _RL_MAX + ' failed attempts')
