@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const { adminOnly } = require('../middleware/auth');
+const normalizeImei = (value) => String(value || '').replace(/\D/g, '');
 
 // ── Get HQ warehouse stock ─────────────────────────────────────────────────
 router.get('/hqstock', adminOnly, async (req, res) => {
@@ -37,12 +38,12 @@ router.delete('/hqstock/:imei', adminOnly, async (req, res) => {
     const stock = await req.models.HQStockModel.findOne({ key: 'hq' });
     if (!stock) return res.json({ success: true });
     
-    const imeiToMatch = raw.replace(/\D/g, '');
+    const imeiToMatch = normalizeImei(raw);
     const isStandardImei = /^\d{15}$/.test(imeiToMatch);
 
     stock.items = (stock.items || []).filter(it => {
       const itImei = String(it?.imei || '');
-      const itImeiClean = itImei.replace(/\D/g, '');
+      const itImeiClean = normalizeImei(itImei);
       
       // If it's a standard 15-digit IMEI, match strictly on digits
       if (isStandardImei && itImeiClean === imeiToMatch) return false;
@@ -92,8 +93,8 @@ router.post('/shipments', adminOnly, async (req, res) => {
     const imeiItems = items.filter(it => it && it.imei);
     if (imeiItems.length === items.length) {
       const normalized = imeiItems.map(it => ({
-        imei:     String(it.imei  || '').replace(/\D/g, ''),
-        imei2:    String(it.imei2 || '').replace(/\D/g, '') || undefined,
+        imei:     normalizeImei(it.imei),
+        imei2:    normalizeImei(it.imei2) || undefined,
         cat:      String(it.cat   || '').trim() || undefined,
         brand:    String(it.brand || '').trim() || undefined,
         model:    String(it.model || '').trim() || undefined,
@@ -122,7 +123,7 @@ router.post('/shipments', adminOnly, async (req, res) => {
 
       const stock    = await req.models.HQStockModel.findOne({ key: 'hq' });
       const hqItems  = Array.isArray(stock?.items) ? stock.items : [];
-      const hqImeiSet = new Set(hqItems.map(x => String(x?.imei || '').replace(/\D/g, '')).filter(Boolean));
+      const hqImeiSet = new Set(hqItems.map(x => normalizeImei(x?.imei)).filter(Boolean));
       const dupHq    = normalized.find(it => hqImeiSet.has(it.imei));
       if (dupHq) return res.status(409).json({ error: `IMEI already exists in warehouse: ${dupHq.imei}` });
 
@@ -172,7 +173,7 @@ router.post('/dispatches', adminOnly, async (req, res) => {
     const imeiItems = items.filter(it => it && it.imei);
     // IMEI flow: move phones from warehouse to selected shop's stock
     if (imeiItems.length === items.length) {
-      const normalizedImei = imeiItems.map(it => String(it.imei || '').replace(/\D/g, ''));
+      const normalizedImei = imeiItems.map(it => normalizeImei(it.imei));
       const invalid = normalizedImei.find(imei => !/^\d{15}$/.test(imei));
       if (invalid) return res.status(400).json({ error: `Invalid IMEI: ${invalid}` });
 
@@ -186,9 +187,11 @@ router.post('/dispatches', adminOnly, async (req, res) => {
 
       const stock    = await req.models.HQStockModel.findOne({ key: 'hq' });
       const hqItems  = Array.isArray(stock?.items) ? stock.items : [];
-      const byImei   = new Map(
-        hqItems.filter(it => it && it.imei).map(it => [String(it.imei).replace(/\D/g, ''), it]),
-      );
+      const byImei   = new Map();
+      for (const it of hqItems) {
+        if (!it || !it.imei) continue;
+        byImei.set(normalizeImei(it.imei), it);
+      }
       const missing = uniqImeis.find(imei => !byImei.has(imei));
       if (missing) return res.status(400).json({ error: `IMEI not found in warehouse: ${missing}` });
 
@@ -211,10 +214,11 @@ router.post('/dispatches', adminOnly, async (req, res) => {
         };
       });
 
+      const movedSet = new Set(uniqImeis);
       await req.models.Phone.insertMany(phonesToCreate, { ordered: true });
       const remaining = hqItems.filter(it => {
-        const imei = String(it?.imei || '').replace(/\D/g, '');
-        return !imei || !uniqImeis.includes(imei);
+        const imei = normalizeImei(it?.imei);
+        return !imei || !movedSet.has(imei);
       });
       await req.models.HQStockModel.findOneAndUpdate(
         { key: 'hq' },
@@ -237,7 +241,7 @@ router.get('/dispatches', adminOnly, async (req, res) => {
     const dispatches = await req.models.Dispatch.find().sort({ date: -1 });
     const allImeis = [...new Set(
       dispatches.flatMap(d => (d.items || [])
-        .map(it => String(it?.imei || '').replace(/\D/g, ''))
+        .map(it => normalizeImei(it?.imei))
         .filter(Boolean)),
     )];
 
@@ -252,7 +256,7 @@ router.get('/dispatches', adminOnly, async (req, res) => {
 
     const withStats = dispatches.map(d => {
       const dItems     = d.items || [];
-      const imeis      = dItems.map(it => String(it?.imei || '').replace(/\D/g, '')).filter(Boolean);
+      const imeis      = dItems.map(it => normalizeImei(it?.imei)).filter(Boolean);
       const totalPhones = imeis.length || dItems.reduce((s, it) => s + (Number(it?.qty) || 0), 0);
       const soldPhones  = imeis.reduce((s, imei) => s + (soldSet.has(`${d.toShop}|${imei}`) ? 1 : 0), 0);
       return { ...d.toObject(), totalPhones, soldPhones };

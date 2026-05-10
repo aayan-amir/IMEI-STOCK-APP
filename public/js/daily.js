@@ -224,9 +224,17 @@ async function saveDay() {
   showToast(`Day saved — ${shop} / ${date}`, 'success');
 }
 function exportDayCSV() {
-  let csv = `${dayState.shop} — ${dayState.date}\nDESCRIPTION,OP,IN,OUT,BAL,COST,SOLD FOR,P/L\n`;
-  Object.entries(CATS).forEach(([ck, cv]) => { const rows = dayState.cats[ck]?.rows || []; if (!rows.length) return; csv += `\n${cv.label}\n`; rows.forEach(r => { const op = r.op || 0, inQ = r.inQty || 0, out = r.out || 0, bal = op + inQ - out, tc = (r.costPerUnit || 0) * out, sa = r.soldFor || 0; csv += `${r.name},${op},${inQ},${out},${bal},${r.costPerUnit || 0},${sa},${sa - tc}\n`; }); });
-  dlCSV(csv, `${dayState.shop}_${dayState.date}.csv`);
+  const lines = [`${dayState.shop} — ${dayState.date}`, 'DESCRIPTION,OP,IN,OUT,BAL,COST,SOLD FOR,P/L'];
+  Object.entries(CATS).forEach(([ck, cv]) => {
+    const rows = dayState.cats[ck]?.rows || [];
+    if (!rows.length) return;
+    lines.push('', cv.label);
+    rows.forEach(r => {
+      const op = r.op || 0, inQ = r.inQty || 0, out = r.out || 0, bal = op + inQ - out, tc = (r.costPerUnit || 0) * out, sa = r.soldFor || 0;
+      lines.push(`${r.name},${op},${inQ},${out},${bal},${r.costPerUnit || 0},${sa},${sa - tc}`);
+    });
+  });
+  dlCSV(lines.join('\n'), `${dayState.shop}_${dayState.date}.csv`);
 }
 
 function printDaySheet() {
@@ -680,4 +688,3 @@ async function renderMonthly() {
   if (!html) html = `<div class="empty"><div class="empty-icon">—</div><h3>No data for ${month}</h3></div>`;
   $('monthly-body').innerHTML = html;
 }
-

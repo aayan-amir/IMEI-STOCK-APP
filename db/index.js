@@ -151,6 +151,8 @@ const AuditLogSchema = new mongoose.Schema({
   details: mongoose.Schema.Types.Mixed,
   ts: { type: String, default: () => new Date().toISOString() },
 });
+AuditLogSchema.index({ ts: -1 });
+AuditLogSchema.index({ shop: 1, ts: -1 });
 
 const ReportSchema = new mongoose.Schema({
   type: String,   // 'daily' | 'monthly'

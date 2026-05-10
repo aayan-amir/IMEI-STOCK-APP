@@ -535,29 +535,26 @@ var LOG_LABELS = {
   stock_delete: 'Phone Deleted from Stock',
 };
 var LOG_DOT = { stock_add: 'add', stock_sell: 'sell', stock_delete: 'delete' };
+var LOG_PAGE_LIMIT = 200;
+var logsBeforeCursor = '';
+var logsHasMore = false;
 
-async function loadLogs() {
-  const shop = $('log-shop')?.value || '';
-  const url = shop ? `/api/logs?shop=${shop}` : '/api/logs';
-  const data = await api('GET', url);
-  allLogsData = Array.isArray(data) ? data : [];
-  const body = $('logs-body');
-  if (!allLogsData.length) {
-    body.innerHTML = `<div class="empty"><div class="empty-icon">—</div><h3>No activity yet</h3><p>Actions will appear here once the system is in use</p></div>`;
-    return;
-  }
-  body.innerHTML = `<div>${allLogsData.map(l => {
-    const dotCls = LOG_DOT[l.action] || 'other';
-    const label = LOG_LABELS[l.action] || l.action;
-    const det = l.details || {};
-    let detail = '';
-    if (l.action === 'stock_add') detail = `${det.brand || ''} ${det.model || ''} · IMEI ${det.imei || ''} · ${det.buyPrice ? pkr(det.buyPrice) : 'no price'}`;
-    else if (l.action === 'stock_sell') detail = `${det.brand || ''} ${det.model || ''} · IMEI ${det.imei || ''} · Sold ${det.salePrice ? pkr(det.salePrice) : ''} · Profit ${det.profit != null ? pkr(det.profit) : '—'}${det.buyerName ? ' · Buyer: ' + det.buyerName : ''}`;
-    else if (l.action === 'stock_delete') detail = `ID: ${det.id || ''}`;
-    const shopBadge = l.shop ? `<span style="background:rgba(${SHOP_RGBA[l.shop] || '22,163,74'},.15);color:${SHOP_COLOR[l.shop] || 'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[l.shop] || '22,163,74'},.3);padding:1px 7px;border-radius:10px;font-size:.57rem;font-weight:700;margin-right:6px">Shop ${l.shop}</span>` : '';
-    const d = new Date(l.ts);
-    const ts = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    return `<div class="log-row">
+function _buildLogDetail(l) {
+  const det = l.details || {};
+  if (l.action === 'stock_add') return `${det.brand || ''} ${det.model || ''} · IMEI ${det.imei || ''} · ${det.buyPrice ? pkr(det.buyPrice) : 'no price'}`;
+  if (l.action === 'stock_sell') return `${det.brand || ''} ${det.model || ''} · IMEI ${det.imei || ''} · Sold ${det.salePrice ? pkr(det.salePrice) : ''} · Profit ${det.profit != null ? pkr(det.profit) : '—'}${det.buyerName ? ' · Buyer: ' + det.buyerName : ''}`;
+  if (l.action === 'stock_delete') return `ID: ${det.id || ''}`;
+  return '';
+}
+
+function _logRowHtml(l) {
+  const dotCls = LOG_DOT[l.action] || 'other';
+  const label = LOG_LABELS[l.action] || l.action;
+  const detail = _buildLogDetail(l);
+  const shopBadge = l.shop ? `<span style="background:rgba(${SHOP_RGBA[l.shop] || '22,163,74'},.15);color:${SHOP_COLOR[l.shop] || 'var(--a5)'};border:1px solid rgba(${SHOP_RGBA[l.shop] || '22,163,74'},.3);padding:1px 7px;border-radius:10px;font-size:.57rem;font-weight:700;margin-right:6px">Shop ${l.shop}</span>` : '';
+  const d = new Date(l.ts);
+  const ts = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return `<div class="log-row">
   <div class="log-dot ${dotCls}"></div>
   <div class="log-body">
     <div class="log-action">${shopBadge}${label}</div>
@@ -565,7 +562,52 @@ async function loadLogs() {
   </div>
   <div class="log-ts">${ts}</div>
 </div>`;
-  }).join('')}</div>`;
+}
+
+function _renderLogsLoadMore() {
+  const body = $('logs-body');
+  if (!body) return;
+  const oldWrap = $('logs-load-more-wrap');
+  if (oldWrap) oldWrap.remove();
+  if (!logsHasMore || !allLogsData.length) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'logs-load-more-wrap';
+  wrap.style.cssText = 'display:flex;justify-content:center;padding:.75rem .25rem 0;';
+  wrap.innerHTML = '<button id="logs-load-more-btn" class="btn bo" style="font-size:.62rem">Load more</button>';
+  body.appendChild(wrap);
+  const btn = $('logs-load-more-btn');
+  if (btn) btn.onclick = function() { loadLogs(false); };
+}
+
+async function loadLogs(reset) {
+  const shouldReset = reset !== false;
+  const shop = $('log-shop')?.value || '';
+  if (shouldReset) {
+    logsBeforeCursor = '';
+    logsHasMore = false;
+    allLogsData = [];
+  }
+  const params = [`limit=${LOG_PAGE_LIMIT}`];
+  if (shop) params.push(`shop=${encodeURIComponent(shop)}`);
+  if (logsBeforeCursor) params.push(`before=${encodeURIComponent(logsBeforeCursor)}`);
+  const url = `/api/logs?${params.join('&')}`;
+  const data = await api('GET', url);
+  const page = Array.isArray(data) ? data : [];
+  allLogsData = shouldReset ? page : allLogsData.concat(page);
+  logsHasMore = page.length === LOG_PAGE_LIMIT;
+  if (allLogsData.length) logsBeforeCursor = allLogsData[allLogsData.length - 1]?._id || allLogsData[allLogsData.length - 1]?.ts || logsBeforeCursor;
+  const body = $('logs-body');
+  if (!allLogsData.length) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">—</div><h3>No activity yet</h3><p>Actions will appear here once the system is in use</p></div>`;
+    return;
+  }
+  if (shouldReset) {
+    body.innerHTML = `<div id="logs-list">${allLogsData.map(_logRowHtml).join('')}</div>`;
+  } else {
+    const list = $('logs-list');
+    if (list) list.insertAdjacentHTML('beforeend', page.map(_logRowHtml).join(''));
+  }
+  _renderLogsLoadMore();
 }
 
 // ── PRINT / PDF HELPER ──
@@ -613,10 +655,12 @@ tr:nth-child(even){background:#fafafa}
 
 // ── REPORTS / INVOICES ───────────────────────────
 var allReports = [];
+var reportBodyCache = Object.create(null);
 
 async function loadReports() {
   const data = await api('GET', '/api/reports');
   allReports = Array.isArray(data) ? data : [];
+  reportBodyCache = Object.create(null);
   renderReports();
 }
 
@@ -650,9 +694,7 @@ function renderReports() {
         <button class="bx" onclick="event.stopPropagation();deleteReport('${uid}')" title="Delete">✕</button>
         <span id="rpt-arr-${uid}" style="color:var(--text2);font-size:.75rem;margin-left:4px">▶</span>
       </div>
-      <div class="report-body" id="rpt-body-${uid}">
-        ${renderReportData(r)}
-      </div>
+      <div class="report-body" id="rpt-body-${uid}" style="display:none"></div>
     </div>`;
     }).join('')}
 </div>`;
@@ -763,7 +805,17 @@ function printReport(id) {
 
 function toggleReportBody(uid) {
   const el = $('rpt-body-' + uid); if (!el) return;
-  const open = el.style.display !== 'none' && el.style.display !== '';
+  const open = el.style.display !== 'none';
+  if (!open) {
+    if (!reportBodyCache[uid]) {
+      const report = allReports.find(x => x._id === uid);
+      if (report) reportBodyCache[uid] = renderReportData(report);
+    }
+    if (reportBodyCache[uid] && !el.dataset.rendered) {
+      el.innerHTML = reportBodyCache[uid];
+      el.dataset.rendered = '1';
+    }
+  }
   el.style.display = open ? 'none' : 'block';
   const arr = $('rpt-arr-' + uid); if (arr) arr.textContent = open ? '▶' : '▼';
 }
@@ -789,13 +841,24 @@ function exportReportCSV(id) {
   const r = allReports.find(x => x._id === id);
   if (!r) return;
   const d = r.data || {};
-  let csv = `Report Type,${r.type}\nShop,${r.shop}\nPeriod,${r.period}\nGenerated,${r.generatedAt}\n\n`;
-  csv += `Total Sales,${d.totalSales || 0}\nCost of Sales,${d.totalCost || 0}\nGross Profit,${d.grossProfit || 0}\nExpenses,${d.expenses || d.totalExpenses || 0}\nNet Profit,${d.netProfit || 0}\nUnits Sold,${d.unitsSold || 0}\n`;
+  const lines = [
+    `Report Type,${r.type}`,
+    `Shop,${r.shop}`,
+    `Period,${r.period}`,
+    `Generated,${r.generatedAt}`,
+    '',
+    `Total Sales,${d.totalSales || 0}`,
+    `Cost of Sales,${d.totalCost || 0}`,
+    `Gross Profit,${d.grossProfit || 0}`,
+    `Expenses,${d.expenses || d.totalExpenses || 0}`,
+    `Net Profit,${d.netProfit || 0}`,
+    `Units Sold,${d.unitsSold || 0}`,
+  ];
   if (d.salesList?.length) {
-    csv += `\nSales List\nPhone,IMEI,Buyer,Cost,Sold For,Profit\n`;
-    d.salesList.forEach(s => csv += `${s.model || ''},${s.imei || ''},${s.buyerName || ''},${s.buyPrice || ''},${s.salePrice || ''},${s.profit || ''}\n`);
+    lines.push('', 'Sales List', 'Phone,IMEI,Buyer,Cost,Sold For,Profit');
+    d.salesList.forEach(s => lines.push(`${s.model || ''},${s.imei || ''},${s.buyerName || ''},${s.buyPrice || ''},${s.salePrice || ''},${s.profit || ''}`));
   }
-  dlCSV(csv, `Report_${r.shop}_${r.period}.csv`);
+  dlCSV(lines.join('\n'), `Report_${r.shop}_${r.period}.csv`);
 }
 
 // ── MODAL MOVED TO UTILS.JS ──
@@ -908,4 +971,3 @@ function applyShopMode(shop) {
     _nav(page);
   };
 }
-
