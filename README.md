@@ -1,185 +1,200 @@
 # stock-ly.com — IMEI Stock Management App
 
-A web-based stock management system for mobile phone shops. Track inventory by IMEI, record sales, manage expenses, view analytics, and run multi-shop operations — all from a single-page interface that works on desktop and mobile.
+A multi-tenant inventory and operations app for phone businesses.
+
+It supports client-based isolation, IMEI lifecycle tracking, shop operations, warehouse/dispatch workflows, daily accounting, analytics, reporting, backups, and super-admin tenant management.
 
 ---
 
-## Features
+## Current App State (What it does now)
 
-| Area | Capabilities |
-|---|---|
-| **IMEI Scan** | Scan barcodes via camera or type a 15-digit IMEI to look up or sell a device |
-| **IMEI Stock** | Browse and search the full inventory for the active shop |
-| **Sales Log** | View all completed sales with buyer details and profit |
-| **Daily Sheet** | Record per-shop daily cash flow, expenses, purchases, and transfers |
-| **Expenses** | Log and categorise shop running costs by month |
-| **History** | Browse historical daily sheets by shop and date |
-| **CEO Dashboard** | High-level multi-shop revenue, cost, profit, and unit summary |
-| **Warehouse** | Manage head-office (HQ) stock levels |
-| **Shipments** | Record incoming supplier shipments with item-level detail |
-| **Monthly P&L** | Month-by-month profit & loss breakdown per shop |
-| **Analytics** | Model-level and shop-level sales analytics |
-| **Contacts** | Customer address book with name, phone, and email |
-| **Invoices** | Generate and manage customer invoices/reports |
-| **Activity Log** | Audit trail of every action taken in the system |
-| **Backup / Restore** | Export and import a full JSON snapshot of all data |
+- **Multi-tenant by client** (`clientId`)
+- **Per-client auth** with separate:
+  - **Gate password** (site access)
+  - **Admin password** (full access)
+- **Shop mode** for restricted shop-level access
+- **Super Admin** panel to:
+  - verify super-admin password
+  - create/update clients
+  - list clients
+  - pause/resume clients
+  - delete clients (and tenant DB)
+
+Frontend is a vanilla JS single-page app under `public/`.
+Backend is Express + MongoDB with tenant model routing.
+
+---
+
+## Main Modules
+
+- IMEI Scan / Add / Sell
+- IMEI Stock Management
+- Sales Log
+- Daily Sheet (cashflow + categories)
+- Shop Expenses
+- History
+- Warehouse (`hqstock`)
+- Shipments and Dispatches
+- Monthly P&L
+- CEO Summary Dashboard
+- Model Analytics
+- Contacts / Customers
+- Reports (daily/monthly)
+- Activity Logs
+- Backup / Restore
+- Product Inventory (`/api/products`)
 
 ---
 
 ## Tech Stack
 
 - **Runtime:** Node.js
-- **Framework:** Express 5
-- **Database:** MongoDB via Mongoose
-- **Frontend:** Single-page app served as `public/index.html` (vanilla JS, no build step)
-- **Auth:** Bearer tokens (in-memory, 8-hour TTL)
-- **Rate limiting:** `express-rate-limit` — 300 req/min on all `/api/` routes; 10 attempts per 15 min on the auth endpoint
+- **Server:** Express 5
+- **Database:** MongoDB + Mongoose
+- **Frontend:** Vanilla JS, HTML, CSS (no build step)
+- **Security middleware:** Helmet, express-rate-limit
+- **Password hashing:** bcrypt
 
 ---
 
-## Getting Started
+## Authentication & Session Model
 
-### Prerequisites
+### Login Flow
+1. Client lookup (`/api/clients/lookup?clientId=...`)
+2. Gate verification (`POST /api/auth`, `type=gate`)
+3. Role auth (`type=admin` or `type=shop`)
 
-- Node.js 18+
-- A running MongoDB instance (local or hosted, e.g. MongoDB Atlas)
+### Sessions
+- Bearer token sessions are stored in MongoDB (`Session` model)
+- TTL expiry: **8 hours**
+- Session includes `role`, `shop`, `clientId`, `validShops`
 
-### Installation
+### Rate Limits
+- `/api/` global: 300 requests/min per IP
+- `/api/auth`: 10 attempts / 15 min
+- `/api/superadmin/*`: 5 attempts / 15 min
+- `/api/clients/lookup`: 100 attempts / 15 min
 
-```bash
-git clone https://github.com/aayan-amir/IMEI-STOCK-APP.git
-cd IMEI-STOCK-APP
-npm install
-```
+---
 
-### Configuration
+## Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values, **or** set the variables directly in your host's dashboard (e.g. Render → Environment):
+Create `.env` (or set in your host):
 
 ```env
-# Required
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/phone-stock
-
-# Auth passwords — server refuses to start if either is missing
-GATE_PASSWORD=your_gate_password
-ADMIN_PASSWORD=your_admin_password
-
-# Optional
+MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/imei-stock
 PORT=3000
 NODE_ENV=production
-
-# Reverse-proxy trust (true | false | integer hop count)
-# Render sits behind one proxy, so 1 is correct
 TRUST_PROXY=1
-
-# Comma-separated valid shop identifiers (default: 456,192,G15)
-# VALID_SHOPS=456,192,G15
+SUPER_ADMIN_PASSWORD=change_this_to_a_strong_secret
 ```
 
-> **Security note:** The server will **refuse to start** if `GATE_PASSWORD` or `ADMIN_PASSWORD` are not set. There are no insecure defaults.
+### Notes
+- `SUPER_ADMIN_PASSWORD` currently has a code fallback (`superadmin`) if unset; set this explicitly in production.
+- CORS is currently open in server code (`app.use(cors())`).
 
-### Running
+---
+
+## Run Locally
 
 ```bash
+npm install
 node server.js
 ```
 
-The app will be available at `http://localhost:3000` (or the port you configured).
+App: `http://localhost:3000`
 
 ---
 
-## Authentication
+## API Overview
 
-Login happens in two steps:
+All endpoints below are mounted under `/api`.
 
-1. **Gate check** — enter the gate password to confirm site access (no token is issued).
-2. **Role login** — choose a role:
-   - **Admin** — full access to all pages and API endpoints.
-   - **Shop** — scoped to a single shop; can add stock and sell phones for that shop only.
+### Client & Auth
+- `GET /clients/lookup?clientId=...`
+- `POST /auth`
+- `PUT /auth/password` (admin only)
 
-Sessions expire after **8 hours** and are stored in server memory (tokens are lost on restart).
+### Super Admin
+- `POST /superadmin/verify`
+- `POST /superadmin/clients`
+- `GET /superadmin/clients` (uses `X-Super-Admin-Password` header)
+- `DELETE /superadmin/clients/:clientId`
 
-### Shops
+### Stock / Sales
+- `GET /lookup/:imei`
+- `GET /stock`
+- `POST /stock/add`
+- `POST /stock/sell`
+- `PUT /stock/batch` (admin)
+- `PUT /stock/:id` (admin)
+- `DELETE /stock/:id` (admin)
+- `GET /stats`
+- `GET /sales` (admin)
+- `DELETE /sales` (admin)
+- `DELETE /sales/by-imei/:imei` (admin)
+- `DELETE /sales/:id` (admin)
 
-The valid shop identifiers are configured via the `VALID_SHOPS` environment variable (comma-separated). The default value is `456,192,G15`.
+### Days / Expenses / Logs / Customers
+- `GET /days` (admin)
+- `GET /days/:shop/:date` (admin)
+- `PUT /days/:shop/:date` (admin)
+- `DELETE /days/:shop/:date` (admin)
+- `GET /shopexpenses` (admin)
+- `POST /shopexpenses` (admin)
+- `DELETE /shopexpenses/:id` (admin)
+- `GET /logs` (admin)
+- `GET /customers` (admin)
+- `POST /customers` (admin)
+- `PUT /customers/:id` (admin)
+- `DELETE /customers/:id` (admin)
+
+### Warehouse / Movement
+- `GET /hqstock` (admin)
+- `PUT /hqstock` (admin)
+- `DELETE /hqstock/:imei` (admin)
+- `DELETE /hqstock/at/:index` (admin)
+- `POST /shipments` (admin)
+- `GET /shipments` (admin)
+- `DELETE /shipments/:id` (admin)
+- `POST /dispatches` (admin)
+- `GET /dispatches` (admin)
+- `DELETE /dispatches/:id` (admin)
+
+### Reports / Analytics / Backup / Products
+- `GET /reports` (admin)
+- `POST /reports/generate` (admin)
+- `DELETE /reports/:id` (admin)
+- `GET /analytics/models` (admin)
+- `GET /ceo/summary` (admin)
+- `GET /backup` (admin)
+- `POST /restore` (admin)
+- `GET /products`
+- `POST /products`
+- `PUT /products/:id`
+- `DELETE /products/:id`
 
 ---
 
-## API Reference
+## Repository Layout
 
-All endpoints require a `Authorization: Bearer <token>` header unless noted.
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/auth` | — | Issue session token |
-| `GET` | `/api/lookup/:imei` | any | Look up a phone by IMEI |
-| `GET` | `/api/stock` | any | List stock (shop-scoped for shop role; add `?all=true` to include sold) |
-| `POST` | `/api/stock/add` | any | Add a phone to stock |
-| `POST` | `/api/stock/sell` | any | Mark a phone as sold |
-| `PUT` | `/api/stock/:id` | admin | Edit a stock record |
-| `DELETE` | `/api/stock/:id` | admin | Delete a stock record |
-| `GET` | `/api/sales` | admin | List all sales |
-| `DELETE` | `/api/sales` | admin | Bulk-delete sales |
-| `DELETE` | `/api/sales/:id` | admin | Delete a single sale |
-| `GET` | `/api/stats` | any | Summary stats (total, in-stock, sold, profit) |
-| `GET` | `/api/days` | admin | List daily sheets |
-| `GET` | `/api/days/:shop/:date` | admin | Get a specific daily sheet |
-| `PUT` | `/api/days/:shop/:date` | admin | Save/update a daily sheet |
-| `DELETE` | `/api/days/:shop/:date` | admin | Delete a daily sheet |
-| `GET` | `/api/shopexpenses` | admin | List shop expenses |
-| `POST` | `/api/shopexpenses` | admin | Add a shop expense |
-| `DELETE` | `/api/shopexpenses/:id` | admin | Delete an expense |
-| `GET` | `/api/hqstock` | admin | Get HQ warehouse stock |
-| `PUT` | `/api/hqstock` | admin | Update HQ warehouse stock |
-| `POST` | `/api/shipments` | admin | Record an incoming shipment |
-| `GET` | `/api/shipments` | admin | List shipments |
-| `POST` | `/api/dispatches` | admin | Record a dispatch to a shop |
-| `GET` | `/api/dispatches` | admin | List dispatches |
-| `GET` | `/api/customers` | admin | List customers |
-| `POST` | `/api/customers` | admin | Add a customer |
-| `PUT` | `/api/customers/:id` | admin | Update a customer |
-| `DELETE` | `/api/customers/:id` | admin | Delete a customer |
-| `GET` | `/api/logs` | admin | List audit log entries |
-| `GET` | `/api/analytics/models` | admin | Model-level sales analytics |
-| `GET` | `/api/ceo/summary` | admin | CEO multi-shop summary |
-| `GET` | `/api/reports` | admin | List saved reports |
-| `POST` | `/api/reports/generate` | admin | Generate a daily or monthly report |
-| `DELETE` | `/api/reports/:id` | admin | Delete a report |
-| `GET` | `/api/backup` | admin | Download full JSON backup |
-| `POST` | `/api/restore` | admin | Restore from JSON backup |
-
----
-
-## Project Structure
-
-```
-.
-├── server.js          # Express server — routes, models, auth
+```text
+IMEI-STOCK-APP/
+├── server.js
+├── db/
+├── middleware/
+├── routes/
 ├── public/
-│   └── index.html     # Single-page frontend (HTML + CSS + JS)
-├── certs/             # TLS certificate files (for local HTTPS if needed)
+│   ├── index.html
+│   ├── css/app.css
+│   └── js/
 ├── package.json
-└── .gitignore
+└── README.md
 ```
 
 ---
 
-## Deployment
+## Testing Status
 
-The app can be deployed to any Node.js-compatible host (Render, Railway, Heroku, VPS, etc.).
-
-### Render
-
-1. Connect the GitHub repo in the Render dashboard.
-2. Set the following environment variables under **Environment**:
-   - `MONGO_URI` — your MongoDB Atlas connection string
-   - `GATE_PASSWORD` — a strong password for gate access
-   - `ADMIN_PASSWORD` — a strong password for admin access
-   - `NODE_ENV=production`
-   - `TRUST_PROXY=1` (Render sits behind one proxy layer)
-3. Render provides HTTPS automatically — no certificate configuration needed in the app.
-
-Key points:
-- The server **refuses to start** if `GATE_PASSWORD` or `ADMIN_PASSWORD` are missing.
-- In-memory tokens are cleared on restart — users will need to log in again after a redeploy.
-- The `certs/` directory is gitignored; do not commit TLS private keys.
+There is currently no implemented automated test suite in `package.json`.
+Running `npm test` returns the placeholder error from the existing script.
