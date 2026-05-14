@@ -6,7 +6,7 @@ It supports client-based isolation, IMEI lifecycle tracking, shop operations, wa
 
 ---
 
-## Current App State (What it does now)
+## Current App State
 
 - **Multi-tenant by client** (`clientId`)
 - **Per-client auth** with separate:
@@ -22,6 +22,11 @@ It supports client-based isolation, IMEI lifecycle tracking, shop operations, wa
 
 Frontend is a vanilla JS single-page app under `public/`.
 Backend is Express + MongoDB with tenant model routing.
+
+### Stability / Readiness Notes
+- Core flows are implemented and wired end-to-end (auth, stock, sales, reports, warehouse, backup, products, super-admin client management).
+- Automated tests are **not implemented yet** in `package.json` (current `npm test` is a placeholder script that exits with error).
+- Security hardening is partially in place (Helmet + rate limits), but some production hardening is still pending (for example: open CORS in current server setup).
 
 ---
 
