@@ -180,14 +180,13 @@ const ClientSchema = new mongoose.Schema({
   status: { type: String, default: 'active', enum: ['active', 'paused'] },
 });
 
-ClientSchema.pre('save', async function(next) {
+ClientSchema.pre('save', async function() {
   if (this.isModified('adminPassword')) {
     this.adminPassword = await bcrypt.hash(this.adminPassword, SALT_ROUNDS);
   }
   if (this.isModified('gatePassword')) {
     this.gatePassword = await bcrypt.hash(this.gatePassword, SALT_ROUNDS);
   }
-  next();
 });
 
 ClientSchema.methods.compareAdminPassword = function(candidate) {
