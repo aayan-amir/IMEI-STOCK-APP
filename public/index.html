@@ -110,18 +110,6 @@
       </div>
     </div>
 
-    <!-- Step 1: gate password (kept for session-restore flow) -->
-    <div id="auth-gate" class="auth-box" style="display:none">
-      <div class="auth-logo">
-        <div class="auth-logo-dot"></div>stock-ly
-      </div>
-      <div class="auth-title">Site Access</div>
-      <div class="auth-sub">Enter the site password to continue.</div>
-      <input type="password" class="auth-input" id="auth-gate-input" placeholder="Password…"
-        autocomplete="current-password" onkeydown="if(event.key==='Enter')checkGate()">
-      <div class="auth-err" id="auth-gate-err">Incorrect password. Try again.</div>
-      <button class="auth-btn" onclick="checkGate()">Unlock</button>
-    </div>
     <!-- Step 2: admin or shop selection -->
     <div id="auth-role" class="auth-box" style="display:none">
       <div class="auth-logo">

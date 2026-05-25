@@ -51,9 +51,12 @@ async function api(method, url, body) {
         localStorage.removeItem('authToken'); localStorage.removeItem('authRole'); localStorage.removeItem('authShop');
         authRole = null; authShop = null;
         $('auth-overlay').classList.remove('hidden');
-        $('auth-client').style.display = 'none';
-        $('auth-gate').style.display = '';
+        $('auth-client').style.display = '';
+        $('auth-superadmin').style.display = 'none';
         $('auth-role').style.display = 'none';
+        var clientIdInput = $('auth-client-input');
+        if (clientIdInput) clientIdInput.value = localStorage.getItem('clientId') || '';
+        setTimeout(() => $('auth-gate-input-combined')?.focus(), 80);
         showToast('Session expired — please sign in again', 'warn');
       }
       return {};

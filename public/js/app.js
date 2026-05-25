@@ -32,14 +32,16 @@ async function bootApp() {
     $('auth-overlay').classList.add('hidden');
     await bootApp();
   } else {
-    // If we have clientId, skip to gate
+    // If we have clientId, prefill sign-in and focus password
     if (clientId) {
       currentClientId = clientId;
       currentClientShops = JSON.parse(localStorage.getItem('clientShops') || '[]');
       renderDynamicShops();
-      $('auth-client').style.display = 'none';
-      $('auth-gate').style.display = '';
-      setTimeout(() => $('auth-gate-input')?.focus(), 80);
+      $('auth-client').style.display = '';
+      $('auth-role').style.display = 'none';
+      $('auth-superadmin').style.display = 'none';
+      $('auth-client-input').value = clientId;
+      setTimeout(() => $('auth-gate-input-combined')?.focus(), 80);
     } else {
       setTimeout(() => $('auth-client-input')?.focus(), 80);
     }
