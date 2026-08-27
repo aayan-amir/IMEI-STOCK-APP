@@ -79,21 +79,23 @@ function logAction(models, action, shop, role, details) {
     .catch(err => console.error('Audit log error:', err));
 }
 
-// Strict rate limiter for the auth endpoint: 10 attempts per 15 minutes
+// Strict rate limiter for the auth endpoint: 15 attempts per 15 minutes
 const authLimiter = rateLimit({
   windowMs: 15 * 60_000,
-  max: 10,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true,
   message: { ok: false, error: 'Too many attempts, please try again later.' },
 });
 
-// Extremely strict rate limiter for superadmin: 5 attempts per 15 minutes
+// Rate limiter for superadmin verify: skips successful logins so valid users are never locked out
 const superAdminLimiter = rateLimit({
   windowMs: 15 * 60_000,
-  max: 5,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true,
   message: { ok: false, error: 'Too many superadmin attempts, locked for 15 minutes.' },
 });
 

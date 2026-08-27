@@ -144,6 +144,9 @@ async function verifySuperAdmin() {
     $('sa-gate').style.display = 'none';
     $('sa-form').style.display = '';
     loadClientsList();
+  } else if (r.status === 429) {
+    $('sa-gate-err').textContent = 'Too many requests. Please wait a moment before trying again.';
+    $('sa-gate-err').style.display = 'block';
   } else {
     _rlFail('sa');
     $('sa-gate-err').textContent = _rlErrMsg('sa', 'Incorrect super admin password.');
