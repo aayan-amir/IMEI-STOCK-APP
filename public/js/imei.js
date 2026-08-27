@@ -1046,7 +1046,13 @@ async function saveBatchEdit() {
 
 async function deletePhone(id) {
   if (!id || id === 'undefined') { showToast('Invalid phone id', 'error'); return; }
-  if (!confirm('Remove this phone from stock?')) return;
+  const ok = await confirmModal({
+    title: 'Remove Phone',
+    message: 'Are you sure you want to remove this phone from stock? If this phone was sold, its sale record will also be removed.',
+    confirmText: 'Remove Phone',
+    danger: true
+  });
+  if (!ok) return;
   // Optimistically hide the card immediately for instant feedback
   const card = document.getElementById('card-' + id);
   if (card) card.style.display = 'none';
@@ -1152,7 +1158,13 @@ function toggleDateGroup(uid) {
 }
 
 async function deleteSale(id) {
-  if (!confirm('Delete this sale? The phone will be returned to stock.')) return;
+  const ok = await confirmModal({
+    title: 'Delete Sale Record',
+    message: 'Are you sure you want to delete this sale? The phone will be returned to active in-stock inventory.',
+    confirmText: 'Return to Stock',
+    danger: true
+  });
+  if (!ok) return;
   const d = await api('DELETE', `/api/sales/${id}`);
   if (d.error) { showToast(d.error, 'error'); return; }
   showToast('Sale deleted — phone returned to stock', 'warn');
@@ -1163,7 +1175,13 @@ async function deleteSale(id) {
 }
 
 async function deleteSaleByIMEI(imei) {
-  if (!confirm('Delete this sale? The phone will be returned to stock.')) return;
+  const ok = await confirmModal({
+    title: 'Delete Sale Record',
+    message: 'Are you sure you want to delete this sale? The phone will be returned to active in-stock inventory.',
+    confirmText: 'Return to Stock',
+    danger: true
+  });
+  if (!ok) return;
   const d = await api('DELETE', `/api/sales/by-imei/${encodeURIComponent(imei)}`);
   if (d.error) { showToast(d.error, 'error'); return; }
   showToast('Sale deleted — phone returned to stock', 'warn');
@@ -1191,7 +1209,13 @@ function exportSalesLogCSV() {
 async function clearAllSales() {
   const shop = $('sl-shop').value;
   const scope = shop === 'ALL' ? 'ALL sales' : 'all sales for Shop ' + shop;
-  if (!confirm(`Permanently delete ${scope} from the database? All phones will be returned to stock. This cannot be undone.`)) return;
+  const ok = await confirmModal({
+    title: 'Clear Sales Log',
+    message: `CRITICAL WARNING: Permanently delete ${scope} from the database? All phones will be returned to in-stock inventory. This cannot be undone.`,
+    confirmText: 'Clear All Sales',
+    danger: true
+  });
+  if (!ok) return;
   const url = shop === 'ALL' ? '/api/sales' : `/api/sales?shop=${shop}`;
   const d = await api('DELETE', url);
   if (d.error) { showToast(d.error, 'error'); return; }
@@ -1279,9 +1303,32 @@ async function saveProductQty(id) {
 }
 
 async function deleteProduct(id, name) {
-  if (!confirm(`Delete "${name}" from products?`)) return;
+  const ok = await confirmModal({
+    title: 'Delete Product',
+    message: `Are you sure you want to delete "${name}" from products / accessories?`,
+    confirmText: 'Delete Product',
+    danger: true
+  });
+  if (!ok) return;
   const d = await api('DELETE', `/api/products/${id}`);
   if (d.error) { showToast(d.error, 'error'); return; }
   showToast(`${name} deleted`, 'warn');
   loadProducts();
+}
+
+function updateSearchClearBtn() {
+  const input = $('imeiSearch');
+  const btn = $('imeiSearchClear');
+  if (!input || !btn) return;
+  btn.style.display = input.value.trim() ? 'block' : 'none';
+}
+
+function clearIMEISearch() {
+  const input = $('imeiSearch');
+  if (input) {
+    input.value = '';
+    updateSearchClearBtn();
+    input.focus();
+    renderIMEIStock();
+  }
 }

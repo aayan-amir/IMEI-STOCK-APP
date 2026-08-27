@@ -21,7 +21,17 @@ router.get('/shopexpenses', adminOnly, async (req, res) => {
 // ── Add shop expense ───────────────────────────────────────────────────────
 router.post('/shopexpenses', adminOnly, async (req, res) => {
   try {
-    const expense = new req.models.ShopExpense({ ...req.body, addedAt: new Date().toISOString() });
+    const { shop, date, month, category, description, amount } = req.body || {};
+    const safeAmount = Number(amount);
+    const expense = new req.models.ShopExpense({
+      shop: String(shop || '').trim(),
+      date: String(date || '').trim(),
+      month: String(month || '').trim(),
+      category: String(category || '').trim(),
+      description: String(description || '').trim(),
+      amount: Number.isFinite(safeAmount) ? safeAmount : 0,
+      addedAt: new Date().toISOString(),
+    });
     await expense.save();
     res.json({ success: true, expense: { ...expense.toObject(), _key: expense.id } });
   } catch (err) {

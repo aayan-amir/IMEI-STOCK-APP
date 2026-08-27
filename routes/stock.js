@@ -44,20 +44,37 @@ router.get('/stock', anyAuth, async (req, res) => {
 // ── Add stock ─────────────────────────────────────────────────────────────
 // Shop users can only add to their own shop
 router.post('/stock/add', anyAuth, async (req, res) => {
-  const body = { ...req.body };
-  if (req.authRole === 'shop') body.shop = req.authShop;
+  const { imei, imei2, brand, model, color, storage, buyPrice, cat, notes } = req.body || {};
+  const shop = req.authRole === 'shop' ? req.authShop : (req.body.shop || null);
 
-  const { imei } = body;
   if (!imei) return res.status(400).json({ error: 'IMEI required' });
-  if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
+  const cleanImei = String(imei).trim();
+  if (!/^\d{15}$/.test(cleanImei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
 
-  const exists = await req.models.Phone.findOne({ imei: String(imei) });
+  const exists = await req.models.Phone.findOne({ imei: cleanImei });
   if (exists) return res.status(409).json({ error: 'IMEI exists' });
 
-  const phone = new req.models.Phone({ ...body, addedAt: new Date().toISOString() });
+  const cleanBuyPrice = Number(buyPrice);
+  const safeBuyPrice = Number.isFinite(cleanBuyPrice) && cleanBuyPrice >= 0 ? cleanBuyPrice : 0;
+
+  const phone = new req.models.Phone({
+    imei: cleanImei,
+    imei2: imei2 ? String(imei2).trim() : undefined,
+    brand: brand ? String(brand).trim() : undefined,
+    model: model ? String(model).trim() : undefined,
+    color: color ? String(color).trim() : undefined,
+    storage: storage ? String(storage).trim() : undefined,
+    buyPrice: safeBuyPrice,
+    shop: shop ? String(shop).trim() : undefined,
+    cat: cat ? String(cat).trim() : undefined,
+    notes: notes ? String(notes).trim() : undefined,
+    status: 'in_stock',
+    addedAt: new Date().toISOString(),
+  });
+
   await phone.save();
-  logAction(req.models, 'stock_add', body.shop || null, req.authRole, {
-    imei, brand: body.brand, model: body.model, buyPrice: body.buyPrice,
+  logAction(req.models, 'stock_add', shop || null, req.authRole, {
+    imei: cleanImei, brand: phone.brand, model: phone.model, buyPrice: safeBuyPrice,
   });
   res.json({ success: true, phone });
 });

@@ -34,6 +34,16 @@ if (trustProxy !== undefined) {
 }
 
 // ── Global Middleware ──────────────────────────────────────────────────────
+// Force HTTPS in production behind reverse proxies (Heroku)
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] && req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(301, `https://${req.hostname}${req.originalUrl}`);
+    }
+    next();
+  });
+}
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
 app.use(cors()); // Allow all for debugging
 

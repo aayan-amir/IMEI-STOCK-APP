@@ -218,10 +218,20 @@ function recalc() {
 <div class="sc g"><div class="sc-lbl">Cash on Hand</div><div class="sc-val g">${pkr(coh)}</div><div class="sc-sub">after transfers</div></div>`;
 }
 
-async function saveDay() {
-  const shop = activeShop === 'HQ' ? (SHOPS[0] || '') : activeShop; const date = $('work-date').value || today();
-  await api('PUT', `/api/days/${shop}/${date}`, dayState);
-  showToast(`Day saved — ${shop} / ${date}`, 'success');
+async function saveDay(btn) {
+  const saveBtn = btn || (window.event ? window.event.target : null);
+  const origText = saveBtn ? saveBtn.textContent : '';
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+  try {
+    const shop = activeShop === 'HQ' ? (SHOPS[0] || '') : activeShop; 
+    const date = $('work-date').value || today();
+    await api('PUT', `/api/days/${shop}/${date}`, dayState);
+    showToast(`Day saved — ${shop} / ${date}`, 'success');
+  } catch (err) {
+    showToast('Failed to save day', 'error');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = origText; }
+  }
 }
 function exportDayCSV() {
   const lines = [`${dayState.shop} — ${dayState.date}`, 'DESCRIPTION,OP,IN,OUT,BAL,COST,SOLD FOR,P/L'];
@@ -659,10 +669,21 @@ function toggleHistCard(hdr) {
 }
 function loadHistDay(shop, date) { activeShop = shop; switchShop(shop); $('work-date').value = date; nav('stock'); }
 async function deleteHistDay(shop, date) {
-  if (!confirm(`Delete history for Shop ${shop} on ${date}? This cannot be undone.`)) return;
+  const ok = await confirmModal({
+    title: 'Delete History Record',
+    message: `Are you sure you want to delete history for Shop ${shop} on ${date}? This cannot be undone.`,
+    confirmText: 'Delete Record',
+    danger: true
+  });
+  if (!ok) return;
   const r = await api('DELETE', `/api/days/${shop}/${date}`);
-  if (r.success) { allDays = allDays.filter(d => !(d.shop === shop && d.date === date)); renderHistory(); }
-  else alert('Failed to delete day.');
+  if (r.success) { 
+    allDays = allDays.filter(d => !(d.shop === shop && d.date === date)); 
+    renderHistory(); 
+    showToast('History record deleted', 'warn');
+  } else {
+    showToast('Failed to delete day', 'error');
+  }
 }
 
 // ── HQ OVERVIEW ──

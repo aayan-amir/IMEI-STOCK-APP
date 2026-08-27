@@ -239,14 +239,27 @@ async function doBackup() {
 }
 async function doRestore() {
   const file = $('restoreFile')?.files[0]; if (!file) { showToast('Select a backup file', 'error'); return; }
-  if (!confirm('This will overwrite existing data. Continue?')) return;
+  const ok = await confirmModal({
+    title: 'Restore Database Backup',
+    message: 'WARNING: Restoring will overwrite existing stock, sales, and settings with the data in this backup file. Proceed?',
+    confirmText: 'Restore & Overwrite',
+    danger: true
+  });
+  if (!ok) return;
   try { const data = JSON.parse(await file.text()); const r = await api('POST', '/api/restore', data); if (r.success) { showToast('Restore complete — reloading…'); setTimeout(() => location.reload(), 1200); } else showToast('Restore failed: ' + (r.error || 'unknown'), 'error'); } catch (e) { showToast('Error reading file', 'error'); }
 }
 
 async function deleteShipmentRecord(type, id) {
   if (!id) { showToast('Cannot delete this record', 'error'); return; }
-  if (!confirm('Delete this shipment record?')) return;
-  const ep = type === 'dispatch' ? `/api/dispatches/${id}` : `/api/shipments/${id}`;
+  const isDispatch = type === 'dispatch';
+  const ok = await confirmModal({
+    title: isDispatch ? 'Delete Dispatch' : 'Delete Shipment',
+    message: `Are you sure you want to delete this ${isDispatch ? 'dispatch' : 'shipment'} record?`,
+    confirmText: 'Delete Record',
+    danger: true
+  });
+  if (!ok) return;
+  const ep = isDispatch ? `/api/dispatches/${id}` : `/api/shipments/${id}`;
   const r = await api('DELETE', ep);
   if (r.success) { loadShipments(); showToast('Shipment deleted', 'warn'); }
   else showToast(r.error || 'Delete failed', 'error');
@@ -255,7 +268,13 @@ async function deleteShipmentRecord(type, id) {
 async function deleteWarehouseImei(imei) {
   const raw = String(imei || '').replace(/\D/g, '');
   if (raw.length !== 15) { showToast('Invalid IMEI', 'error'); return; }
-  if (!confirm(`Delete IMEI ${raw} from warehouse?`)) return;
+  const ok = await confirmModal({
+    title: 'Delete Warehouse Item',
+    message: `Are you sure you want to remove IMEI ${raw} from the HQ warehouse?`,
+    confirmText: 'Delete Phone',
+    danger: true
+  });
+  if (!ok) return;
   const r = await api('DELETE', `/api/hqstock/${raw}`);
   if (r.success) { loadWarehouse(); showToast('Warehouse phone deleted', 'warn'); }
   else showToast(r.error || 'Delete failed', 'error');
@@ -461,7 +480,13 @@ async function saveContact(id) {
 }
 
 async function deleteContact(id) {
-  if (!confirm('Delete this contact?')) return;
+  const ok = await confirmModal({
+    title: 'Delete Contact',
+    message: 'Are you sure you want to delete this customer contact?',
+    confirmText: 'Delete Contact',
+    danger: true
+  });
+  if (!ok) return;
   const d = await api('DELETE', `/api/customers/${id}`);
   if (d.error) { showToast(d.error, 'error'); return; }
   showToast('Contact deleted', 'warn');
@@ -833,7 +858,13 @@ async function generateReport() {
 }
 
 async function deleteReport(id) {
-  if (!confirm('Delete this report?')) return;
+  const ok = await confirmModal({
+    title: 'Delete Report',
+    message: 'Are you sure you want to delete this saved invoice / report?',
+    confirmText: 'Delete Report',
+    danger: true
+  });
+  if (!ok) return;
   const d = await api('DELETE', `/api/reports/${id}`);
   if (d.error) { showToast(d.error, 'error'); return; }
   delete reportBodyCache[id];

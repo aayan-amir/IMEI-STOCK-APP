@@ -3,12 +3,15 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a18">
   <title>stock-ly</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="apple-touch-icon" href="/icons/icon.svg">
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap"
     rel="stylesheet">
@@ -19,6 +22,7 @@
 </head>
 
 <body>
+  <a href="#main" class="skip-link">Skip to main content</a>
 
   <!-- ── AUTH OVERLAY ── -->
   <div id="auth-overlay">
@@ -153,60 +157,60 @@
     <div id="sb">
       <div class="sb-sec">
         <div class="sb-lbl">Shop</div>
-        <div class="ni on" id="ni-scan" onclick="nav('scan')">
+        <div class="ni on" id="ni-scan" role="button" tabindex="0" onclick="nav('scan')">
           <div class="nd" style="background:var(--a1)"></div>IMEI Scan
         </div>
-        <div class="ni" id="ni-imeistock" onclick="nav('imeistock')">
+        <div class="ni" id="ni-imeistock" role="button" tabindex="0" onclick="nav('imeistock')">
           <div class="nd" style="background:var(--a2)"></div>IMEI Stock
         </div>
-        <div class="ni" id="ni-saleslog" onclick="nav('saleslog')">
+        <div class="ni" id="ni-saleslog" role="button" tabindex="0" onclick="nav('saleslog')">
           <div class="nd" style="background:var(--success)"></div>Sales Log
         </div>
-        <div class="ni" id="ni-stock" onclick="nav('stock')">
+        <div class="ni" id="ni-stock" role="button" tabindex="0" onclick="nav('stock')">
           <div class="nd" style="background:var(--a5)"></div>Daily Sheet
         </div>
-        <div class="ni" id="ni-expenses" onclick="nav('expenses')">
+        <div class="ni" id="ni-expenses" role="button" tabindex="0" onclick="nav('expenses')">
           <div class="nd" style="background:var(--danger)"></div>Expenses
         </div>
-        <div class="ni" id="ni-history" onclick="nav('history')">
+        <div class="ni" id="ni-history" role="button" tabindex="0" onclick="nav('history')">
           <div class="nd" style="background:var(--text2)"></div>History
         </div>
       </div>
       <hr class="sdiv">
       <div class="sb-sec">
         <div class="sb-lbl">Head Office</div>
-        <div class="ni" id="ni-ceo" onclick="nav('ceo')">
+        <div class="ni" id="ni-ceo" role="button" tabindex="0" onclick="nav('ceo')">
           <div class="nd" style="background:var(--a5)"></div>CEO Dashboard
         </div>
-        <div class="ni" id="ni-warehouse" onclick="nav('warehouse')">
+        <div class="ni" id="ni-warehouse" role="button" tabindex="0" onclick="nav('warehouse')">
           <div class="nd" style="background:var(--a6)"></div>Warehouse
         </div>
-        <div class="ni" id="ni-shipments" onclick="nav('shipments')">
+        <div class="ni" id="ni-shipments" role="button" tabindex="0" onclick="nav('shipments')">
           <div class="nd" style="background:var(--a4)"></div>Shipments
         </div>
-        <div class="ni" id="ni-monthly" onclick="nav('monthly')">
+        <div class="ni" id="ni-monthly" role="button" tabindex="0" onclick="nav('monthly')">
           <div class="nd" style="background:var(--a1)"></div>Monthly P&L
         </div>
-        <div class="ni" id="ni-analytics" onclick="nav('analytics')">
+        <div class="ni" id="ni-analytics" role="button" tabindex="0" onclick="nav('analytics')">
           <div class="nd" style="background:var(--a2)"></div>Analytics
         </div>
       </div>
       <hr class="sdiv">
       <div class="sb-sec">
         <div class="sb-lbl">Tools</div>
-        <div class="ni" id="ni-contacts" onclick="nav('contacts')">
+        <div class="ni" id="ni-contacts" role="button" tabindex="0" onclick="nav('contacts')">
           <div class="nd" style="background:var(--a4)"></div>Contacts
         </div>
-        <div class="ni" id="ni-reports" onclick="nav('reports')">
+        <div class="ni" id="ni-reports" role="button" tabindex="0" onclick="nav('reports')">
           <div class="nd" style="background:var(--a5)"></div>Invoices
         </div>
-        <div class="ni" id="ni-logs" onclick="nav('logs')">
+        <div class="ni" id="ni-logs" role="button" tabindex="0" onclick="nav('logs')">
           <div class="nd" style="background:var(--text3)"></div>Activity Log
         </div>
-        <div class="ni" id="ni-backup" onclick="nav('backup')">
+        <div class="ni" id="ni-backup" role="button" tabindex="0" onclick="nav('backup')">
           <div class="nd" style="background:var(--success)"></div>Backup
         </div>
-        <div class="ni" onclick="openCamera('free')">
+        <div class="ni" role="button" tabindex="0" onclick="openCamera('free')">
           <div class="nd" style="background:var(--a4)"></div>Barcode Scanner
         </div>
       </div>
@@ -478,12 +482,15 @@
           <button class="btn bo" style="font-size:.65rem" onclick="collapseAllGroups()">Collapse All</button>
         </div>
         <div class="stock-scroll">
-          <div class="search-wrap"><span class="search-icon" aria-hidden="true">○</span><input type="text"
-              id="imeiSearch" placeholder="Search brand, model, IMEI…" oninput="renderIMEIStock()"></div>
+          <div class="search-wrap">
+            <span class="search-icon" aria-hidden="true">○</span>
+            <input type="text" id="imeiSearch" placeholder="Search brand, model, IMEI…" oninput="renderIMEIStock(); updateSearchClearBtn();">
+            <button id="imeiSearchClear" class="search-clear-btn" aria-label="Clear search" onclick="clearIMEISearch()">✕</button>
+          </div>
           <div class="filter-row">
-            <div class="filter-chip" onclick="setIMEIFilter('all',this)">All</div>
-            <div class="filter-chip active" onclick="setIMEIFilter('in_stock',this)">In Stock</div>
-            <div class="filter-chip sell-chip" onclick="setIMEIFilter('sold',this)">Sold</div>
+            <div class="filter-chip" role="button" tabindex="0" onclick="setIMEIFilter('all',this)">All</div>
+            <div class="filter-chip active" role="button" tabindex="0" onclick="setIMEIFilter('in_stock',this)">In Stock</div>
+            <div class="filter-chip sell-chip" role="button" tabindex="0" onclick="setIMEIFilter('sold',this)">Sold</div>
           </div>
           <div id="bulkActions" class="bulk-bar" style="display:none;">
             <div class="bulk-pill" id="bulkSelectionLabel">0 selected</div>
@@ -844,7 +851,7 @@
   </div>
 
   <!-- BARCODE SCANNER MODAL -->
-  <div id="camModal"
+  <div id="camModal" role="dialog" aria-modal="true" aria-labelledby="camLabel"
     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:600;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;">
     <div style="position:relative;width:min(420px,95vw);">
       <video id="camVideo" autoplay playsinline muted
@@ -920,11 +927,11 @@
   </div>
 
   <!-- MODAL -->
-  <div id="modal-bg">
+  <div id="modal-bg" role="dialog" aria-modal="true">
     <div id="modal"></div>
   </div>
   <!-- TOAST -->
-  <div id="toast"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
     <script src="/js/keyboard.js"></script>
     <script src="/js/globals.js"></script>
   <script src="/js/utils.js"></script>

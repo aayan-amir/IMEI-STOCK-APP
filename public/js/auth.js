@@ -270,8 +270,15 @@ async function loadClientsList() {
 }
 
 async function toggleClientStatus(clientId, currentStatus) {
-  if (!confirm(`Are you sure you want to ${currentStatus === 'active' ? 'PAUSE' : 'RESUME'} this client?`)) return;
-  const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+  const isPause = currentStatus === 'active';
+  const ok = await confirmModal({
+    title: isPause ? 'Pause Client' : 'Resume Client',
+    message: `Are you sure you want to ${isPause ? 'pause' : 'resume'} client "${clientId}"?`,
+    confirmText: isPause ? 'Pause Client' : 'Resume Client',
+    danger: isPause
+  });
+  if (!ok) return;
+  const newStatus = isPause ? 'paused' : 'active';
   const pw = $('sa-pass').value;
   const res = await fetch(BASE + '/api/superadmin/clients', {
     method: 'POST',
@@ -287,7 +294,13 @@ async function toggleClientStatus(clientId, currentStatus) {
 }
 
 async function deleteClient(clientId) {
-  if (!confirm(`CRITICAL WARNING: This will PERMANENTLY DELETE client "${clientId}" and ALL their data. This cannot be undone. Proceed?`)) return;
+  const ok = await confirmModal({
+    title: 'Delete Client',
+    message: `CRITICAL WARNING: This will PERMANENTLY DELETE client "${clientId}" and ALL their stock, sales, and data. This cannot be undone.`,
+    confirmText: 'Delete Client',
+    danger: true
+  });
+  if (!ok) return;
   const pw = $('sa-pass').value;
   const res = await fetch(BASE + `/api/superadmin/clients/${clientId}`, {
     method: 'DELETE',
