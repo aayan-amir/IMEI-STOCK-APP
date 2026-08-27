@@ -106,6 +106,8 @@ async function api(method, url, body) {
       if (authRole) {
         localStorage.removeItem('authToken'); localStorage.removeItem('authRole'); localStorage.removeItem('authShop');
         authRole = null; authShop = null;
+        if ($('topbar')) $('topbar').style.display = 'none';
+        if ($('wrap')) $('wrap').style.display = 'none';
         $('auth-overlay').classList.remove('hidden');
         $('auth-client').style.display = '';
         $('auth-superadmin').style.display = 'none';

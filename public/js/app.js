@@ -3,6 +3,8 @@
 
 // ── BOOT ──
 async function bootApp() {
+  $('topbar').style.display = 'flex';
+  $('wrap').style.display = 'flex';
   applyPhoneMode();
   const shop = (authRole === 'shop') ? authShop : activeShop;
   activeShop = shop;
