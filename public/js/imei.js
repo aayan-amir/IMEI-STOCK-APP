@@ -456,7 +456,7 @@ function renderIMEIStock() {
           <span class="badge badge-blue">${esc((CATS[g.cat]?.label) || titleCase(g.cat || 'Other'))}</span>
           <span class="badge ${isOpen ? 'badge-green' : 'badge-gray'}" id="grp-state-${uid}">${isOpen ? 'Open' : 'Closed'}</span>
           ${(g.colors && g.colors.size === 1) ? `<span class="badge badge-gray">${esc(titleCase([...g.colors][0]))}</span>` : (g.colors && g.colors.size > 1 ? `<span class="badge badge-gray">Multiple Colors</span>` : '')}
-          ${storageLabel ? `<span class="badge badge-purple">${storageLabel}</span>` : ''}
+          ${storageLabel ? `<span class="badge badge-purple">${esc(storageLabel)}</span>` : ''}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0;">
