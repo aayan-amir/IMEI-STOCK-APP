@@ -1,0 +1,2058 @@
+{
+  "scope": "Tracked file paths; source inventory excludes vendor/minified files and never reads certificates, env files or IDE caches. Function counts include named function declarations, not all callbacks/arrow functions.",
+  "baselineCommit": "38e4110fddabbe9b2344c7b780b09353016f3902",
+  "counts": {
+    "trackedFiles": 132,
+    "presentFiles": 132,
+    "authoredJavaScriptFiles": 30,
+    "authoredJavaScriptLines": 6438,
+    "namedFunctionDeclarations": 222,
+    "routeDeclarations": 52
+  },
+  "files": [
+    {
+      "path": ".gitignore",
+      "present": true,
+      "bytes": 88
+    },
+    {
+      "path": ".idea/.gitignore",
+      "present": true,
+      "bytes": 50
+    },
+    {
+      "path": ".idea/caches/deviceStreaming.xml",
+      "present": true,
+      "bytes": 81374
+    },
+    {
+      "path": ".idea/deviceManager.xml",
+      "present": true,
+      "bytes": 363
+    },
+    {
+      "path": ".idea/imeiapp.iml",
+      "present": true,
+      "bytes": 344
+    },
+    {
+      "path": ".idea/markdown.xml",
+      "present": true,
+      "bytes": 314
+    },
+    {
+      "path": ".idea/misc.xml",
+      "present": true,
+      "bytes": 149
+    },
+    {
+      "path": ".idea/modules.xml",
+      "present": true,
+      "bytes": 273
+    },
+    {
+      "path": ".idea/vcs.xml",
+      "present": true,
+      "bytes": 172
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP.slnx/copilot-chat/9c4601ed/sessions/b0752c0a-e075-4601-ad71-a1d86bf54c78",
+      "present": true,
+      "bytes": 169715
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP.slnx/v18/.wsuo",
+      "present": true,
+      "bytes": 27136
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP.slnx/v18/DocumentLayout.backup.json",
+      "present": true,
+      "bytes": 3687
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP.slnx/v18/DocumentLayout.json",
+      "present": true,
+      "bytes": 3687
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP/CopilotIndices/18.0.988.22099/CodeChunks.db",
+      "present": true,
+      "bytes": 69632
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP/CopilotIndices/18.0.988.22099/CodeChunks.db-shm",
+      "present": true,
+      "bytes": 32768
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP/CopilotIndices/18.0.988.22099/CodeChunks.db-wal",
+      "present": true,
+      "bytes": 309032
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP/CopilotIndices/18.0.988.22099/SemanticSymbols.db",
+      "present": true,
+      "bytes": 49152
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP/CopilotIndices/18.0.988.22099/SemanticSymbols.db-shm",
+      "present": true,
+      "bytes": 32768
+    },
+    {
+      "path": ".vs/IMEI-STOCK-APP/CopilotIndices/18.0.988.22099/SemanticSymbols.db-wal",
+      "present": true,
+      "bytes": 94792
+    },
+    {
+      "path": ".vs/VSWorkspaceState.json",
+      "present": true,
+      "bytes": 78
+    },
+    {
+      "path": ".vs/slnx.sqlite",
+      "present": true,
+      "bytes": 90112
+    },
+    {
+      "path": "Procfile",
+      "present": true,
+      "bytes": 21
+    },
+    {
+      "path": "README.md",
+      "present": true,
+      "bytes": 5370
+    },
+    {
+      "path": "STRUCTURE.md",
+      "present": true,
+      "bytes": 13995
+    },
+    {
+      "path": "android/.gitignore",
+      "present": true,
+      "bytes": 1925
+    },
+    {
+      "path": "android/.idea/.gitignore",
+      "present": true,
+      "bytes": 50
+    },
+    {
+      "path": "android/.idea/AndroidProjectSystem.xml",
+      "present": true,
+      "bytes": 217
+    },
+    {
+      "path": "android/.idea/compiler.xml",
+      "present": true,
+      "bytes": 174
+    },
+    {
+      "path": "android/.idea/deploymentTargetSelector.xml",
+      "present": true,
+      "bytes": 339
+    },
+    {
+      "path": "android/.idea/deviceManager.xml",
+      "present": true,
+      "bytes": 363
+    },
+    {
+      "path": "android/.idea/migrations.xml",
+      "present": true,
+      "bytes": 263
+    },
+    {
+      "path": "android/.idea/misc.xml",
+      "present": true,
+      "bytes": 417
+    },
+    {
+      "path": "android/.idea/planningMode.xml",
+      "present": true,
+      "bytes": 391
+    },
+    {
+      "path": "android/.idea/runConfigurations.xml",
+      "present": true,
+      "bytes": 980
+    },
+    {
+      "path": "android/app/.gitignore",
+      "present": true,
+      "bytes": 28
+    },
+    {
+      "path": "android/app/build.gradle",
+      "present": true,
+      "bytes": 2097
+    },
+    {
+      "path": "android/app/capacitor.build.gradle",
+      "present": true,
+      "bytes": 389
+    },
+    {
+      "path": "android/app/proguard-rules.pro",
+      "present": true,
+      "bytes": 772
+    },
+    {
+      "path": "android/app/release/baselineProfiles/0/app-release.dm",
+      "present": true,
+      "bytes": 3073
+    },
+    {
+      "path": "android/app/release/baselineProfiles/1/app-release.dm",
+      "present": true,
+      "bytes": 3012
+    },
+    {
+      "path": "android/app/release/output-metadata.json",
+      "present": true,
+      "bytes": 743
+    },
+    {
+      "path": "android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java",
+      "present": true,
+      "bytes": 783
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "present": true,
+      "bytes": 1861
+    },
+    {
+      "path": "android/app/src/main/java/app/stockly/android/MainActivity.java",
+      "present": true,
+      "bytes": 128
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-hdpi/splash.png",
+      "present": true,
+      "bytes": 7705
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-mdpi/splash.png",
+      "present": true,
+      "bytes": 4040
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-xhdpi/splash.png",
+      "present": true,
+      "bytes": 9251
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-xxhdpi/splash.png",
+      "present": true,
+      "bytes": 13984
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-xxxhdpi/splash.png",
+      "present": true,
+      "bytes": 17683
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-hdpi/splash.png",
+      "present": true,
+      "bytes": 7934
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-mdpi/splash.png",
+      "present": true,
+      "bytes": 4096
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-xhdpi/splash.png",
+      "present": true,
+      "bytes": 9875
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-xxhdpi/splash.png",
+      "present": true,
+      "bytes": 13346
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-xxxhdpi/splash.png",
+      "present": true,
+      "bytes": 17489
+    },
+    {
+      "path": "android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml",
+      "present": true,
+      "bytes": 1914
+    },
+    {
+      "path": "android/app/src/main/res/drawable/ic_launcher_background.xml",
+      "present": true,
+      "bytes": 5776
+    },
+    {
+      "path": "android/app/src/main/res/drawable/splash.png",
+      "present": true,
+      "bytes": 4040
+    },
+    {
+      "path": "android/app/src/main/res/layout/activity_main.xml",
+      "present": true,
+      "bytes": 490
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "present": true,
+      "bytes": 338
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "present": true,
+      "bytes": 338
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/app/src/main/res/values/colors.xml",
+      "present": true,
+      "bytes": 312
+    },
+    {
+      "path": "android/app/src/main/res/values/strings.xml",
+      "present": true,
+      "bytes": 301
+    },
+    {
+      "path": "android/app/src/main/res/values/styles.xml",
+      "present": true,
+      "bytes": 1339
+    },
+    {
+      "path": "android/app/src/main/res/xml/file_paths.xml",
+      "present": true,
+      "bytes": 158
+    },
+    {
+      "path": "android/app/src/main/res/xml/network_security_config.xml",
+      "present": true,
+      "bytes": 298
+    },
+    {
+      "path": "android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java",
+      "present": true,
+      "bytes": 403
+    },
+    {
+      "path": "android/build.gradle",
+      "present": true,
+      "bytes": 685
+    },
+    {
+      "path": "android/capacitor.settings.gradle",
+      "present": true,
+      "bytes": 210
+    },
+    {
+      "path": "android/gradle.properties",
+      "present": true,
+      "bytes": 1133
+    },
+    {
+      "path": "android/gradle/gradle-daemon-jvm.properties",
+      "present": true,
+      "bytes": 92
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.jar",
+      "present": true,
+      "bytes": 43764
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.properties",
+      "present": true,
+      "bytes": 259
+    },
+    {
+      "path": "android/gradlew",
+      "present": true,
+      "bytes": 8984
+    },
+    {
+      "path": "android/gradlew.bat",
+      "present": true,
+      "bytes": 2937
+    },
+    {
+      "path": "android/icon.png",
+      "present": true,
+      "bytes": 4666881
+    },
+    {
+      "path": "android/settings.gradle",
+      "present": true,
+      "bytes": 301
+    },
+    {
+      "path": "android/variables.gradle",
+      "present": true,
+      "bytes": 513
+    },
+    {
+      "path": "capacitor.config.json",
+      "present": true,
+      "bytes": 252
+    },
+    {
+      "path": "certs/cert.pem",
+      "present": true,
+      "bytes": 1654
+    },
+    {
+      "path": "certs/key.pem",
+      "present": true,
+      "bytes": 1732
+    },
+    {
+      "path": "create-client.js",
+      "present": true,
+      "bytes": 1106,
+      "lines": 39,
+      "functions": [
+        {
+          "name": "run",
+          "line": 13
+        }
+      ],
+      "requires": [
+        "dotenv",
+        "mongoose",
+        "crypto"
+      ],
+      "routes": []
+    },
+    {
+      "path": "db/index.js",
+      "present": true,
+      "bytes": 7092,
+      "lines": 247,
+      "functions": [
+        {
+          "name": "connectMongo",
+          "line": 22
+        },
+        {
+          "name": "getTenantDb",
+          "line": 218
+        }
+      ],
+      "requires": [
+        "mongoose",
+        "bcrypt"
+      ],
+      "routes": []
+    },
+    {
+      "path": "middleware/auth.js",
+      "present": true,
+      "bytes": 5409,
+      "lines": 156,
+      "functions": [
+        {
+          "name": "generateToken",
+          "line": 25
+        },
+        {
+          "name": "createSession",
+          "line": 29
+        },
+        {
+          "name": "getSession",
+          "line": 35
+        },
+        {
+          "name": "deleteSession",
+          "line": 41
+        },
+        {
+          "name": "safeCompare",
+          "line": 46
+        },
+        {
+          "name": "requireAuth",
+          "line": 59
+        },
+        {
+          "name": "logAction",
+          "line": 77
+        },
+        {
+          "name": "tenantMiddleware",
+          "line": 105
+        }
+      ],
+      "requires": [
+        "crypto",
+        "express-rate-limit",
+        "../db"
+      ],
+      "routes": []
+    },
+    {
+      "path": "migrate-anas.js",
+      "present": true,
+      "bytes": 4631,
+      "lines": 104,
+      "functions": [
+        {
+          "name": "run",
+          "line": 22
+        },
+        {
+          "name": "copyData",
+          "line": 74
+        }
+      ],
+      "requires": [
+        "mongoose",
+        "dns"
+      ],
+      "routes": []
+    },
+    {
+      "path": "migrate-phase1.js",
+      "present": true,
+      "bytes": 11610,
+      "lines": 248,
+      "functions": [
+        {
+          "name": "makeModel",
+          "line": 76
+        },
+        {
+          "name": "run",
+          "line": 82
+        }
+      ],
+      "requires": [
+        "mongoose"
+      ],
+      "routes": []
+    },
+    {
+      "path": "package-lock.json",
+      "present": true,
+      "bytes": 41432
+    },
+    {
+      "path": "package.json",
+      "present": true,
+      "bytes": 529
+    },
+    {
+      "path": "public/css/app.css",
+      "present": true,
+      "bytes": 58373
+    },
+    {
+      "path": "public/icons/icon.svg",
+      "present": true,
+      "bytes": 1622
+    },
+    {
+      "path": "public/index.html",
+      "present": true,
+      "bytes": 52338
+    },
+    {
+      "path": "public/js/app.js",
+      "present": true,
+      "bytes": 2109,
+      "lines": 52,
+      "functions": [
+        {
+          "name": "bootApp",
+          "line": 5
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/auth.js",
+      "present": true,
+      "bytes": 16433,
+      "lines": 407,
+      "functions": [
+        {
+          "name": "_rlGet",
+          "line": 10
+        },
+        {
+          "name": "_rlFail",
+          "line": 23
+        },
+        {
+          "name": "_rlClear",
+          "line": 31
+        },
+        {
+          "name": "_rlLocked",
+          "line": 32
+        },
+        {
+          "name": "_rlTimeLeft",
+          "line": 33
+        },
+        {
+          "name": "_rlRemaining",
+          "line": 34
+        },
+        {
+          "name": "_rlLockedMsg",
+          "line": 35
+        },
+        {
+          "name": "_rlErrMsg",
+          "line": 39
+        },
+        {
+          "name": "renderLockStatus",
+          "line": 48
+        },
+        {
+          "name": "resetLock",
+          "line": 73
+        },
+        {
+          "name": "checkClientAndGate",
+          "line": 84
+        },
+        {
+          "name": "verifySuperAdmin",
+          "line": 128
+        },
+        {
+          "name": "showSuperAdmin",
+          "line": 159
+        },
+        {
+          "name": "hideSuperAdmin",
+          "line": 169
+        },
+        {
+          "name": "addShopTag",
+          "line": 177
+        },
+        {
+          "name": "removeShopTag",
+          "line": 190
+        },
+        {
+          "name": "renderShopTags",
+          "line": 195
+        },
+        {
+          "name": "saveClient",
+          "line": 207
+        },
+        {
+          "name": "loadClientsList",
+          "line": 238
+        },
+        {
+          "name": "toggleClientStatus",
+          "line": 272
+        },
+        {
+          "name": "deleteClient",
+          "line": 296
+        },
+        {
+          "name": "renderDynamicShops",
+          "line": 318
+        },
+        {
+          "name": "updateShopBadges",
+          "line": 392
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/ceo.js",
+      "present": true,
+      "bytes": 57222,
+      "lines": 1009,
+      "functions": [
+        {
+          "name": "loadWarehouse",
+          "line": 5
+        },
+        {
+          "name": "renderWarehouse",
+          "line": 6
+        },
+        {
+          "name": "openReceiveModal",
+          "line": 20
+        },
+        {
+          "name": "addToReceiveQueue",
+          "line": 79
+        },
+        {
+          "name": "renderRCItems",
+          "line": 108
+        },
+        {
+          "name": "removeReceiveQueueItem",
+          "line": 130
+        },
+        {
+          "name": "clearReceiveQueue",
+          "line": 131
+        },
+        {
+          "name": "saveReceive",
+          "line": 132
+        },
+        {
+          "name": "openDispatchModal",
+          "line": 168
+        },
+        {
+          "name": "saveDispatch",
+          "line": 180
+        },
+        {
+          "name": "openDispatchFromShipments",
+          "line": 199
+        },
+        {
+          "name": "loadShipments",
+          "line": 210
+        },
+        {
+          "name": "renderShipments",
+          "line": 211
+        },
+        {
+          "name": "doBackup",
+          "line": 224
+        },
+        {
+          "name": "doRestore",
+          "line": 240
+        },
+        {
+          "name": "deleteShipmentRecord",
+          "line": 252
+        },
+        {
+          "name": "deleteWarehouseImei",
+          "line": 268
+        },
+        {
+          "name": "renderCEO",
+          "line": 284
+        },
+        {
+          "name": "momTag",
+          "line": 295
+        },
+        {
+          "name": "sign",
+          "line": 300
+        },
+        {
+          "name": "loadContacts",
+          "line": 397
+        },
+        {
+          "name": "searchContacts",
+          "line": 405
+        },
+        {
+          "name": "renderContacts",
+          "line": 410
+        },
+        {
+          "name": "openAddContactModal",
+          "line": 436
+        },
+        {
+          "name": "openEditContactModal",
+          "line": 450
+        },
+        {
+          "name": "saveContact",
+          "line": 472
+        },
+        {
+          "name": "deleteContact",
+          "line": 482
+        },
+        {
+          "name": "renderAnalytics",
+          "line": 497
+        },
+        {
+          "name": "_buildLogDetail",
+          "line": 567
+        },
+        {
+          "name": "_logRowHtml",
+          "line": 575
+        },
+        {
+          "name": "_renderLogsLoadMore",
+          "line": 592
+        },
+        {
+          "name": "loadLogs",
+          "line": 607
+        },
+        {
+          "name": "printSection",
+          "line": 642
+        },
+        {
+          "name": "loadReports",
+          "line": 688
+        },
+        {
+          "name": "renderReports",
+          "line": 695
+        },
+        {
+          "name": "renderReportData",
+          "line": 734
+        },
+        {
+          "name": "printReport",
+          "line": 792
+        },
+        {
+          "name": "toggleReportBody",
+          "line": 834
+        },
+        {
+          "name": "generateReport",
+          "line": 851
+        },
+        {
+          "name": "deleteReport",
+          "line": 860
+        },
+        {
+          "name": "exportReportCSV",
+          "line": 875
+        },
+        {
+          "name": "dlCSV",
+          "line": 902
+        },
+        {
+          "name": "checkGate",
+          "line": 906
+        },
+        {
+          "name": "checkAdmin",
+          "line": 930
+        },
+        {
+          "name": "enterShopMode",
+          "line": 956
+        },
+        {
+          "name": "logout",
+          "line": 968
+        },
+        {
+          "name": "applyShopMode",
+          "line": 980
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/daily.js",
+      "present": true,
+      "bytes": 52831,
+      "lines": 712,
+      "functions": [
+        {
+          "name": "makeEmptyDay",
+          "line": 5
+        },
+        {
+          "name": "guessCat",
+          "line": 8
+        },
+        {
+          "name": "autoSelectCat",
+          "line": 17
+        },
+        {
+          "name": "autoBrandFromCat",
+          "line": 25
+        },
+        {
+          "name": "loadDay",
+          "line": 32
+        },
+        {
+          "name": "renderStock",
+          "line": 113
+        },
+        {
+          "name": "onRC",
+          "line": 162
+        },
+        {
+          "name": "updateCatTotals",
+          "line": 176
+        },
+        {
+          "name": "addRow",
+          "line": 184
+        },
+        {
+          "name": "removeRow",
+          "line": 185
+        },
+        {
+          "name": "renderExpenses",
+          "line": 187
+        },
+        {
+          "name": "addExp",
+          "line": 188
+        },
+        {
+          "name": "delExp",
+          "line": 189
+        },
+        {
+          "name": "renderPurchases",
+          "line": 190
+        },
+        {
+          "name": "addPurchase",
+          "line": 191
+        },
+        {
+          "name": "delPurchase",
+          "line": 192
+        },
+        {
+          "name": "renderTransfers",
+          "line": 193
+        },
+        {
+          "name": "addTransfer",
+          "line": 194
+        },
+        {
+          "name": "delTransfer",
+          "line": 195
+        },
+        {
+          "name": "recalc",
+          "line": 197
+        },
+        {
+          "name": "saveDay",
+          "line": 221
+        },
+        {
+          "name": "exportDayCSV",
+          "line": 236
+        },
+        {
+          "name": "printDaySheet",
+          "line": 250
+        },
+        {
+          "name": "printSalesLog",
+          "line": 273
+        },
+        {
+          "name": "printShipments",
+          "line": 301
+        },
+        {
+          "name": "printIMEIStock",
+          "line": 308
+        },
+        {
+          "name": "printExpenses",
+          "line": 339
+        },
+        {
+          "name": "printHistory",
+          "line": 364
+        },
+        {
+          "name": "printWarehouse",
+          "line": 386
+        },
+        {
+          "name": "printMonthly",
+          "line": 413
+        },
+        {
+          "name": "printCEO",
+          "line": 445
+        },
+        {
+          "name": "printContacts",
+          "line": 482
+        },
+        {
+          "name": "printAnalytics",
+          "line": 500
+        },
+        {
+          "name": "printLogs",
+          "line": 520
+        },
+        {
+          "name": "openNewDayModal",
+          "line": 544
+        },
+        {
+          "name": "startNewDay",
+          "line": 556
+        },
+        {
+          "name": "renderShopExpenses",
+          "line": 565
+        },
+        {
+          "name": "deleteShopExp",
+          "line": 594
+        },
+        {
+          "name": "openAddExpenseModal",
+          "line": 595
+        },
+        {
+          "name": "saveShopExp",
+          "line": 611
+        },
+        {
+          "name": "loadAllDays",
+          "line": 619
+        },
+        {
+          "name": "renderHistory",
+          "line": 624
+        },
+        {
+          "name": "toggleHistCard",
+          "line": 662
+        },
+        {
+          "name": "loadHistDay",
+          "line": 670
+        },
+        {
+          "name": "deleteHistDay",
+          "line": 671
+        },
+        {
+          "name": "renderMonthly",
+          "line": 691
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/globals.js",
+      "present": true,
+      "bytes": 3837,
+      "lines": 76,
+      "functions": [
+        {
+          "name": "today",
+          "line": 7
+        },
+        {
+          "name": "ym",
+          "line": 8
+        },
+        {
+          "name": "getRole",
+          "line": 26
+        },
+        {
+          "name": "applyPhoneMode",
+          "line": 38
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/imei.js",
+      "present": true,
+      "bytes": 64231,
+      "lines": 1335,
+      "functions": [
+        {
+          "name": "setMode",
+          "line": 5
+        },
+        {
+          "name": "addToBatchQueue",
+          "line": 27
+        },
+        {
+          "name": "renderBatchQueue",
+          "line": 54
+        },
+        {
+          "name": "removeBatchEntry",
+          "line": 81
+        },
+        {
+          "name": "clearBatchQueue",
+          "line": 86
+        },
+        {
+          "name": "submitBatch",
+          "line": 91
+        },
+        {
+          "name": "handleImeiSubmit",
+          "line": 163
+        },
+        {
+          "name": "showAddForm",
+          "line": 201
+        },
+        {
+          "name": "showSellForm",
+          "line": 210
+        },
+        {
+          "name": "updateCrossShopWarning",
+          "line": 231
+        },
+        {
+          "name": "cancelForm",
+          "line": 262
+        },
+        {
+          "name": "showPreview",
+          "line": 272
+        },
+        {
+          "name": "hidePreview",
+          "line": 273
+        },
+        {
+          "name": "submitAdd",
+          "line": 275
+        },
+        {
+          "name": "submitSell",
+          "line": 300
+        },
+        {
+          "name": "openCamera",
+          "line": 347
+        },
+        {
+          "name": "openCameraForImei2",
+          "line": 401
+        },
+        {
+          "name": "getBestCameraStream",
+          "line": 407
+        },
+        {
+          "name": "pickBestRearCamera",
+          "line": 443
+        },
+        {
+          "name": "score",
+          "line": 444
+        },
+        {
+          "name": "closeCamera",
+          "line": 461
+        },
+        {
+          "name": "clearScanResult",
+          "line": 473
+        },
+        {
+          "name": "flashField",
+          "line": 482
+        },
+        {
+          "name": "onBarcodeDetected",
+          "line": 489
+        },
+        {
+          "name": "useScanResult",
+          "line": 565
+        },
+        {
+          "name": "toggleTorch",
+          "line": 587
+        },
+        {
+          "name": "triggerFocus",
+          "line": 596
+        },
+        {
+          "name": "startScanning",
+          "line": 615
+        },
+        {
+          "name": "expandAllGroups",
+          "line": 667
+        },
+        {
+          "name": "collapseAllGroups",
+          "line": 671
+        },
+        {
+          "name": "loadIMEIData",
+          "line": 675
+        },
+        {
+          "name": "setIMEIFilter",
+          "line": 696
+        },
+        {
+          "name": "toggleGrouped",
+          "line": 697
+        },
+        {
+          "name": "renderIMEIStock",
+          "line": 699
+        },
+        {
+          "name": "updateBulkActions",
+          "line": 792
+        },
+        {
+          "name": "togglePhoneSelection",
+          "line": 802
+        },
+        {
+          "name": "clearPhoneSelection",
+          "line": 809
+        },
+        {
+          "name": "getSelectedPhones",
+          "line": 825
+        },
+        {
+          "name": "openGroupBatchEdit",
+          "line": 830
+        },
+        {
+          "name": "toggleGroup",
+          "line": 841
+        },
+        {
+          "name": "phoneCardHTML",
+          "line": 861
+        },
+        {
+          "name": "openEditPhone",
+          "line": 897
+        },
+        {
+          "name": "saveEditPhone",
+          "line": 955
+        },
+        {
+          "name": "openBatchEditModal",
+          "line": 973
+        },
+        {
+          "name": "saveBatchEdit",
+          "line": 1021
+        },
+        {
+          "name": "deletePhone",
+          "line": 1047
+        },
+        {
+          "name": "exportIMEICSV",
+          "line": 1072
+        },
+        {
+          "name": "loadSalesLog",
+          "line": 1081
+        },
+        {
+          "name": "renderSalesLog",
+          "line": 1089
+        },
+        {
+          "name": "toggleDateGroup",
+          "line": 1153
+        },
+        {
+          "name": "deleteSale",
+          "line": 1160
+        },
+        {
+          "name": "deleteSaleByIMEI",
+          "line": 1177
+        },
+        {
+          "name": "exportSalesLogCSV",
+          "line": 1194
+        },
+        {
+          "name": "clearAllSales",
+          "line": 1209
+        },
+        {
+          "name": "submitProduct",
+          "line": 1232
+        },
+        {
+          "name": "loadProducts",
+          "line": 1255
+        },
+        {
+          "name": "renderProducts",
+          "line": 1263
+        },
+        {
+          "name": "editProductQty",
+          "line": 1287
+        },
+        {
+          "name": "saveProductQty",
+          "line": 1296
+        },
+        {
+          "name": "deleteProduct",
+          "line": 1305
+        },
+        {
+          "name": "updateSearchClearBtn",
+          "line": 1319
+        },
+        {
+          "name": "clearIMEISearch",
+          "line": 1326
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/keyboard.js",
+      "present": true,
+      "bytes": 2999,
+      "lines": 71,
+      "functions": [
+        {
+          "name": "initKeyboardHandler",
+          "line": 12
+        },
+        {
+          "name": "onViewportResize",
+          "line": 20
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/ui.js",
+      "present": true,
+      "bytes": 5973,
+      "lines": 114,
+      "functions": [
+        {
+          "name": "nav",
+          "line": 4
+        },
+        {
+          "name": "switchShop",
+          "line": 35
+        },
+        {
+          "name": "loadSidebarStats",
+          "line": 101
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/utils.js",
+      "present": true,
+      "bytes": 5754,
+      "lines": 129,
+      "functions": [
+        {
+          "name": "$",
+          "line": 4
+        },
+        {
+          "name": "toggleSidebar",
+          "line": 5
+        },
+        {
+          "name": "closeSidebar",
+          "line": 13
+        },
+        {
+          "name": "showModal",
+          "line": 17
+        },
+        {
+          "name": "confirmModal",
+          "line": 26
+        },
+        {
+          "name": "_resolveConfirm",
+          "line": 45
+        },
+        {
+          "name": "closeModal",
+          "line": 54
+        },
+        {
+          "name": "pkr",
+          "line": 82
+        },
+        {
+          "name": "fmtDate",
+          "line": 83
+        },
+        {
+          "name": "esc",
+          "line": 84
+        },
+        {
+          "name": "titleCase",
+          "line": 85
+        },
+        {
+          "name": "fmtPhoneName",
+          "line": 86
+        },
+        {
+          "name": "showToast",
+          "line": 87
+        },
+        {
+          "name": "_authPost",
+          "line": 88
+        },
+        {
+          "name": "api",
+          "line": 94
+        },
+        {
+          "name": "tickClock",
+          "line": 127
+        }
+      ],
+      "requires": [],
+      "routes": []
+    },
+    {
+      "path": "public/js/zxing.min.js",
+      "present": true,
+      "bytes": 292357
+    },
+    {
+      "path": "public/manifest.json",
+      "present": true,
+      "bytes": 480
+    },
+    {
+      "path": "routes/analytics.js",
+      "present": true,
+      "bytes": 5800,
+      "lines": 135,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth",
+        "../utils/helpers"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/analytics/models",
+          "line": 9
+        },
+        {
+          "method": "GET",
+          "path": "/ceo/summary",
+          "line": 54
+        }
+      ]
+    },
+    {
+      "path": "routes/backup.js",
+      "present": true,
+      "bytes": 4850,
+      "lines": 124,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/backup",
+          "line": 8
+        },
+        {
+          "method": "POST",
+          "path": "/restore",
+          "line": 37
+        }
+      ]
+    },
+    {
+      "path": "routes/clients.js",
+      "present": true,
+      "bytes": 8298,
+      "lines": 179,
+      "functions": [],
+      "requires": [
+        "express",
+        "../db",
+        "../middleware/auth",
+        "../middleware/auth"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/clients/lookup",
+          "line": 9
+        },
+        {
+          "method": "POST",
+          "path": "/auth",
+          "line": 24
+        },
+        {
+          "method": "PUT",
+          "path": "/auth/password",
+          "line": 85
+        },
+        {
+          "method": "POST",
+          "path": "/superadmin/verify",
+          "line": 112
+        },
+        {
+          "method": "POST",
+          "path": "/superadmin/clients",
+          "line": 121
+        },
+        {
+          "method": "GET",
+          "path": "/superadmin/clients",
+          "line": 147
+        },
+        {
+          "method": "DELETE",
+          "path": "/superadmin/clients/:clientId",
+          "line": 161
+        }
+      ]
+    },
+    {
+      "path": "routes/customers.js",
+      "present": true,
+      "bytes": 3159,
+      "lines": 69,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/customers",
+          "line": 8
+        },
+        {
+          "method": "POST",
+          "path": "/customers",
+          "line": 25
+        },
+        {
+          "method": "PUT",
+          "path": "/customers/:id",
+          "line": 38
+        },
+        {
+          "method": "DELETE",
+          "path": "/customers/:id",
+          "line": 59
+        }
+      ]
+    },
+    {
+      "path": "routes/days.js",
+      "present": true,
+      "bytes": 2962,
+      "lines": 68,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/days",
+          "line": 8
+        },
+        {
+          "method": "GET",
+          "path": "/days/:shop/:date",
+          "line": 25
+        },
+        {
+          "method": "PUT",
+          "path": "/days/:shop/:date",
+          "line": 35
+        },
+        {
+          "method": "DELETE",
+          "path": "/days/:shop/:date",
+          "line": 57
+        }
+      ]
+    },
+    {
+      "path": "routes/expenses.js",
+      "present": true,
+      "bytes": 2282,
+      "lines": 53,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/shopexpenses",
+          "line": 8
+        },
+        {
+          "method": "POST",
+          "path": "/shopexpenses",
+          "line": 22
+        },
+        {
+          "method": "DELETE",
+          "path": "/shopexpenses/:id",
+          "line": 43
+        }
+      ]
+    },
+    {
+      "path": "routes/logs.js",
+      "present": true,
+      "bytes": 1806,
+      "lines": 46,
+      "functions": [],
+      "requires": [
+        "express",
+        "mongoose",
+        "../middleware/auth"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/logs",
+          "line": 9
+        }
+      ]
+    },
+    {
+      "path": "routes/products.js",
+      "present": true,
+      "bytes": 4007,
+      "lines": 88,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/products",
+          "line": 8
+        },
+        {
+          "method": "POST",
+          "path": "/products",
+          "line": 21
+        },
+        {
+          "method": "PUT",
+          "path": "/products/:id",
+          "line": 59
+        },
+        {
+          "method": "DELETE",
+          "path": "/products/:id",
+          "line": 77
+        }
+      ]
+    },
+    {
+      "path": "routes/reports.js",
+      "present": true,
+      "bytes": 4747,
+      "lines": 107,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth",
+        "../utils/helpers"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/reports",
+          "line": 9
+        },
+        {
+          "method": "POST",
+          "path": "/reports/generate",
+          "line": 23
+        },
+        {
+          "method": "DELETE",
+          "path": "/reports/:id",
+          "line": 97
+        }
+      ]
+    },
+    {
+      "path": "routes/sales.js",
+      "present": true,
+      "bytes": 3277,
+      "lines": 76,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth",
+        "../utils/helpers"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/sales",
+          "line": 9
+        },
+        {
+          "method": "DELETE",
+          "path": "/sales",
+          "line": 17
+        },
+        {
+          "method": "DELETE",
+          "path": "/sales/by-imei/:imei",
+          "line": 40
+        },
+        {
+          "method": "DELETE",
+          "path": "/sales/:id",
+          "line": 58
+        }
+      ]
+    },
+    {
+      "path": "routes/stock.js",
+      "present": true,
+      "bytes": 12813,
+      "lines": 284,
+      "functions": [],
+      "requires": [
+        "express",
+        "../db",
+        "../middleware/auth",
+        "../utils/helpers"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/lookup/:imei",
+          "line": 10
+        },
+        {
+          "method": "GET",
+          "path": "/stock",
+          "line": 22
+        },
+        {
+          "method": "POST",
+          "path": "/stock/add",
+          "line": 46
+        },
+        {
+          "method": "POST",
+          "path": "/stock/sell",
+          "line": 83
+        },
+        {
+          "method": "GET",
+          "path": "/stats",
+          "line": 176
+        },
+        {
+          "method": "PUT",
+          "path": "/stock/batch",
+          "line": 196
+        },
+        {
+          "method": "PUT",
+          "path": "/stock/:id",
+          "line": 245
+        },
+        {
+          "method": "DELETE",
+          "path": "/stock/:id",
+          "line": 259
+        }
+      ]
+    },
+    {
+      "path": "routes/warehouse.js",
+      "present": true,
+      "bytes": 12342,
+      "lines": 282,
+      "functions": [],
+      "requires": [
+        "express",
+        "../middleware/auth"
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/hqstock",
+          "line": 9
+        },
+        {
+          "method": "PUT",
+          "path": "/hqstock",
+          "line": 19
+        },
+        {
+          "method": "DELETE",
+          "path": "/hqstock/:imei",
+          "line": 35
+        },
+        {
+          "method": "DELETE",
+          "path": "/hqstock/at/:index",
+          "line": 65
+        },
+        {
+          "method": "POST",
+          "path": "/shipments",
+          "line": 85
+        },
+        {
+          "method": "GET",
+          "path": "/shipments",
+          "line": 147
+        },
+        {
+          "method": "DELETE",
+          "path": "/shipments/:id",
+          "line": 157
+        },
+        {
+          "method": "POST",
+          "path": "/dispatches",
+          "line": 167
+        },
+        {
+          "method": "GET",
+          "path": "/dispatches",
+          "line": 239
+        },
+        {
+          "method": "DELETE",
+          "path": "/dispatches/:id",
+          "line": 272
+        }
+      ]
+    },
+    {
+      "path": "scratch/check_clients.js",
+      "present": true,
+      "bytes": 743,
+      "lines": 27,
+      "functions": [
+        {
+          "name": "check",
+          "line": 12
+        }
+      ],
+      "requires": [
+        "dotenv",
+        "mongoose"
+      ],
+      "routes": []
+    },
+    {
+      "path": "scratch/migrate_passwords.js",
+      "present": true,
+      "bytes": 1910,
+      "lines": 66,
+      "functions": [
+        {
+          "name": "migrate",
+          "line": 16
+        }
+      ],
+      "requires": [
+        "mongoose",
+        "bcrypt",
+        "dotenv"
+      ],
+      "routes": []
+    },
+    {
+      "path": "server.js",
+      "present": true,
+      "bytes": 4580,
+      "lines": 115,
+      "functions": [],
+      "requires": [
+        "dotenv",
+        "express",
+        "cors",
+        "express-rate-limit",
+        "helmet",
+        "./db",
+        "./middleware/auth",
+        "./routes/clients",
+        "./routes/stock",
+        "./routes/sales",
+        "./routes/days",
+        "./routes/expenses",
+        "./routes/warehouse",
+        "./routes/customers",
+        "./routes/logs",
+        "./routes/analytics",
+        "./routes/reports",
+        "./routes/backup",
+        "./routes/products"
+      ],
+      "routes": []
+    },
+    {
+      "path": "utils/helpers.js",
+      "present": true,
+      "bytes": 554,
+      "lines": 20,
+      "functions": [
+        {
+          "name": "buildSalesByShopQuery",
+          "line": 8
+        }
+      ],
+      "requires": [],
+      "routes": []
+    }
+  ]
+}

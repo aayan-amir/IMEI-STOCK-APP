@@ -4,6 +4,9 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const { adminOnly } = require('../middleware/auth');
+const { recordPage } = require('../services/record-list');
+router.get('/v2/logs/export', adminOnly, async (req, res) => { res.json(await recordPage(req, 'logs', true)); });
+router.get('/v2/logs', adminOnly, async (req, res) => { res.json(await recordPage(req, 'logs')); });
 
 // ── Get audit logs ─────────────────────────────────────────────────────────
 router.get('/logs', adminOnly, async (req, res) => {

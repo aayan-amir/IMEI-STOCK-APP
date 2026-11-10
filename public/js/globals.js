@@ -1,10 +1,16 @@
 /* ── Shared global state and constants ── */
 /* Auto-split from index.html — 2026-04-25T15:26:28.690Z */
 
-var BASE = (window.location.origin.includes('localhost') || window.location.origin.includes('capacitor'))
-               ? "https://www.stock-ly.app"
-               : window.location.origin;
-function today() { return new Date().toISOString().slice(0, 10); }
+function getApiBase() {
+  if (!window.Capacitor?.isNativePlatform()) return window.location.origin;
+  var origin = window.STOCKLY_CONFIG?.nativeApiBase;
+  if (!/^https:\/\/[^/?#\s]+$/.test(origin || '')) throw new Error('Configure a valid HTTPS native API origin');
+  var url = new URL(origin);
+  if (!url.hostname || url.username || url.password) throw new Error('Configure a valid HTTPS native API origin');
+  return origin;
+}
+var BASE = getApiBase();
+function today() { return StocklyBusinessRules.businessDate(); }
 function ym(d) { return d ? d.slice(0, 7) : ''; }
 var SHOPS = [];
 var SHOP_COLOR = { 'HQ': 'var(--chq)' };
@@ -61,15 +67,16 @@ function applyPhoneMode() {
   document.getElementById('main').prepend(banner);
 }
 
+var navigationVersion = 0;
 var activeShop = '', activePage = 'scan', scanMode = 'add', pendingIMEI = '', camStream = null;
 var shopModeActive = false;
 var dayState = { shop: '', date: (typeof today === 'function' ? today() : ''), cats: {}, expenses: [], purchases: [], transfers: [], carryForward: 0 };
 var allIMEIStock = [], allIMEISales = [], imeiFilter = 'in_stock';
 var selectedPhoneIds = new Set();
-var allDays = [], allShopExp = [], allDispatches = [], allShipments = [], hqStock = { items: [] };
+var allDays = [], allShopExp = [], allMovementData = [], hqStock = { items: [] };
 var allLogsData = [], lastCEOSummary = null, lastAnalyticsData = null;
 
 // Pages hidden on phone/shop mode (admin-only desktop pages)
-var ADMIN_ONLY_PAGES = ['stock', 'expenses', 'history', 'warehouse', 'shipments', 'monthly', 'backup', 'saleslog', 'ceo', 'contacts', 'analytics', 'logs', 'reports'];
+var ADMIN_ONLY_PAGES = ['stock', 'expenses', 'history', 'warehouse', 'shipments', 'monthly', 'backup', 'saleslog', 'ceo', 'contacts', 'analytics', 'logs', 'reports', 'stocktakes'];
 
 var authRole = null, authShop = null, _pendingGatePassword = '';

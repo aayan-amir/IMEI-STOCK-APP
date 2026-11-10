@@ -2,40 +2,28 @@
 
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
-const {
-  Session,
-  getTenantDb,
-  PhoneSchema,
-  SaleSchema,
-  DaySchema,
-  ShopExpenseSchema,
-  HQStockSchema,
-  ShipmentSchema,
-  DispatchSchema,
-  CustomerSchema,
-  AuditLogSchema,
-  ReportSchema,
-  ProductSchema,
-} = require('../db');
+const { Session, Client, getTenantDb } = require('../db');
 
-const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || 'superadmin';
+const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || null;
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 // ── Session Helpers ────────────────────────────────────────────────────────
-function generateToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
 async function createSession(data) {
-  const token = generateToken();
+  const token = crypto.randomBytes(32).toString('hex');
   await Session.create({ token, ...data, expiresAt: new Date(Date.now() + TOKEN_TTL_MS) });
   return token;
 }
 
 async function getSession(token) {
   if (!token) return null;
-  const s = await Session.findOne({ token, expiresAt: { $gt: new Date() } });
-  return s || null;
+  const session = await Session.findOne({ token, expiresAt: { $gt: new Date() } });
+  if (!session || !['admin', 'shop'].includes(session.role)) return null;
+  const client = await Client.findOne({ clientId: session.clientId }, 'clientId status shops authVersion');
+  if (!client || client.status !== 'active' || (client.authVersion || null) !== (session.authVersion || null)) return null;
+  const shops = (client.shops || []).map(shop => shop.id).filter(id => typeof id === 'string');
+  if (session.role === 'shop' && !shops.includes(session.shop)) return null;
+  session.validShops = shops;
+  return session;
 }
 
 async function deleteSession(token) {
@@ -44,6 +32,7 @@ async function deleteSession(token) {
 
 // Constant-time string comparison to prevent timing attacks
 function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || !a || !b) return false;
   try {
     const ba = Buffer.from(String(a || ''), 'utf8');
     const bb = Buffer.from(String(b || ''), 'utf8');
@@ -60,7 +49,7 @@ function requireAuth(roles = ['admin', 'shop']) {
   return async (req, res, next) => {
     const header = req.headers['authorization'] || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-    const session = await getSession(token);
+    const session = req.session || await getSession(token);
     if (!session) return res.status(401).json({ error: 'Unauthorized' });
     if (!roles.includes(session.role)) return res.status(403).json({ error: 'Forbidden' });
     req.authRole = session.role;
@@ -107,34 +96,15 @@ async function tenantMiddleware(req, res, next) {
     return next();
   }
 
-  let clientId = req.headers['x-client-id'] || req.query.clientId;
-
   const header = req.headers['authorization'] || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
   const session = token ? await getSession(token) : null;
-  if (session && session.clientId) {
-    clientId = session.clientId;
-  }
-
-  if (!clientId) {
-    return res.status(400).json({ error: 'Client ID required' });
-  }
-
-  const tenantDb = getTenantDb(clientId);
+  if (!session?.clientId) return res.status(401).json({ error: 'Unauthorized' });
+  req.session = session;
+  const tenantDb = getTenantDb(session.clientId);
   req.tenantDb = tenantDb;
-  req.models = {
-    Phone:        tenantDb.model('Phone',       PhoneSchema),
-    Sale:         tenantDb.model('Sale',        SaleSchema),
-    Day:          tenantDb.model('Day',         DaySchema),
-    ShopExpense:  tenantDb.model('ShopExpense', ShopExpenseSchema),
-    HQStockModel: tenantDb.model('HQStock',     HQStockSchema),
-    Shipment:     tenantDb.model('Shipment',    ShipmentSchema),
-    Dispatch:     tenantDb.model('Dispatch',    DispatchSchema),
-    Customer:     tenantDb.model('Customer',    CustomerSchema),
-    AuditLog:     tenantDb.model('AuditLog',    AuditLogSchema),
-    Report:       tenantDb.model('Report',      ReportSchema),
-    Product:      tenantDb.model('Product',     ProductSchema),
-  };
+  req.models = require('../services/backup-validation').getModels(tenantDb);
+  req.models.HQStockModel = req.models.HQStock;
   req.validShops = session ? (session.validShops || []) : [];
   next();
 }

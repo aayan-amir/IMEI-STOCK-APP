@@ -1,0 +1,4 @@
+interface:
+  display_name: "Planner + Challenger"
+  short_description: "Native two-agent planning and critique"
+  default_prompt: "Use $planner-challenger to plan this task and independently challenge the plan."

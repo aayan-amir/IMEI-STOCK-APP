@@ -2,12 +2,6 @@
   "appId": "app.stockly.android",
   "appName": "Stock-ly",
   "webDir": "public",
-  "plugins": {
-    "Keyboard": {
-      "resize": "none",
-      "resizeOnFullScreen": true
-    }
-  },
   "android": {
     "backgroundColor": "#f5f3ee"
   }

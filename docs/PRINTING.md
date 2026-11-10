@@ -1,0 +1,9 @@
+# Print lifecycle
+
+All existing print callers use the same iframe-based printSection helper. It creates one active print document, escapes the window title, waits for the written document to finish loading, awaits fonts and image decoding, then invokes the browser print control. A failed image/font/document/print operation is reported and its frame is removed. No fixed 500ms readiness or 2-second frame-removal timers remain.
+
+An initial iframe load cannot satisfy readiness before the written document is complete. Owner/session is captured and checked before print invocation. Session expiry cancels a pending document/font/image wait and removes its frame. Duplicate clicks cannot create competing print documents. afterprint removes the frame after print or cancellation; pagehide also cleans it. This relies on browser lifecycle events rather than guessing how long the user spends in the dialog.
+
+Nine VM regressions cover fonts, early loads, images, broken images, repeat/duplicate actions, errors and changed/expired sessions. A real IAB synthetic delayed-image fixture observed complete document but incomplete image before the image wait was added. After the fix its intercepted print invocation observed a complete document, fully loaded image, preserved leading-zero IMEI/table row and zero remaining frames after a synthetic afterprint. Repeat invocation had no console warnings/errors. This fixture does not prove native afterprint behavior.
+
+A separate real browser invocation opened the synthetic 200-row print document. Its native dialog blocked subsequent DOM automation; the temporary tab was closed without sending a physical print job. Physical Android/WebView, actual printer/PDF pagination and native cancel/afterprint acceptance remain release checks. Do not claim those passed from VM or intercepted-print results.

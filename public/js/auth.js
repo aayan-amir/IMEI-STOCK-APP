@@ -255,13 +255,9 @@ async function loadClientsList() {
         </div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="toggleClientStatus('${esc(c.clientId)}', '${esc(c.status)}')" style="background:var(--s3);border:1px solid var(--border);padding:5px 8px;border-radius:6px;color:var(--text2);font-size:.65rem;cursor:pointer;">
+        <button onclick="toggleClientStatus(${escAttr(JSON.stringify(String(c.clientId || '')))}, ${escAttr(JSON.stringify(String(c.status || '')))})" style="background:var(--s3);border:1px solid var(--border);padding:5px 8px;border-radius:6px;color:var(--text2);font-size:.65rem;cursor:pointer;">
 
           ${c.status === 'active' ? 'Pause' : 'Resume'}
-        </button>
-        <button onclick="deleteClient('${esc(c.clientId)}')" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);padding:5px 8px;border-radius:6px;color:var(--danger);font-size:.65rem;cursor:pointer;">
-
-          Delete
         </button>
       </div>
     </div>
@@ -270,49 +266,23 @@ async function loadClientsList() {
 }
 
 async function toggleClientStatus(clientId, currentStatus) {
-  const isPause = currentStatus === 'active';
-  const ok = await confirmModal({
-    title: isPause ? 'Pause Client' : 'Resume Client',
-    message: `Are you sure you want to ${isPause ? 'pause' : 'resume'} client "${clientId}"?`,
-    confirmText: isPause ? 'Pause Client' : 'Resume Client',
-    danger: isPause
-  });
-  if (!ok) return;
-  const newStatus = isPause ? 'paused' : 'active';
-  const pw = $('sa-pass').value;
-  const res = await fetch(BASE + '/api/superadmin/clients', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ superAdminPassword: pw, clientId, status: newStatus })
-  });
-  if (res.ok) {
-    showToast(`Client ${newStatus} successfully`, 'success');
-    loadClientsList();
-  } else {
-    showToast('Failed to update status', 'error');
-  }
+  const review = destructiveScope(), password = $('sa-pass').value;
+  try {
+    const status = currentStatus === 'active' ? 'paused' : 'active';
+    const ok = await confirmModal({ title: status === 'paused' ? 'Pause Client' : 'Resume Client',
+      message: 'Change access for client "' + clientId + '"? Business records will be retained.',
+      confirmText: status === 'paused' ? 'Pause Client' : 'Resume Client', danger: status === 'paused' });
+    if (!ok) return;
+    if (review !== destructiveScope() || password !== $('sa-pass').value) throw Error('Platform access changed. Review this action again.');
+    await api('POST', '/api/superadmin/clients/' + encodeURIComponent(clientId) + '/status',
+      { superAdminPassword: password, expectedStatus: currentStatus, status }, { auth: false });
+    if (review !== destructiveScope() || password !== $('sa-pass').value) return;
+    showToast('Client ' + status, 'success'); loadClientsList();
+  } catch (error) { if (review === destructiveScope() && password === $('sa-pass').value) handleApiError(error); }
 }
 
-async function deleteClient(clientId) {
-  const ok = await confirmModal({
-    title: 'Delete Client',
-    message: `CRITICAL WARNING: This will PERMANENTLY DELETE client "${clientId}" and ALL their stock, sales, and data. This cannot be undone.`,
-    confirmText: 'Delete Client',
-    danger: true
-  });
-  if (!ok) return;
-  const pw = $('sa-pass').value;
-  const res = await fetch(BASE + `/api/superadmin/clients/${clientId}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ superAdminPassword: pw })
-  });
-  if (res.ok) {
-    showToast('Client deleted permanently', 'warn');
-    loadClientsList();
-  } else {
-    showToast('Failed to delete client', 'error');
-  }
+async function deleteClient() {
+  showToast('Permanent account deletion is unavailable. Pause the account to retain its records.', 'warn');
 }
 
 function renderDynamicShops() {
@@ -380,8 +350,9 @@ function renderDynamicShops() {
     const el = $(id);
     if (!el) return;
     const currentVal = el.value;
-    const firstOpt = el.options[0] && (el.options[0].value === '' || el.options[0].value === 'ALL') ? el.options[0].outerHTML : '';
-    el.innerHTML = firstOpt + currentClientShops.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)}</option>`).join('');
+    const firstOpt = id === 'ship-shop-filter' ? '<option value="ALL">All movements</option><option value="HQ">Warehouse receipts</option>'
+      : el.options[0] && (el.options[0].value === '' || el.options[0].value === 'ALL') ? el.options[0].outerHTML : '';
+    el.innerHTML = firstOpt + currentClientShops.map(s => `<option value="${escAttr(s.id)}">${esc(s.name || s.id)}</option>`).join('');
 
     if (currentVal) el.value = currentVal;
   });

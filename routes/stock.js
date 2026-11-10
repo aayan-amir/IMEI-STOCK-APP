@@ -3,8 +3,18 @@
 const express = require('express');
 const router = express.Router();
 const { mongoose } = require('../db');
-const { adminOnly, anyAuth, logAction } = require('../middleware/auth');
-const { buildSalesByShopQuery } = require('../utils/helpers');
+const { adminOnly, anyAuth } = require('../middleware/auth');
+const { readSalesLedger } = require('../services/sales-ledger');
+const { sumSaleEvents } = require('../public/js/business-rules');
+const { sellPhone } = require('../services/stock-sales');
+const { HttpError } = require('../utils/http-error');
+const { inventoryTransaction, lockInventory, assertNotInHQ } = require('../services/inventory-identity');
+const { stockPage } = require('../services/stock-list');
+const { imeiHistory } = require('../services/imei-history');
+router.get('/stock/:imei/history/:source', adminOnly, async (req, res) => { res.json(await imeiHistory(req)); });
+
+router.get('/v2/stock/export', anyAuth, async (req, res) => { res.json(await stockPage(req, true)); });
+router.get('/v2/stock', anyAuth, async (req, res) => { res.json(await stockPage(req)); });
 
 // ── Lookup phone by IMEI (used by scan/sell flow) ─────────────────────────
 router.get('/lookup/:imei', anyAuth, async (req, res) => {
@@ -41,134 +51,40 @@ router.get('/stock', anyAuth, async (req, res) => {
   res.json(items.map(p => ({ ...p, id: p._id })));
 });
 
+router.post('/v2/stock/intake', anyAuth, async (req, res) => {
+  res.json(await require('../services/stock-intake').intakeBatch({ connection: req.tenantDb, models: req.models,
+    actor: { role: req.authRole, shop: req.authShop }, validShops: req.validShops, payload: req.body }));
+});
+
 // ── Add stock ─────────────────────────────────────────────────────────────
-// Shop users can only add to their own shop
 router.post('/stock/add', anyAuth, async (req, res) => {
-  const { imei, imei2, brand, model, color, storage, buyPrice, cat, notes } = req.body || {};
-  const shop = req.authRole === 'shop' ? req.authShop : (req.body.shop || null);
-
-  if (!imei) return res.status(400).json({ error: 'IMEI required' });
-  const cleanImei = String(imei).trim();
-  if (!/^\d{15}$/.test(cleanImei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
-
-  const exists = await req.models.Phone.findOne({ imei: cleanImei });
-  if (exists) return res.status(409).json({ error: 'IMEI exists' });
-
-  const cleanBuyPrice = Number(buyPrice);
-  const safeBuyPrice = Number.isFinite(cleanBuyPrice) && cleanBuyPrice >= 0 ? cleanBuyPrice : 0;
-
-  const phone = new req.models.Phone({
-    imei: cleanImei,
-    imei2: imei2 ? String(imei2).trim() : undefined,
-    brand: brand ? String(brand).trim() : undefined,
-    model: model ? String(model).trim() : undefined,
-    color: color ? String(color).trim() : undefined,
-    storage: storage ? String(storage).trim() : undefined,
-    buyPrice: safeBuyPrice,
-    shop: shop ? String(shop).trim() : undefined,
-    cat: cat ? String(cat).trim() : undefined,
-    notes: notes ? String(notes).trim() : undefined,
-    status: 'in_stock',
-    addedAt: new Date().toISOString(),
+  const { stockItem } = require('../services/inventory-input');
+  const item = stockItem(req.body);
+  const shop = req.authRole === 'shop' ? req.authShop : req.body?.shop;
+  if (!req.validShops.includes(shop)) throw new HttpError(400, 'Choose a configured shop. Use warehouse receiving for HQ stock.', 'INVALID_SHOP');
+  const result = await inventoryTransaction(req.tenantDb, async session => {
+    await lockInventory(req.models, session, [item.imei]);
+    await assertNotInHQ(req.models, session, item.imei);
+    if (await req.models.Phone.exists({ imei: item.imei }).session(session)) throw new HttpError(409, 'IMEI already exists in stock', 'INVENTORY_CONFLICT');
+    const [phone] = await req.models.Phone.create([{ ...item, shop, status: 'in_stock', addedAt: new Date().toISOString() }], { session });
+    await req.models.AuditLog.create([{ action: 'stock_add', shop, role: req.authRole,
+      details: { imei: item.imei, phoneId: phone.id, buyPrice: item.buyPrice } }], { session });
+    return { success: true, phone };
   });
-
-  await phone.save();
-  logAction(req.models, 'stock_add', shop || null, req.authRole, {
-    imei: cleanImei, brand: phone.brand, model: phone.model, buyPrice: safeBuyPrice,
-  });
-  res.json({ success: true, phone });
+  res.json(result);
 });
 
 // ── Sell phone ────────────────────────────────────────────────────────────
 router.post('/stock/sell', anyAuth, async (req, res) => {
-  try {
-    const { imei, salePrice, buyerName, buyerPhone, notes, soldByShop } = req.body;
-
-    if (!imei) return res.status(400).json({ error: 'IMEI required' });
-    if (!/^\d{15}$/.test(imei)) return res.status(400).json({ error: 'IMEI must be exactly 15 digits' });
-    if (salePrice === undefined || salePrice === null || salePrice === '') {
-      return res.status(400).json({ error: 'salePrice required' });
-    }
-
-    const phone = await req.models.Phone.findOne({ imei: String(imei) });
-    if (!phone) return res.status(404).json({ error: 'Not found' });
-    if (phone.status === 'sold') return res.status(409).json({ error: 'Already sold' });
-
-    const sp = Number(salePrice);
-    if (Number.isNaN(sp) || sp <= 0) return res.status(400).json({ error: 'Sale price must be greater than zero' });
-
-    // Determine the selling shop: explicit value from body, or the authenticated shop, or the stock-owning shop
-    const effectiveSoldByShop = (soldByShop && req.validShops.includes(soldByShop))
-      ? soldByShop
-      : (req.authShop || phone.shop);
-
-    const bp = Number(phone.buyPrice) || 0;
-    const profit = sp - bp;
-
-    phone.status     = 'sold';
-    phone.salePrice  = sp;
-    phone.soldAt     = new Date().toISOString();
-    phone.soldByShop = effectiveSoldByShop;
-    // phone.shop intentionally unchanged — keeps the stock-owning shop for audit
-
-    await phone.save();
-
-    const sale = new req.models.Sale({
-      imei:        phone.imei,
-      brand:       phone.brand,
-      model:       phone.model,
-      buyPrice:    bp,
-      salePrice:   sp,
-      profit,
-      shop:        phone.shop,
-      soldByShop:  effectiveSoldByShop,
-      buyerName:   buyerName  || null,
-      buyerPhone:  buyerPhone || null,
-      notes:       notes      || null,
-      soldAt:      phone.soldAt,
-    });
-
-    try {
-      await sale.save();
-    } catch (saleErr) {
-      // Revert phone status if sale record fails to save
-      phone.status    = 'in_stock';
-      phone.salePrice = undefined;
-      phone.soldAt    = undefined;
-      await phone.save().catch(revertErr => console.error('Failed to revert phone after sale error:', revertErr));
-      throw saleErr;
-    }
-
-    // Auto-upsert customer contact if buyer info is provided
-    if (buyerName || buyerPhone) {
-      try {
-        const nameVal  = (buyerName  || '').trim();
-        const phoneVal = (buyerPhone || '').trim();
-        if (nameVal) {
-          const orClauses = [{ name: { $regex: `^${nameVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } }];
-          if (phoneVal) orClauses.push({ phone: phoneVal });
-          const existing = await req.models.Customer.findOne({ $or: orClauses });
-          if (existing) {
-            if (phoneVal && !existing.phone) { existing.phone = phoneVal; await existing.save(); }
-          } else {
-            await req.models.Customer.create({ name: nameVal, phone: phoneVal || undefined, addedAt: new Date().toISOString() });
-          }
-        }
-      } catch (contactErr) {
-        console.error('Auto-save contact error (non-fatal):', contactErr);
-      }
-    }
-
-    logAction(req.models, 'stock_sell', effectiveSoldByShop || phone.shop || null, req.authRole, {
-      imei: phone.imei, brand: phone.brand, model: phone.model,
-      salePrice: sp, profit, buyerName: buyerName || null,
-      stockShop: phone.shop || null, soldByShop: effectiveSoldByShop,
-    });
-    res.json({ success: true, sale });
-  } catch (err) {
-    console.error('Sell endpoint error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  const result = await sellPhone({
+    connection: req.tenantDb, models: req.models,
+    actor: { role: req.authRole, shop: req.authShop },
+    validShops: req.validShops, payload: req.body,
+    operationId: req.get('Idempotency-Key'),
+    tenderRequired: req.app.locals.fullyPaidSalesEnabled === true,
+    clientSaleVersion: req.get('X-Stockly-Sale-Version'),
+  });
+  res.json({ success: true, sale: result.sale });
 });
 
 // ── Stats ─────────────────────────────────────────────────────────────────
@@ -179,105 +95,52 @@ router.get('/stats', anyAuth, async (req, res) => {
     typeof rawShop === 'string' && req.validShops.includes(rawShop) ? rawShop : undefined
   );
   const stockQuery = shop ? { shop } : {};
-  const salesQuery = buildSalesByShopQuery(shop);
-  const stock = await req.models.Phone.find(stockQuery);
-  const sales = await req.models.Sale.find(salesQuery);
+  const stock = await req.models.Phone.aggregate([{ $match: stockQuery }, { $group: { _id: '$status', count: { $sum: 1 } } }]);
+  const counts = new Map(stock.map(row => [row._id, row.count]));
+  const totals = sumSaleEvents(await readSalesLedger(req.models, { shop, summaryOnly: true }));
 
   res.json({
-    inStock:      stock.filter(p => p.status === 'in_stock').length,
-    sold:         stock.filter(p => p.status === 'sold').length,
-    total:        stock.length,
-    totalRevenue: sales.reduce((s, x) => s + (x.salePrice || 0), 0),
-    salesCount:   sales.length,
+    inStock:      counts.get('in_stock') || 0,
+    sold:         counts.get('sold') || 0,
+    total:        stock.reduce((sum, row) => sum + row.count, 0),
+    totalRevenue: totals.revenue,
+    salesCount:   totals.units,
   });
 });
 
-// ── Batch edit phones ─────────────────────────────────────────────────────
+// ── Edit stock ─────────────────────────────────────────────────────────────
+function edit(req, ids) {
+  return require('../services/stock-edits').editStock({ connection: req.tenantDb, models: req.models,
+    actor: { role: req.authRole }, ids, payload: req.body || {}, validShops: req.validShops });
+}
 router.put('/stock/batch', adminOnly, async (req, res) => {
-  try {
-    const { ids } = req.body || {};
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ error: 'ids required' });
-    }
-    const validIds = ids.filter(id => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id));
-    if (validIds.length !== ids.length) {
-      return res.status(400).json({ error: 'Invalid phone ids' });
-    }
-
-    const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body || {};
-    const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
-    Object.keys(allowed).forEach(k => { if (allowed[k] === undefined) delete allowed[k]; });
-
-    if (allowed.buyPrice !== undefined) {
-      const bp = Number(allowed.buyPrice);
-      if (Number.isNaN(bp) || bp < 0) return res.status(400).json({ error: 'Invalid buy price' });
-      allowed.buyPrice = bp;
-    }
-    if (allowed.imei2 !== undefined) {
-      allowed.imei2 = String(allowed.imei2 || '').replace(/\D/g, '');
-      if (!allowed.imei2) delete allowed.imei2;
-    }
-    ['brand', 'model', 'color', 'storage', 'notes', 'cat', 'shop'].forEach(k => {
-      if (typeof allowed[k] === 'string') {
-        const v = allowed[k].trim();
-        if (v) allowed[k] = v; else delete allowed[k];
-      }
-    });
-
-    if (Object.keys(allowed).length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
-    }
-
-    const result  = await req.models.Phone.updateMany({ _id: { $in: validIds } }, { $set: allowed });
-    const updated = await req.models.Phone.find({ _id: { $in: validIds } });
-    res.json({
-      success:  true,
-      matched:  result.matchedCount  ?? updated.length,
-      modified: result.modifiedCount ?? result.nModified ?? 0,
-      phones:   updated,
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  res.json(await edit(req, req.body?.ids));
 });
-
-// ── Edit phone ────────────────────────────────────────────────────────────
 router.put('/stock/:id', adminOnly, async (req, res) => {
-  try {
-    const { brand, model, color, storage, buyPrice, imei2, cat, notes, shop } = req.body;
-    const allowed = { brand, model, color, storage, buyPrice, imei2, cat, notes, shop };
-    Object.keys(allowed).forEach(k => allowed[k] === undefined && delete allowed[k]);
-    const phone = await req.models.Phone.findByIdAndUpdate(req.params.id, { $set: allowed }, { returnDocument: 'after' });
-    if (!phone) return res.status(404).json({ error: 'Not found' });
-    res.json({ success: true, phone });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  const result = await edit(req, [req.params.id]);
+  res.json({ success: true, phone: result.phones[0] });
 });
 
 // ── Delete phone ──────────────────────────────────────────────────────────
 router.delete('/stock/:id', adminOnly, async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!id || id === 'undefined' || !mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid phone id' });
-    }
-    // Retrieve the phone first so we can log its details before deletion
-    const phone = await req.models.Phone.findById(id);
-    if (phone) {
-      // If the phone was sold, remove its sale record too
-      if (phone.status === 'sold' && phone.imei) {
-        await req.models.Sale.deleteMany({ imei: phone.imei });
-      }
-      await req.models.Phone.findByIdAndDelete(id);
-      logAction(req.models, 'stock_delete', phone.shop || null, req.authRole, {
-        id, imei: phone.imei, brand: phone.brand, model: phone.model,
-      });
-    }
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+  const { id } = req.params;
+  if (!id || id === 'undefined' || !mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: 'Invalid phone id' });
   }
+  await inventoryTransaction(req.tenantDb, async session => {
+    const phone = await req.models.Phone.findById(id).session(session);
+    if (phone) {
+      await lockInventory(req.models, session, [phone.imei]);
+      await assertNotInHQ(req.models, session, phone.imei);
+      if (phone.status !== 'in_stock' || phone.currentSaleId || await req.models.Sale.exists({ imei: phone.imei, reversedAt: null }).session(session)) {
+        throw new HttpError(409, 'Reverse the current sale before deleting this phone.', 'ACTIVE_SALE');
+      }
+      await req.models.Phone.deleteOne({ _id: id, status: 'in_stock' }, { session });
+      await req.models.AuditLog.create([{ action: 'stock_delete', shop: phone.shop || null, role: req.authRole,
+        details: { id, imei: phone.imei, brand: phone.brand, model: phone.model } }], { session });
+    }
+  }, { readConcern: { level: 'snapshot' }, writeConcern: { w: 'majority' } });
+  res.json({ success: true });
 });
 
 module.exports = router;

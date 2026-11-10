@@ -1,0 +1,13 @@
+# Current implementation entry point
+
+This is the 2026-11-10 working-checkout overlay. The original repo maps remain the 2026-11-08 baseline and their counts/line references are historical. No production deployment equivalence is asserted.
+
+server.js owns startup/connect retry and installs server-lifecycle.js for bounded drain. app.js is the inert Express factory: correlation, origin/security/body limits, health/readiness/drain guards, tenant/auth middleware and 17 route modules. request-work.js tracks middleware/route promises independently of socket lifetime. recovery-control.js guards mutation leases; tracking surrounds lease release too.
+
+services/backup-validation.js is the business model catalog and validation authority. Version 3 covers 23 business collections, including stock checks, returns, cash entries and counted checkpoints; master clients/sessions and recovery control are excluded. Recovery validates a consistent snapshot and applies only to an empty account. See RECOVERY.md.
+
+Inventory services serialize IMEI identity/location, use immutable sale/reversal evidence and retained request outcomes, and keep warehouse/product operations separate. Financial summaries read canonical events and frozen closed days. Payments use exact PKR minor units; simple fully-paid Cash/Bank sales, immediate original-shop returns and actual separate refunds follow the accepted business rules. Cash closing counts physical cash separately from profit. New writers remain default off; contracts and compatibility gates are documented in COUNTED-CASH.md and FEATURE-EXECUTION.md.
+
+The browser still uses ordered classic scripts and shared globals. Public configuration selects same-origin browser APIs or explicit HTTPS native origin. Bounded page/export APIs retain old array endpoints for installed clients. Scanner code is lazy-loaded only when needed and guarded across navigation/session lifecycle. Shared dialogs trap focus and cancel replacements, and confirmed actions use captured account/session/page guards. Permanent tenant deletion is unavailable in the UI. Sidebar/HQ/analytics/expense reads guard ownership and stale responses; this is not a claim that every legacy form has one unified state model.
+
+Current measured performance, fixture scope and limits are in MOVEMENT-PAGING.md and SCANNER-LIFECYCLE.md. Read ownership is in READ-REFRESH.md; print lifecycle in PRINTING.md; verification history and remaining scope in FEATURE-EXECUTION.md. release-runbook.md and android-build-and-acceptance.md distinguish local evidence from release/device gates. Current build/verification status is in READY-TO-RUN.md; the original improvement plan remains the broader backlog.

@@ -1,5 +1,7 @@
 # stock-ly — IMEI Stock Management App
 
+Current setup and verification limits: [Ready-to-run handoff](docs/READY-TO-RUN.md).
+
 A multi-tenant inventory and operations app for phone businesses.
 
 It supports client-based isolation, IMEI lifecycle tracking, shop operations, warehouse/dispatch workflows, daily accounting, analytics, reporting, backups, and super-admin tenant management.

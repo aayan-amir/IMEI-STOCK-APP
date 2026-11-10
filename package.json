@@ -5,15 +5,28 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/test.cjs",
+    "test:unit": "node scripts/test.cjs unit",
+    "test:integration": "node scripts/test.cjs integration",
+    "test:prepare-db": "node scripts/prepare-test-db.cjs",
+    "check": "node scripts/check-syntax.cjs",
+    "inventory:check": "node scripts/inventory-preflight.cjs",
+    "bench:movements": "node --expose-gc scripts/bench-movements.cjs",
+    "bench:intake": "node scripts/bench-intake.cjs",
+    "android:sync": "cap sync android",
+    "android:check": "node scripts/build-android.cjs --check",
+    "android:build": "node scripts/build-android.cjs"
   },
   "engines": {
-    "node": ">=18.x"
+    "node": ">=20.19.0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -21,5 +34,9 @@
     "express-rate-limit": "^8.3.1",
     "helmet": "^8.1.0",
     "mongoose": "^9.3.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0",
+    "mongodb-memory-server": "^11.3.0"
   }
 }

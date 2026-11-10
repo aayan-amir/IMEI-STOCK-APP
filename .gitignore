@@ -1,7 +1,63 @@
+# Dependencies and generated web output
 node_modules/
-data/stock.json
+/dist/
+/coverage/
+/.nyc_output/
+*.tsbuildinfo
+
+# Environment files and credentials
 .env
-certs/
-.vs/
-.gitnexus/lbug
-.gitnexus/lbug.wal
+.env.*
+!.env.example
+!.env.*.example
+/certs/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local business data and backup exports
+/data/
+/backups/
+/dumps/
+*.mongodump
+
+# Logs, temporary files and test artifacts
+*.log
+*.pid
+*.pid.lock
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+/test-results/
+/playwright-report/
+/blob-report/
+/.cache/
+/.npm/
+
+# Editor and OS files
+/.vs/
+/.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local assistant state and scratch work
+/.serena/
+/.gitnexus/
+/.codex/
+/scratch/
+/REPO-MAP.md
+/docs/superpowers/
+
+# Project-local Android tooling and signing configuration
+/.android-tools/
+/android/local.properties
+/android/key.properties
+/android/keystore.properties
+*.apk
+*.aab

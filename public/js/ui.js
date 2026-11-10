@@ -2,9 +2,12 @@
 /* Auto-split from index.html — 2026-04-25T15:26:28.693Z */
 
 function nav(page) {
+  if (shopModeActive && !['scan', 'imeistock'].includes(page)) { showToast('Not available in shop mode', 'warn'); return; }
   // Block desktop-only pages on phone (non-admin only)
   if (IS_PHONE && authRole !== 'admin' && ADMIN_ONLY_PAGES.includes(page)) { showToast('Not available on phone mode', 'warn'); return; }
   closeSidebar(); // close mobile sidebar overlay on navigation
+  if (typeof closeCamera === 'function') closeCamera();
+  navigationVersion++;
   activePage = page;
   document.querySelectorAll('.pg').forEach(p => {
     p.classList.remove('on');
@@ -16,6 +19,7 @@ function nav(page) {
   ({
     scan: () => $('imeiInput')?.focus(),
     imeistock: () => loadIMEIData(),
+    stocktakes: () => loadStocktakes(),
     saleslog: () => { $('sl-from').value = today(); $('sl-to').value = today(); loadSalesLog(); },
     stock: () => { $('work-date').value = $('work-date').value || today(); loadDay(); },
     expenses: () => { $('exp-month-filter').value = ym(today()); renderShopExpenses(); },
@@ -34,7 +38,10 @@ function nav(page) {
 
 function switchShop(s) {
   if (shopModeActive) return; // locked in shop mode
+  if (typeof closeCamera === 'function') closeCamera();
+  navigationVersion++;
   activeShop = s;
+  if (typeof intakeShopChanged === 'function') intakeShopChanged();
   clearPhoneSelection();
   document.querySelectorAll('.stab').forEach(t => t.classList.toggle('on', t.dataset.s === s));
   var c = SHOP_COLOR[s] || 'var(--a5)'; var r = SHOP_RGBA[s] || '22,163,74';
@@ -82,7 +89,7 @@ function switchShop(s) {
   }
 
   if (['scan', 'imeistock'].includes(activePage)) loadIMEIData().finally(() => { var pg = $('pg-' + activePage); if (pg) pg.style.opacity = '1'; });
-  else if (activePage === 'stock') { dayState.shop = s; loadDay().finally(() => { var pg = $('pg-stock'); if (pg) pg.style.opacity = '1'; }); }
+  else if (activePage === 'stock') { loadDay().finally(() => { var pg = $('pg-stock'); if (pg) pg.style.opacity = '1'; }); }
   else if (activePage === 'expenses') renderShopExpenses().finally(() => { var pg = $('pg-expenses'); if (pg) pg.style.opacity = '1'; });
   else if (activePage === 'saleslog') loadSalesLog().finally(() => { var pg = $('pg-saleslog'); if (pg) pg.style.opacity = '1'; });
   else if (activePage === 'history') loadAllDays().finally(() => { var pg = $('pg-history'); if (pg) pg.style.opacity = '1'; });
@@ -98,16 +105,42 @@ function switchShop(s) {
   loadSidebarStats();
 }
 
-async function loadSidebarStats() {
-  try {
-    var sh = activeShop === 'HQ' ? null : activeShop;
-    var s = await api('GET', sh ? `/api/stats?shop=${sh}` : '/api/stats');
-    $('sb-is').textContent = s.inStock;
-    $('sb-sa').textContent = s.sold;
-    $('sb-rv').textContent = s.totalRevenue > 0 ? pkr(s.totalRevenue) : '—';
-    var p = $('connPill'); p.classList.add('online'); $('connText').textContent = 'online';
-  } catch (e) {
-    var p = $('connPill'); p.classList.remove('online'); $('connText').textContent = 'offline';
+var sidebarRead = null, sidebarGeneration = 0, sidebarOwner = null;
+var sidebarFailures = 0, sidebarNextPoll = 0;
+function sidebarScope() { return JSON.stringify([listOwner(), localStorage.getItem('authToken'), activeShop]); }
+async function loadSidebarStats(options = {}) {
+  const scope = sidebarScope();
+  if (options.dedupe && sidebarRead?.scope === scope) return sidebarRead.promise;
+  if (sidebarRead) sidebarRead.controller.abort();
+  if (sidebarOwner !== scope) {
+    sidebarOwner = scope; sidebarFailures = 0; sidebarNextPoll = 0;
+    for (const id of ['sb-is', 'sb-sa', 'sb-rv']) $(id).textContent = '—';
+    $('connPill').classList.remove('online'); $('connText').textContent = 'checking';
   }
+  const request = { scope, generation: ++sidebarGeneration, controller: new AbortController() };
+  sidebarRead = request;
+  const current = () => request.generation === sidebarGeneration && sidebarScope() === scope;
+  request.promise = (async () => {
+    try {
+      const sh = activeShop === 'HQ' ? null : activeShop;
+      const result = await api('GET', sh ? '/api/stats?shop=' + encodeURIComponent(sh) : '/api/stats', undefined, { signal: request.controller.signal });
+      if (!current()) return;
+      $('sb-is').textContent = result.inStock; $('sb-sa').textContent = result.sold;
+      $('sb-rv').textContent = result.totalRevenue > 0 ? pkr(result.totalRevenue) : '—';
+      $('connPill').classList.add('online'); $('connText').textContent = 'online';
+      sidebarFailures = 0; sidebarNextPoll = Date.now() + 12000;
+    } catch (error) {
+      if (!current()) return;
+      $('connPill').classList.remove('online'); $('connText').textContent = 'offline';
+      sidebarFailures++; sidebarNextPoll = Date.now() + Math.min(300000, 12000 * Math.pow(2, Math.min(sidebarFailures, 5)));
+    } finally { if (sidebarRead === request) sidebarRead = null; }
+  })();
+  return request.promise;
 }
-setInterval(() => { if (authRole) loadSidebarStats(); }, 12000);
+function pollSidebarStats() {
+  if (!authRole || document.hidden) return;
+  if (sidebarOwner === sidebarScope() && Date.now() < sidebarNextPoll) return;
+  return loadSidebarStats({ dedupe: true });
+}
+setInterval(pollSidebarStats, 12000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pollSidebarStats(); });

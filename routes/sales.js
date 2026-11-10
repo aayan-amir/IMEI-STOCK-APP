@@ -1,75 +1,50 @@
 'use strict';
 
-const express = require('express');
-const router = express.Router();
-const { adminOnly } = require('../middleware/auth');
+const router = require('express').Router();
+const { adminOnly, anyAuth } = require('../middleware/auth');
 const { buildSalesByShopQuery } = require('../utils/helpers');
+const { reverseSales } = require('../services/sale-reversals');
+const { HttpError } = require('../utils/http-error');
+const { readSalesLedger, checkedBounds } = require('../services/sales-ledger');
+const { salesPage } = require('../services/sales-list');
+const { saleReceipt } = require('../services/sale-receipt');
 
-// ── Get sales (admin only) ─────────────────────────────────────────────────
-router.get('/sales', adminOnly, async (req, res) => {
-  const query = buildSalesByShopQuery(req.query.shop);
-  const sales = await req.models.Sale.find(query);
-  res.json(sales);
+router.get('/sales/:id/receipt', adminOnly, async (req, res) => {
+  if (!/^[a-f0-9]{24}$/i.test(req.params.id)) throw new HttpError(400, 'Invalid sale ID', 'INVALID_INPUT');
+  const sale = await req.models.Sale.findById(req.params.id).lean();
+  if (!sale) throw new HttpError(404, 'Sale not found', 'NOT_FOUND');
+  res.json(saleReceipt(sale));
 });
 
-// ── Bulk delete sales ──────────────────────────────────────────────────────
-// Reverts all affected phones back to in_stock
+router.get('/v2/sales/export', anyAuth, async (req, res) => { res.json(await salesPage(req, true)); });
+router.get('/v2/sales', anyAuth, async (req, res) => { res.json(await salesPage(req)); });
+
+router.get('/sales', anyAuth, async (req, res) => {
+  if (req.query.ledger === 'true') {
+    return res.json(await readSalesLedger(req.models, { shop: req.authShop || req.query.shop,
+      bounds: req.query.date ? checkedBounds(req.query.date, 'daily') : undefined }));
+  }
+  if (req.authRole !== 'admin') throw new HttpError(403, 'Forbidden', 'FORBIDDEN');
+  res.json(await req.models.Sale.find({ ...buildSalesByShopQuery(req.query.shop), reversedAt: null }));
+});
+
+router.get('/sales/current/:imei', adminOnly, async (req, res) => {
+  const sales = await req.models.Sale.find({ imei: req.params.imei, reversedAt: null }).limit(2).lean();
+  if (sales.length !== 1) throw new HttpError(409, 'Current sale needs review before reversal.', 'SALE_STATE_CONFLICT');
+  res.json(sales[0]);
+});
+
+function reverse(req, saleIds, imei) {
+  return reverseSales({ connection: req.tenantDb, models: req.models, actor: { role: req.authRole }, saleIds, imei });
+}
 router.delete('/sales', adminOnly, async (req, res) => {
-  try {
-    const query = buildSalesByShopQuery(req.query.shop);
-    const sales = await req.models.Sale.find(query);
-    if (sales.length === 0) return res.json({ success: true, deleted: 0 });
-
-    const imeis = [...new Set(sales.map(s => s.imei).filter(Boolean))];
-    if (imeis.length) {
-      await req.models.Phone.updateMany(
-        { imei: { $in: imeis } },
-        { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } },
-      );
-    }
-
-    const result = await req.models.Sale.deleteMany(query);
-    res.json({ success: true, deleted: result.deletedCount });
-  } catch (err) {
-    console.error('Bulk delete sales error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  res.json(await reverse(req, req.body?.saleIds));
 });
-
-// ── Delete sale by IMEI ────────────────────────────────────────────────────
 router.delete('/sales/by-imei/:imei', adminOnly, async (req, res) => {
-  try {
-    const sale = await req.models.Sale.findOne({ imei: req.params.imei });
-    if (!sale) return res.status(404).json({ error: 'Sale not found' });
-
-    await req.models.Phone.findOneAndUpdate(
-      { imei: sale.imei },
-      { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } },
-    );
-    await req.models.Sale.findByIdAndDelete(sale._id);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Delete sale by IMEI error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  res.json(await reverse(req, req.body?.saleId ? [req.body.saleId] : undefined, req.params.imei));
 });
-
-// ── Delete sale by ID ──────────────────────────────────────────────────────
 router.delete('/sales/:id', adminOnly, async (req, res) => {
-  try {
-    const sale = await req.models.Sale.findById(req.params.id);
-    if (!sale) return res.status(404).json({ error: 'Sale not found' });
-
-    await req.models.Phone.findOneAndUpdate(
-      { imei: sale.imei },
-      { $set: { status: 'in_stock' }, $unset: { salePrice: '', soldAt: '' } },
-    );
-    await req.models.Sale.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Delete sale error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  res.json(await reverse(req, [req.params.id]));
 });
 
 module.exports = router;

@@ -10,13 +10,33 @@ async function bootApp() {
   activeShop = shop;
   switchShop(shop);                       // switchShop(shop) already calls loadIMEIData if activePage is scan/imeistock
   if (authRole === 'shop') applyShopMode(shop);
+  loadBusinessCapabilities();
   $('work-date').value = today();
   $('monthly-month').value = ym(today()); $('exp-month-filter').value = ym(today()); $('ship-month-filter').value = ym(today());
-  await loadSidebarStats();
+  await loadSidebarStats({ dedupe: true });
   // Only call loadIMEIData if switchShop didn't already trigger it
   if (!['scan', 'imeistock'].includes(activePage)) await loadIMEIData();
   $('imeiInput')?.focus();
 }
+
+var nativeBackRegistration = null;
+function initNativeBack() {
+  const bridge = window.Capacitor;
+  if (nativeBackRegistration || !bridge?.isNativePlatform?.() || typeof bridge.registerPlugin !== 'function') return;
+  nativeBackRegistration = Promise.resolve().then(() => {
+    const native = bridge.registerPlugin('App');
+    return native.addListener('backButton', event => {
+      if (typeof cameraOpening !== 'undefined' && (cameraOpening || camStream)) { closeCamera(); return; }
+      if ($('modal-bg')?.classList.contains('open')) { closeModal(); return; }
+      if ($('sb')?.classList.contains('sb-open')) { closeSidebar(); return; }
+      if (['addForm', 'sellForm', 'batchForm', 'productForm'].some(id => $(id)?.getClientRects().length)) { setMode('add'); return; }
+      if (authRole && activePage !== 'scan') { nav('scan'); return; }
+      if (event.canGoBack) window.history.back();
+      else native.exitApp().catch(() => {});
+    });
+  }).catch(() => { nativeBackRegistration = null; console.warn('Native back navigation could not initialize'); });
+}
+initNativeBack();
 
 // ── INITIALIZE ──
 // Override auth check to show Client ID box first if not set

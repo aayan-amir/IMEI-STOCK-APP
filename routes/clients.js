@@ -3,7 +3,16 @@
 const express = require('express');
 const router = express.Router();
 const { Client, mongoose } = require('../db');
-const { safeCompare, createSession, authLimiter, superAdminLimiter, SUPER_ADMIN_PASSWORD } = require('../middleware/auth');
+const { safeCompare, createSession, deleteSession, anyAuth, adminOnly, authLimiter, superAdminLimiter, SUPER_ADMIN_PASSWORD } = require('../middleware/auth');
+
+router.get('/capabilities', anyAuth, (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const owner = req.authRole === 'admin';
+  res.json({ version: 1, backupVersions: [2, 3], features: {
+    imeiHistory: owner, saleReceipts: owner, stocktake: owner && req.app.locals.stocktakesEnabled === true,
+    fullyPaidTender: req.app.locals.fullyPaidSalesEnabled === true, customerReturns: owner && req.app.locals.customerReturnsEnabled === true, verifiedCashClose: owner && req.app.locals.verifiedCashEnabled === true,
+  } });
+});
 
 // ── Public: lookup a client's shops ───────────────────────────────────────
 router.get('/clients/lookup', async (req, res) => {
@@ -27,6 +36,9 @@ router.post('/auth', authLimiter, async (req, res) => {
   console.log(`🔑 Auth Attempt: ${clientId} | Type: ${type} | Shop: ${shop}`);
 
   if (!clientId) return res.status(400).json({ error: 'Client ID required' });
+  if (typeof password !== 'string' || !password || !['gate', 'admin', 'shop'].includes(type)) {
+    return res.status(400).json({ ok: false, error: 'Valid login type and password required' });
+  }
 
   try {
     const client = await Client.findOne({ clientId });
@@ -36,24 +48,22 @@ router.post('/auth', authLimiter, async (req, res) => {
     }
     if (client.status === 'paused') return res.status(403).json({ error: 'Account paused' });
 
-    const gatePass  = client.gatePassword;
-    const adminPass = client.adminPassword;
     const validShops = (client.shops || []).map(s => s.id);
 
     if (type === 'gate') {
       const isOk = await client.compareGatePassword(password);
       if (!isOk) console.log(`❌ Auth Failed: Gate password mismatch for ${clientId}`);
       else       console.log(`✅ Auth Success: Gate password verified for ${clientId}`);
-      return res.json({ ok: isOk });
+      return res.status(isOk ? 200 : 401).json({ ok: isOk });
     }
 
     if (type === 'admin') {
       const isOk = await client.compareAdminPassword(password);
       if (!isOk) {
         console.log(`❌ Auth Failed: Admin password mismatch for ${clientId}`);
-        return res.json({ ok: false });
+        return res.status(401).json({ ok: false });
       }
-      const token = await createSession({ role: 'admin', shop: null, clientId, validShops });
+      const token = await createSession({ role: 'admin', shop: null, clientId, validShops, authVersion: client.authVersion });
       console.log(`✅ Auth Success: Admin logged in for ${clientId}`);
       return res.json({ ok: true, token, role: 'admin', shops: client.shops });
     }
@@ -62,13 +72,13 @@ router.post('/auth', authLimiter, async (req, res) => {
       const isOk = await client.compareGatePassword(password);
       if (!isOk) {
         console.log(`❌ Auth Failed: Shop gate password mismatch for ${clientId}`);
-        return res.json({ ok: false });
+        return res.status(401).json({ ok: false });
       }
       if (!validShops.includes(shop)) {
         console.log(`❌ Auth Failed: Invalid shop "${shop}" for client ${clientId}`);
         return res.status(400).json({ ok: false, error: 'Invalid shop' });
       }
-      const token = await createSession({ role: 'shop', shop, clientId, validShops });
+      const token = await createSession({ role: 'shop', shop, clientId, validShops, authVersion: client.authVersion });
       console.log(`✅ Auth Success: Shop "${shop}" logged in for ${clientId}`);
       return res.json({ ok: true, token, role: 'shop', shop, shops: client.shops });
     }
@@ -81,7 +91,10 @@ router.post('/auth', authLimiter, async (req, res) => {
 });
 
 // ── Admin: update own passwords ───────────────────────────────────────────
-const { adminOnly } = require('../middleware/auth');
+router.post('/auth/logout', anyAuth, async (req, res) => {
+  await deleteSession(req.session.token);
+  res.json({ success: true });
+});
 router.put('/auth/password', authLimiter, adminOnly, async (req, res) => {
   const { currentPassword, newAdminPassword, newGatePassword } = req.body || {};
   const clientId = req.session ? req.session.clientId : null;
@@ -117,6 +130,17 @@ router.post('/superadmin/verify', superAdminLimiter, (req, res) => {
   return res.status(403).json({ ok: false });
 });
 
+router.post('/superadmin/clients/:clientId/status', superAdminLimiter, async (req, res) => {
+  const { HttpError } = require('../utils/http-error');
+  const { superAdminPassword, expectedStatus, status } = req.body || {};
+  if (!safeCompare(superAdminPassword, SUPER_ADMIN_PASSWORD)) throw new HttpError(403, 'Forbidden', 'FORBIDDEN');
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(req.params.clientId) || !['active', 'paused'].includes(expectedStatus) || !['active', 'paused'].includes(status)) throw new HttpError(400, 'Invalid account status', 'INVALID_INPUT');
+  const client = await Client.findOneAndUpdate({ clientId: req.params.clientId, status: expectedStatus },
+    { $set: { status, authVersion: require('node:crypto').randomUUID() } }, { returnDocument: 'after' });
+  if (!client) throw new HttpError(409, 'Account status changed or the account is unavailable. Refresh the list.', 'CLIENT_STATUS_CONFLICT');
+  res.json({ success: true, client: { clientId: client.clientId, status: client.status } });
+});
+
 // ── Super Admin: create / update client ───────────────────────────────────
 router.post('/superadmin/clients', superAdminLimiter, async (req, res) => {
   const { superAdminPassword, clientId, adminPassword, gatePassword, shops, status } = req.body || {};
@@ -131,11 +155,11 @@ router.post('/superadmin/clients', superAdminLimiter, async (req, res) => {
       existing.shops         = shops         || existing.shops;
       existing.status        = status        || existing.status;
       await existing.save();
-      return res.json({ success: true, client: existing });
+      return res.json({ success: true, client: { clientId: existing.clientId, shops: existing.shops, status: existing.status } });
     }
     const client = new Client({ clientId, adminPassword, gatePassword, shops, status: status || 'active' });
     await client.save();
-    res.json({ success: true, client });
+    res.json({ success: true, client: { clientId: client.clientId, shops: client.shops, status: client.status } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

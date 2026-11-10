@@ -3,6 +3,9 @@
 const express = require('express');
 const router = express.Router();
 const { adminOnly } = require('../middleware/auth');
+const { catalogPage } = require('../services/catalog-list');
+router.get('/v2/customers/export', adminOnly, async (req, res) => { res.json(await catalogPage(req, 'customers', true)); });
+router.get('/v2/customers', adminOnly, async (req, res) => { res.json(await catalogPage(req, 'customers')); });
 
 // ── List / search customers ────────────────────────────────────────────────
 router.get('/customers', adminOnly, async (req, res) => {

@@ -1,0 +1,17 @@
+# Scanner loading and lifecycle
+
+The barcode functions now live in scanner.js, retaining their existing classic-script names and calls. IMEI stock/sale/list code stays in imei.js. The browser loads scanner.js before normal application initialization. No new dependency or decoder version was introduced.
+
+The 292,357-byte bundled ZXing asset is no longer an eager head script. Native BarcodeDetector is tried first; when unavailable or initialization fails, a same-origin single-flight loader requests /js/zxing.min.js on actual camera use. Load/error/timeout and synchronous insertion failures share settled cleanup; the request can be explicitly retried. A stale callback cannot clear a newer loader attempt. The existing bundled decoder remains available for offline packaged assets; the loader never uses the API origin.
+
+Each opening binds its generation, account/token, role, shop and page. Pending and active MediaStreams are owned explicitly. Close, Escape while permission is pending, visibility loss, workflow/shop navigation, session expiration and logout stop tracks and invalidate stale callbacks. Delayed permission, playback, decoder and native-detection results cannot reopen the scanner or trigger an action for another owner/session. Video objects and canvas frames are cleared. Readiness listeners, fallback timers, animation frames and delayed focus resets are removed/invalidated. Optional capability APIs can fail without stopping an otherwise usable camera. Manual entry remains available and permission/no-camera errors give specific recovery guidance.
+
+## Verification
+
+Eighteen focused unit cases passed after meaningful failing reproductions. They cover canceled late permission, denied permission/manual input, late native decoding, shared decoder loading/error/retry, background cleanup, readiness listener removal, old focus timers, overlapping openings, Escape, session expiration, navigation, owner changes, optional capability failure, delayed playback, stale loader callbacks and synchronous insertion failure. Independent read-only review found the synchronous loader retry issue; it was reproduced RED then corrected GREEN.
+
+Full stationary-source suite: 502/502 passed, zero failures/skips, 122.4 seconds. The earlier in-progress full run caught two newly added generation/loader regression cases before their fixes; its 499-pass/2-fail result is not the final checkpoint.
+
+Two disposable same-machine loopback previews compared the preceding verified source checkpoint with the new app. Initial declared JavaScript responses were 582,996 bytes across 16 requests before and 294,703 bytes across 16 requests after: 288,293 fewer bytes (about 49.4 percent). This is a full-response payload comparison, not compressed wire traffic, p95 latency, LCP, INP or physical-phone startup certification. Browser DOM showed no eager decoder script on current app entry and no current-entry console errors. A separate disposable browser fixture injected a 503 on first local decoder load; the actual bundled BrowserMultiFormatReader loaded and constructed successfully on retry. No camera permission or external service/account was used; all preview servers were stopped.
+
+Physical Android/iOS camera selection, autofocus/torch quality, orientation, real barcode detection speed and packaged APK acceptance remain device gates. Existing rear-camera label scoring is a heuristic; it is not a verified hardware guarantee.

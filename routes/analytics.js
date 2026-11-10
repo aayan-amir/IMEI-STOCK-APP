@@ -3,7 +3,10 @@
 const express = require('express');
 const router = express.Router();
 const { adminOnly } = require('../middleware/auth');
-const { buildSalesByShopQuery } = require('../utils/helpers');
+const { readSalesLedger, checkedBounds } = require('../services/sales-ledger');
+const { sumMoney, businessDate } = require('../public/js/business-rules');
+const { financialSummary } = require('../services/financial-summary');
+const { inventoryTransaction } = require('../services/inventory-identity');
 
 // ── Model analytics (top sold, stagnating stock) ───────────────────────────
 router.get('/analytics/models', adminOnly, async (req, res) => {
@@ -13,7 +16,7 @@ router.get('/analytics/models', adminOnly, async (req, res) => {
     const staleDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const [recentSales, staleStock] = await Promise.all([
-      req.models.Sale.find({ soldAt: { $gte: since } }),
+      readSalesLedger(req.models, { bounds: { start: since, end: new Date().toISOString() } }),
       req.models.Phone.find({ status: 'in_stock', addedAt: { $lte: staleDate } }),
     ]);
 
@@ -22,9 +25,9 @@ router.get('/analytics/models', adminOnly, async (req, res) => {
     recentSales.forEach(s => {
       const key = `${s.brand || ''} ${s.model || ''}`.trim() || 'Unknown';
       if (!modelMap[key]) modelMap[key] = { model: key, count: 0, revenue: 0, profit: 0 };
-      modelMap[key].count++;
-      modelMap[key].revenue += s.salePrice || 0;
-      modelMap[key].profit  += s.profit    || 0;
+      modelMap[key].count += s.units;
+      modelMap[key].revenue = sumMoney([modelMap[key].revenue, s.salePrice]);
+      modelMap[key].profit = sumMoney([modelMap[key].profit, s.profit]);
     });
     const topSold = Object.values(modelMap).sort((a, b) => b.count - a.count).slice(0, 15);
 
@@ -51,84 +54,34 @@ router.get('/analytics/models', adminOnly, async (req, res) => {
 });
 
 // ── CEO summary (monthly overview across all shops) ───────────────────────
+router.get('/financial-summary', adminOnly, async (req, res) => {
+  const result = await inventoryTransaction(req.tenantDb, session => financialSummary(req.models, {
+    type: req.query.type, period: req.query.period, shop: req.query.shop || 'ALL', validShops: req.validShops, session,
+  }));
+  res.json(result);
+});
+
 router.get('/ceo/summary', adminOnly, async (req, res) => {
-  try {
-    const { month } = req.query;
-    if (month && !/^\d{4}-\d{2}$/.test(month)) {
-      return res.status(400).json({ error: 'Invalid month format (YYYY-MM required)' });
+  const month = req.query.month || businessDate().slice(0, 7);
+  checkedBounds(month, 'monthly');
+  const [year, number] = month.split('-').map(Number);
+  const prevMonth = new Date(Date.UTC(year, number - 2, 1)).toISOString().slice(0, 7);
+  const result = await inventoryTransaction(req.tenantDb, async session => {
+    const current = await financialSummary(req.models, { type: 'monthly', period: month, validShops: req.validShops, session });
+    const previous = await financialSummary(req.models, { type: 'monthly', period: prevMonth, validShops: req.validShops, session });
+    const stock = await req.models.Phone.find({ status: 'in_stock' }).session(session).lean();
+    const counts = new Map();
+    for (const event of current.ledger) {
+      const model = `${event.brand || ''} ${event.model || ''}`.trim();
+      if (model) counts.set(model, (counts.get(model) || 0) + event.units);
     }
-    const currentMonth = month || new Date().toISOString().slice(0, 7);
-    const [y, m]       = currentMonth.split('-').map(Number);
-    const prevDate     = new Date(y, m - 2, 1);
-    const prevMonth    = prevDate.toISOString().slice(0, 7);
-
-    const [currentSales, prevSales, currentExpenses, stock] = await Promise.all([
-      req.models.Sale.find({ soldAt: { $regex: `^${currentMonth}` } }).lean(),
-      req.models.Sale.find({ soldAt: { $regex: `^${prevMonth}` } }).lean(),
-      req.models.ShopExpense.find({ month: String(currentMonth) }).lean(),
-      req.models.Phone.find({ status: 'in_stock' }).lean(),
-    ]);
-
-    // Per-shop breakdown
-    const VALID_SHOPS = req.validShops;
-    const shopStats = {};
-    VALID_SHOPS.forEach(s => { shopStats[s] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 }; });
-
-    currentSales.forEach(s => {
-      // Revenue and profit attributed to the shop that made the sale (soldByShop), falling back to stock-owning shop
-      const sh = s.soldByShop || s.shop;
-      if (!sh) return;
-      if (!shopStats[sh]) shopStats[sh] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 };
-      shopStats[sh].revenue += s.salePrice || 0;
-      shopStats[sh].cost    += s.buyPrice  || 0;
-      shopStats[sh].profit  += s.profit    || 0;
-      shopStats[sh].units++;
-    });
-
-    currentExpenses.forEach(e => {
-      const sh = e.shop;
-      if (!sh) return;
-      if (!shopStats[sh]) shopStats[sh] = { revenue: 0, cost: 0, profit: 0, units: 0, expenses: 0 };
-      shopStats[sh].expenses += e.amount || 0;
-    });
-
-    // Top models this month
-    const modelCounts = {};
-    currentSales.forEach(s => {
-      const key = `${s.brand || ''} ${s.model || ''}`.trim();
-      if (key) modelCounts[key] = (modelCounts[key] || 0) + 1;
-    });
-    const topModels = Object.entries(modelCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([model, count]) => ({ model, count }));
-
-    const totalRevenue   = currentSales.reduce((s, x) => s + (x.salePrice || 0), 0);
-    const totalProfit    = currentSales.reduce((s, x) => s + (x.profit    || 0), 0);
-    const totalExpenses  = currentExpenses.reduce((s, e) => s + (e.amount || 0), 0);
-    const prevRevenue    = prevSales.reduce((s, x) => s + (x.salePrice || 0), 0);
-    const prevProfit     = prevSales.reduce((s, x) => s + (x.profit    || 0), 0);
-
-    res.json({
-      month: currentMonth,
-      prevMonth,
-      current: {
-        revenue:   totalRevenue,
-        profit:    totalProfit,
-        expenses:  totalExpenses,
-        units:     currentSales.length,
-        netProfit: totalProfit - totalExpenses,
-      },
-      prev: { revenue: prevRevenue, profit: prevProfit },
-      shopStats,
-      topModels,
-      inventoryCount: stock.length,
-      inventoryValue: stock.reduce((s, p) => s + (p.buyPrice || 0), 0),
-    });
-  } catch (err) {
-    console.error('CEO summary error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    const view = f => ({ ...f, profit: f.grossProfit });
+    return { month, prevMonth, ruleVersion: current.ruleVersion, current: view(current.financial), prev: view(previous.financial),
+      shopStats: Object.fromEntries(Object.entries(current.shopStats).map(([shop, f]) => [shop, view(f)])),
+      topModels: [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 5).map(([model, count]) => ({ model, count })),
+      inventoryKind: 'current', inventoryCount: stock.length, inventoryValue: sumMoney(stock.map(phone => phone.buyPrice || 0)) };
+  });
+  res.json(result);
 });
 
 module.exports = router;

@@ -3,7 +3,15 @@
 const express = require('express');
 const router = express.Router();
 const { adminOnly } = require('../middleware/auth');
-const { buildSalesByShopQuery } = require('../utils/helpers');
+const { inventoryTransaction } = require('../services/inventory-identity');
+const { touchPeriod } = require('../services/accounting-period');
+const { HttpError } = require('../utils/http-error');
+const { checkedBounds } = require('../services/sales-ledger');
+const { financialSummary, reportData } = require('../services/financial-summary');
+const { dayChecksum } = require('../services/day-service');
+const { recordPage } = require('../services/record-list');
+router.get('/v2/reports/export', adminOnly, async (req, res) => { res.json(await recordPage(req, 'reports', true)); });
+router.get('/v2/reports', adminOnly, async (req, res) => { res.json(await recordPage(req, 'reports')); });
 
 // ── List reports ───────────────────────────────────────────────────────────
 router.get('/reports', adminOnly, async (req, res) => {
@@ -21,86 +29,47 @@ router.get('/reports', adminOnly, async (req, res) => {
 
 // ── Generate and persist a report ─────────────────────────────────────────
 router.post('/reports/generate', adminOnly, async (req, res) => {
-  try {
     const { type: rawType, shop: rawShop, period: rawPeriod } = req.body || {};
     const type   = String(rawType   || '');
     const shop   = String(rawShop   || '');
     const period = String(rawPeriod || '');
-    if (!type || !shop || !period) return res.status(400).json({ error: 'type, shop, period required' });
-    if (!/^\d{4}-\d{2}(-\d{2})?$/.test(period)) return res.status(400).json({ error: 'Invalid period format (YYYY-MM or YYYY-MM-DD required)' });
-
-    let data = {};
-
-    if (type === 'daily') {
-      const shopQ = shop === 'ALL' ? {} : buildSalesByShopQuery(shop);
-      const [sales, day] = await Promise.all([
-        req.models.Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
-        shop === 'ALL' ? Promise.resolve(null) : req.models.Day.findOne({ shop, date: period }),
-      ]);
-      const expenses = (day?.expenses || []).reduce((s, e) => s + (e.amt || 0), 0);
-      data = {
-        totalSales:  sales.reduce((s, x) => s + (x.salePrice || 0), 0),
-        totalCost:   sales.reduce((s, x) => s + (x.buyPrice  || 0), 0),
-        grossProfit: sales.reduce((s, x) => s + (x.profit    || 0), 0),
-        unitsSold:   sales.length,
-        expenses,
-        netProfit:   sales.reduce((s, x) => s + (x.profit || 0), 0) - expenses,
-        salesList:   sales.map(s => ({
-          model:     `${s.brand || ''} ${s.model || ''}`.trim(),
-          imei:      s.imei,
-          salePrice: s.salePrice,
-          buyPrice:  s.buyPrice,
-          profit:    s.profit,
-          buyerName: s.buyerName || null,
-          shop:      s.shop,
-        })),
-      };
-    } else if (type === 'monthly') {
-      const shopQ = shop === 'ALL' ? {} : buildSalesByShopQuery(shop);
-      const [sales, expenses] = await Promise.all([
-        req.models.Sale.find({ ...shopQ, soldAt: { $regex: `^${period}` } }),
-        req.models.ShopExpense.find(shop === 'ALL' ? { month: period } : { shop, month: period }),
-      ]);
-      const grossProfit   = sales.reduce((s, x) => s + (x.profit || 0), 0);
-      const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
-      data = {
-        totalSales:       sales.reduce((s, x) => s + (x.salePrice || 0), 0),
-        totalCost:        sales.reduce((s, x) => s + (x.buyPrice  || 0), 0),
-        grossProfit,
-        unitsSold:        sales.length,
-        totalExpenses,
-        netProfit:        grossProfit - totalExpenses,
-        expenseBreakdown: expenses.map(e => ({
-          category:    e.category,
-          description: e.description,
-          amount:      e.amount,
-          date:        e.date,
-        })),
-      };
-    } else {
-      return res.status(400).json({ error: 'Invalid type' });
-    }
-
-    const report = await req.models.Report.findOneAndUpdate(
-      { type, shop, period },
-      { type, shop, period, data, generatedAt: new Date().toISOString() },
-      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-    );
-    res.json({ success: true, report });
-  } catch (err) {
-    console.error('Report generate error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    if (!type || !shop || !period) throw new HttpError(400, 'type, shop, period required', 'INVALID_INPUT');
+    if (shop !== 'ALL' && !req.validShops.includes(shop)) throw new HttpError(400, 'Invalid shop', 'INVALID_SHOP');
+    checkedBounds(period, type);
+    const result = await inventoryTransaction(req.tenantDb, async session => {
+      for (const id of (shop === 'ALL' ? [...req.validShops].sort() : [shop])) await touchPeriod(req.models, session, id);
+      const summary = await financialSummary(req.models, { shop, type, period, validShops: req.validShops, session });
+      const data = JSON.parse(JSON.stringify(reportData(summary)));
+      const previous = await req.models.Report.findOne({ type, shop, period }).session(session).lean();
+      if (previous && dayChecksum(previous.data) === dayChecksum(data)) return { success: true, report: previous };
+      const history = previous?.history || [];
+      if (previous) {
+        if (history.length >= 30) throw new HttpError(409, 'Report history needs managed archival before another version.', 'REPORT_CONFLICT');
+        history.push({ generatedAt: previous.generatedAt, data: previous.data });
+      }
+      const report = await req.models.Report.findOneAndUpdate(
+        { type, shop, period },
+        { type, shop, period, data, history, generatedAt: new Date().toISOString() },
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true, session },
+      );
+      return { success: true, report };
+    });
+    res.json(result);
 });
 
 // ── Delete report ──────────────────────────────────────────────────────────
 router.delete('/reports/:id', adminOnly, async (req, res) => {
-  try {
-    await req.models.Report.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  if (!/^[a-f0-9]{24}$/i.test(req.params.id)) throw new HttpError(400, 'Invalid report ID', 'INVALID_INPUT');
+  await inventoryTransaction(req.tenantDb, async session => {
+    const report = await req.models.Report.findById(req.params.id).session(session);
+    if (!report) return;
+    for (const shop of (report.shop === 'ALL' ? [...req.validShops].sort() : [report.shop])) await touchPeriod(req.models, session, shop);
+    if (report.data?.closedRevision || report.data?.sourceRevisions?.some(source => source.status === 'closed') || report.history?.length) throw new HttpError(409, 'This report retains closed history and cannot be deleted.', 'REPORT_RETAINED');
+    await req.models.Report.deleteOne({ _id: report._id }, { session });
+    await req.models.AuditLog.create([{ action: 'report_delete', role: req.authRole, shop: report.shop,
+      details: { reportId: report.id, type: report.type, period: report.period } }], { session });
+  });
+  res.json({ success: true });
 });
 
 module.exports = router;

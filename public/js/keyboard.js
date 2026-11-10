@@ -1,13 +1,4 @@
-/* ── Keyboard resize handler for Capacitor Android ──
- * With Keyboard.resize = "none" in capacitor.config.json, the native
- * webview does NOT resize when the soft keyboard opens. Instead, we
- * use the Visual Viewport API to detect the keyboard height and set a
- * CSS custom property (--keyboard-height) on <html>. The body uses
- * calc(100% - var(--keyboard-height)) to shrink itself, and the
- * flexbox layout flows naturally without any black gaps.
- *
- * Also scrolls the focused input into view when the keyboard opens.
- */
+/* Keyboard visibility follows the visual viewport; no native keyboard plugin is required. */
 
 (function initKeyboardHandler() {
   // Only run on Capacitor / mobile webview
