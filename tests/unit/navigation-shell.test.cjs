@@ -54,3 +54,12 @@ test('overview omits duplicate insights and printed summaries remain reports', (
   assert.equal(source.includes('Quick Insights'), false);
   assert.equal(source.includes('Invoice —'), false);
 });
+
+test('stock opens the add and sell screen and page status starts without technical filler', () => {
+  const html = fs.readFileSync('public/index.html', 'utf8');
+  assert.match(html, /id="ni-scan"[^>]*data-section="inventory"[^>]*onclick="nav\('scan'\)"/);
+  for (const id of ['products-status','sl-page-status','history-status','movements-status','contacts-status','reports-status']) {
+    assert.match(html, new RegExp('id="'+id+'"[^>]*></p>'));
+  }
+  assert.match(fs.readFileSync('public/js/app.js','utf8'), /nav\('scan'\)/);
+});

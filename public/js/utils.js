@@ -247,7 +247,7 @@ function createListPager(config) {
       } catch (error) {
         if (!current()) return;
         if (!pager.isCurrent()) $(config.body).innerHTML = '<div class="empty">Could not load this list. Refresh to retry.</div>';
-        $(`${config.prefix}-status`).textContent = 'Could not load this page. Last loaded data is retained; refresh to retry.';
+        $(`${config.prefix}-status`).textContent = 'Could not load this page. Refresh to retry.';
         return handleApiError(error);
       } finally { if (current()) { pager.loading = false; pager.draw(); } }
     },

@@ -154,7 +154,7 @@
     <div id="sb">
       <nav class="primary-nav" aria-label="Main navigation">
         <button type="button" class="ni" id="ni-ceo" data-admin-only="true" data-section="overview" onclick="nav('ceo')">Overview</button>
-        <button type="button" class="ni on" id="ni-imeistock" data-section="inventory" onclick="nav('imeistock')">Stock</button>
+        <button type="button" class="ni on" id="ni-scan" data-section="inventory" onclick="nav('scan')">Stock</button>
         <button type="button" class="ni" id="ni-saleslog" data-admin-only="true" data-section="sales" onclick="nav('saleslog')">Sales</button>
         <button type="button" class="ni" id="ni-stock" data-admin-only="true" data-section="daily" onclick="nav('stock')">Daily Close</button>
         <button type="button" class="ni" id="ni-monthly" data-admin-only="true" data-section="reports" onclick="nav('monthly')">Reports</button>
@@ -173,8 +173,9 @@
 
     <div id="main">
       <nav class="workspace-nav" data-workspace="inventory" aria-label="Stock sections">
-        <button type="button" class="btn bo" data-workspace-page="imeistock" onclick="nav('imeistock')">Phones</button>
-        <button type="button" class="btn bo" id="ni-scan" data-workspace-page="scan" onclick="nav('scan')">Scan</button>
+        <button type="button" class="btn bo" data-workspace-page="scan" onclick="nav('scan')">Add / Sell</button>
+        <button type="button" class="btn bo" id="ni-imeistock" data-workspace-page="imeistock" onclick="nav('imeistock')">Phones</button>
+
         <button type="button" class="btn bo" id="ni-warehouse" data-workspace-page="warehouse" data-admin-only="true" onclick="nav('warehouse')">Warehouse</button>
         <button type="button" class="btn bo" id="ni-shipments" data-workspace-page="shipments" data-admin-only="true" onclick="nav('shipments')">Movement History</button>
         <button type="button" class="btn bo" id="ni-stocktakes" data-workspace-page="stocktakes" style="display:none" data-admin-only="true" onclick="nav('stocktakes')">Stock Checks</button>
@@ -201,7 +202,7 @@
       <!-- ══ IMEI SCAN ══ -->
       <div class="pg on" id="pg-scan">
         <div class="tb">
-          <div class="tb-title">IMEI Scan</div>
+          <div class="tb-title">Add / Sell Phones</div>
           <div class="tb-badge" id="scan-shop-badge">Shop Name</div>
           <div class="tbsep"></div>
           <button class="btn bb" onclick="openCamera()" style="font-size:.7rem;">Scan Barcode</button>
@@ -223,8 +224,6 @@
               <button class="btn bo" onclick="openCamera('imei1')" title="Use camera">Cam</button>
               <button class="btn bg" onclick="handleImeiSubmit()">Go</button>
             </div>
-            <p style="font-size:.62rem;color:var(--text2);margin-top:7px;font-family:var(--mono)">Hardware scanner
-              auto-submits on Enter · Scan IMEI 1, details form appears</p>
           </div>
           <div class="result-preview" id="resultPreview">
             <div
@@ -343,11 +342,11 @@
               <button class="btn bo" onclick="cancelForm()">Cancel</button>
             </div>
             <div class="filter-row">
-              <label for="products-search">Find products</label><input id="products-search" type="search" maxlength="80" oninput="searchProducts()">
-              <label for="products-availability">Availability</label><select id="products-availability" onchange="loadProducts()"><option value="all">All products</option><option value="available">In stock</option><option value="empty">Out of stock</option></select>
-              <button class="btn bo" onclick="loadProducts()">Refresh</button><button class="btn bo" onclick="exportProductsCSV()">CSV all matches</button>
+              <div class="filter-field"><label for="products-search">Find products</label><input id="products-search" type="search" maxlength="80" oninput="searchProducts()"></div>
+              <div class="filter-field"><label for="products-availability">Availability</label><select id="products-availability" onchange="loadProducts()"><option value="all">All products</option><option value="available">In stock</option><option value="empty">Out of stock</option></select></div>
+              <button class="btn bo" onclick="loadProducts()">Refresh</button><button class="btn bo" onclick="exportProductsCSV()">Export CSV</button>
             </div>
-            <p id="products-status" role="status" aria-live="polite">Product counts apply to the loaded page.</p>
+            <p id="products-status" role="status" aria-live="polite"></p>
             <div id="productList" style="margin-top:16px;"></div>
             <nav aria-label="Product pages"><button class="btn bo" id="products-prev" onclick="productPager.previous()" disabled>Previous</button><button class="btn bo" id="products-next" onclick="productPager.next()" disabled>Next</button></nav>
           </div>
@@ -457,8 +456,8 @@
           <div class="tb-badge" id="imei-shop-badge">Shop Name</div>
           <div class="tbsep"></div>
           <button class="btn bo" style="font-size:.65rem" onclick="loadIMEIData()">↻ Refresh</button>
-          <button class="btn bo" style="font-size:.65rem" onclick="exportIMEICSV()">↓ CSV all matches</button>
-          <button class="btn bo" style="font-size:.65rem" onclick="printIMEIStock()">Print all matches</button>
+          <button class="btn bo" style="font-size:.65rem" onclick="exportIMEICSV()">↓ Export CSV</button>
+          <button class="btn bo" style="font-size:.65rem" onclick="printIMEIStock()">Print</button>
           <button class="btn bo" style="font-size:.65rem" id="groupBtn" onclick="toggleGrouped()">Flat List</button>
           <button class="btn bo" style="font-size:.65rem" onclick="expandAllGroups()">Expand All</button>
           <button class="btn bo" style="font-size:.65rem" onclick="collapseAllGroups()">Collapse All</button>
@@ -502,24 +501,21 @@
             style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
             <!-- dynamic -->
           </select>
-          <input type="date" id="sl-from" aria-label="First business date" onchange="loadSalesLog()"
-            style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
-          <span style="color:var(--text2);font-size:.7rem;flex-shrink:0">→</span>
-          <input type="date" id="sl-to" aria-label="Last business date" onchange="loadSalesLog()"
-            style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
+          <div class="toolbar-date"><label for="sl-from">From</label><input type="date" id="sl-from" aria-label="First business date" onchange="loadSalesLog()"
+            style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;"></div>
+          <div class="toolbar-date"><label for="sl-to">To</label><input type="date" id="sl-to" aria-label="Last business date" onchange="loadSalesLog()"
+            style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;"></div>
           <div class="tbsep"></div>
           <button class="btn bo" onclick="loadSalesLog()" style="font-size:.62rem">↻ Refresh</button>
-          <button class="btn bo" onclick="exportSalesLogCSV()" style="font-size:.62rem">↓ CSV all matches</button>
-          <button class="btn bo" onclick="printSalesLog()" style="font-size:.62rem">Print all matches</button>
-          <button class="btn br" onclick="clearAllSales()" style="font-size:.62rem">Reverse sales on this page</button>
+          <button class="btn bo" onclick="exportSalesLogCSV()" style="font-size:.62rem">↓ Export CSV</button>
+          <button class="btn bo" onclick="printSalesLog()" style="font-size:.62rem">Print</button>
+          <button class="btn br" onclick="clearAllSales()" style="font-size:.62rem">Reverse listed sales</button>
         </div>
         <div class="filter-row">
-          <label for="sl-kind">Events</label>
-          <select id="sl-kind" onchange="loadSalesLog()"><option value="all">All events</option><option value="sale">Sales</option><option value="reversal">Reversals</option></select>
-          <label for="sl-search">Search sales</label>
-          <input id="sl-search" type="search" maxlength="80" placeholder="Phone, IMEI or buyer" oninput="scheduleSalesSearch()">
+          <div class="filter-field"><label for="sl-kind">Events</label><select id="sl-kind" onchange="loadSalesLog()"><option value="all">All events</option><option value="sale">Sales</option><option value="reversal">Reversals</option></select></div>
+          <div class="filter-field"><label for="sl-search">Search sales</label><input id="sl-search" type="search" maxlength="80" placeholder="Phone, IMEI or buyer" oninput="scheduleSalesSearch()"></div>
         </div>
-        <p id="sl-page-status" role="status" aria-live="polite">Totals and reversal actions apply to the loaded page.</p>
+        <p id="sl-page-status" role="status" aria-live="polite"></p>
         <nav aria-label="Sales pages" style="display:flex;gap:8px;padding:8px">
           <button class="btn bo" id="sl-prev" onclick="previousSalesPage()" disabled>Previous</button>
           <button class="btn bo" id="sl-next" onclick="nextSalesPage()" disabled>Next</button>
@@ -649,10 +645,10 @@
           <label for="hist-month">Month</label><input id="hist-month" type="month" onchange="loadAllDays()">
           <label for="hist-status">Status</label><select id="hist-status" onchange="loadAllDays()"><option value="">All statuses</option><option value="open">Open drafts</option><option value="closed">Closed</option></select>
           <button class="btn bo" onclick="loadAllDays()" style="font-size:.62rem">Refresh</button>
-          <button class="btn bo" onclick="printHistory()" style="font-size:.62rem">Print all matches</button>
-          <button class="btn bo" onclick="exportRecordsJSON(historyPager,'days')" style="font-size:.62rem">JSON all matches</button>
+          <button class="btn bo" onclick="printHistory()" style="font-size:.62rem">Print</button>
+          <button class="btn bo" onclick="exportRecordsJSON(historyPager,'days')" style="font-size:.62rem">Export JSON</button>
         </div>
-        <p id="history-status" role="status" aria-live="polite">Closed figures are retained snapshots. Open drafts require the current ledger.</p>
+        <p id="history-status" role="status" aria-live="polite"></p>
         <nav aria-label="History pages"><button class="btn bo" id="history-prev" onclick="historyPager.previous()" disabled>Previous</button><button class="btn bo" id="history-next" onclick="historyPager.next()" disabled>Next</button></nav>
         <div class="hq-body" id="hist-body">
           <div class="empty">
@@ -696,9 +692,9 @@
           <div class="tbsep"></div>
           <button class="btn bb" onclick="openDispatchFromShipments()">↗ Dispatch</button>
           <button class="btn bb" onclick="openReceiveModal()">+ Log Shipment</button>
-          <button class="btn bo" onclick="loadShipments()">Refresh</button><button class="btn bo" onclick="printShipments()">Print all matches</button><button class="btn bo" onclick="exportRecordsJSON(movementPager, 'movements')">JSON all matches</button>
+          <button class="btn bo" onclick="loadShipments()">Refresh</button><button class="btn bo" onclick="printShipments()">Print</button><button class="btn bo" onclick="exportRecordsJSON(movementPager, 'movements')">Export JSON</button>
         </div>
-        <p id="movements-status" role="status" aria-live="polite">Retained movement records; current sale status is not inferred from old dispatches.</p><nav aria-label="Movement pages"><button class="btn bo" id="movements-prev" onclick="movementPager.previous()" disabled>Previous</button><button class="btn bo" id="movements-next" onclick="movementPager.next()" disabled>Next</button></nav><div class="hq-body" id="ship-body"></div>
+        <p id="movements-status" role="status" aria-live="polite"></p><nav aria-label="Movement pages"><button class="btn bo" id="movements-prev" onclick="movementPager.previous()" disabled>Previous</button><button class="btn bo" id="movements-next" onclick="movementPager.next()" disabled>Next</button></nav><div class="hq-body" id="ship-body"></div>
       </div>
 
       <!-- ══ MONTHLY P&L ══ -->
@@ -746,10 +742,10 @@
             style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--mono);font-size:.68rem;padding:.24rem .55rem;outline:none;width:180px;">
           <div class="tbsep"></div>
           <button class="btn bo" onclick="loadContacts()" style="font-size:.62rem">Refresh</button>
-          <button class="btn bo" onclick="printContacts()" style="font-size:.62rem">Print all matches</button>
+          <button class="btn bo" onclick="printContacts()" style="font-size:.62rem">Print</button>
           <button class="btn bv" onclick="openAddContactModal()">+ Add Contact</button>
         </div>
-        <p id="contacts-status" role="status" aria-live="polite">Contact counts apply to the loaded page.</p>
+        <p id="contacts-status" role="status" aria-live="polite"></p>
         <nav aria-label="Contact pages"><button class="btn bo" id="contacts-prev" onclick="contactPager.previous()" disabled>Previous</button><button class="btn bo" id="contacts-next" onclick="contactPager.next()" disabled>Next</button></nav>
         <div class="hq-body" id="contacts-body">
           <div class="empty">
@@ -795,10 +791,10 @@
           </select>
           <div class="tbsep"></div>
           <button class="btn bo" onclick="loadLogs()" style="font-size:.62rem">↻ Refresh</button>
-          <button class="btn bo" onclick="printLogs()" style="font-size:.62rem">Print all matches</button>
-          <button class="btn bo" onclick="exportRecordsJSON(logPager,'logs')" style="font-size:.62rem">JSON all matches</button>
+          <button class="btn bo" onclick="printLogs()" style="font-size:.62rem">Print</button>
+          <button class="btn bo" onclick="exportRecordsJSON(logPager,'logs')" style="font-size:.62rem">Export JSON</button>
         </div>
-        <div class="filter-row"><label for="log-action">Action (exact)</label><input id="log-action" maxlength="64" oninput="searchLogs()"><label for="log-from">From</label><input id="log-from" type="date" onchange="loadLogs()"><label for="log-to">To</label><input id="log-to" type="date" onchange="loadLogs()"></div>
+        <div class="filter-row"><div class="filter-field"><label for="log-action">Action</label><input id="log-action" maxlength="64" oninput="searchLogs()"></div><div class="filter-field"><label for="log-from">From</label><input id="log-from" type="date" onchange="loadLogs()"></div><div class="filter-field"><label for="log-to">To</label><input id="log-to" type="date" onchange="loadLogs()"></div></div>
         <p id="logs-status" role="status" aria-live="polite">Loaded-page count is separate from matching activity.</p>
         <nav aria-label="Activity pages"><button class="btn bo" id="logs-prev" onclick="logPager.previous()" disabled>Previous</button><button class="btn bo" id="logs-next" onclick="logPager.next()" disabled>Next</button></nav>
         <div class="hq-body" id="logs-body">
@@ -830,8 +826,8 @@
           <div class="tbsep"></div>
           <button class="btn bo" onclick="loadReports()" style="font-size:.62rem">↻ Refresh</button>
         </div>
-        <div class="filter-row"><label for="saved-report-type">Saved type</label><select id="saved-report-type" onchange="loadReports()"><option value="">All types</option><option value="daily">Daily</option><option value="monthly">Monthly</option></select><label for="saved-report-month">Saved month</label><input id="saved-report-month" type="month" onchange="loadReports()"><button class="btn bo" onclick="exportRecordsJSON(reportPager,'reports')">JSON all matches</button></div>
-        <p id="reports-status" role="status" aria-live="polite">Saved figures are retained report versions.</p>
+        <div class="filter-row"><div class="filter-field"><label for="saved-report-type">Saved type</label><select id="saved-report-type" onchange="loadReports()"><option value="">All types</option><option value="daily">Daily</option><option value="monthly">Monthly</option></select></div><div class="filter-field"><label for="saved-report-month">Saved month</label><input id="saved-report-month" type="month" onchange="loadReports()"></div><button class="btn bo" onclick="exportRecordsJSON(reportPager,'reports')">Export JSON</button></div>
+        <p id="reports-status" role="status" aria-live="polite"></p>
         <nav aria-label="Saved report pages"><button class="btn bo" id="reports-prev" onclick="reportPager.previous()" disabled>Previous</button><button class="btn bo" id="reports-next" onclick="reportPager.next()" disabled>Next</button></nav>
         <div class="hq-body" id="reports-body">
           <div class="empty">
@@ -866,8 +862,7 @@
         <div class="hq-body" style="padding:1.2rem;max-width:480px;">
           <div class="scan-section">
             <h2>Backup</h2>
-            <p style="font-size:.75rem;color:var(--text2);margin-bottom:14px;line-height:1.6">Download a consistent business-data snapshot, including
-              products, contacts, reports, retained corrections, and audit history. Account credentials are excluded.</p>
+            <p style="font-size:.75rem;color:var(--text2);margin-bottom:14px;line-height:1.6">Download a backup of your stock, sales and shop records.</p>
             <button class="btn bv" onclick="doBackup()">⬇ Download Backup</button>
           </div>
           <div class="scan-section" style="margin-top:12px">

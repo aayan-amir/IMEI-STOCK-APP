@@ -306,7 +306,7 @@ async function doRestore() {
     const labels = { Phone: 'Phones', Sale: 'Sale records', Product: 'Products', Customer: 'Contacts', Day: 'Daily sheets', Report: 'Reports', ShopExpense: 'Expenses', Stocktake: 'Stock checks',
       CustomerReturn: 'Customer returns', CashEntry: 'Recorded payments', CashCheckpoint: 'Cash counts' };
     const rows = Object.entries(labels).map(([name, label]) => `<div><dt>${label}</dt><dd>${Number(preview.counts?.[name] || 0)}</dd></div>`).join('');
-    showModal(`<h3>Review backup restore</h3><p>Restore this complete snapshot into this empty account. Existing business data cannot be overwritten.</p><p>Source: ${esc(backup.source?.clientId || '')}</p><dl>${rows}</dl><p>Retained corrections and retry history are included. This review expires in ten minutes.</p><div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" id="restore-reviewed-apply" onclick="applyReviewedRestore()">Restore into empty account</button></div>`);
+    showModal(`<h3>Review backup restore</h3><p>Restore this complete snapshot into this empty account. Existing business data cannot be overwritten.</p><p>Source: ${esc(backup.source?.clientId || '')}</p><dl>${rows}</dl><p>This review expires in ten minutes.</p><div class="mf"><button class="btn bo" onclick="closeModal()">Cancel</button><button class="btn bv" id="restore-reviewed-apply" onclick="applyReviewedRestore()">Restore into empty account</button></div>`);
   } catch (error) { return handleApiError(error); }
 }
 async function applyReviewedRestore() {
@@ -818,7 +818,7 @@ function renderReports() {
         <span style="font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--white)">${r.period}</span>
         <span style="margin-left:auto;font-size:.6rem;color:var(--text3)">${fmtDate(r.generatedAt)}</span>
         <button class="btn bo" style="font-size:.58rem;padding:.12rem .4rem" onclick="event.stopPropagation();printReport('${uid}')" title="Print / PDF">Print</button>
-        ${r.history?.length || r.data?.closedRevision || r.data?.sourceRevisions?.some(source => source.status === 'closed') ? '<span>Retained history</span>' : `<button class="bx" onclick="event.stopPropagation();deleteReport('${uid}')" aria-label="Delete open report">✕</button>`}
+        ${r.history?.length || r.data?.closedRevision || r.data?.sourceRevisions?.some(source => source.status === 'closed') ? '<span>Closed report</span>' : `<button class="bx" onclick="event.stopPropagation();deleteReport('${uid}')" aria-label="Delete open report">✕</button>`}
         <span id="rpt-arr-${uid}" style="color:var(--text2);font-size:.75rem;margin-left:4px">▶</span>
       </div>
       <div class="report-body" id="rpt-body-${uid}" style="display:none"></div>

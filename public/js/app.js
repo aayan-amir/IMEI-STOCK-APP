@@ -5,6 +5,7 @@
 async function bootApp() {
   $('topbar').style.display = 'flex';
   $('wrap').style.display = 'flex';
+  nav('scan');
   applyPhoneMode();
   const shop = (authRole === 'shop') ? authShop : activeShop;
   activeShop = shop;

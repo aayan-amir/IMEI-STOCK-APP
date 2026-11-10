@@ -31,3 +31,9 @@ test('grouped stock preserves ordinary, mixed and missing storage labels', async
   assert.match(await stockView(['128GB', '256GB'], true), /badge-purple">Multiple Storages<\/span>/);
   assert.doesNotMatch(await stockView([''], true), /badge-purple/);
 });
+
+test('grouped stock shows availability without a duplicate units badge', async () => {
+  const html = await stockView(['128GB', '128GB'], true);
+  assert.match(html, /2 in stock/);
+  assert.doesNotMatch(html, /2 units/);
+});

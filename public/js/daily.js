@@ -73,12 +73,12 @@ function clearDailyDrafts() {
 function renderDayStatus() {
   if (!loadedDayContext) return;
   const closed = dayState.status === 'closed';
-  $('day-state-banner').textContent = closed ? `Closed revision ${dayState.revision}. Values come from the retained snapshot.` : 'Open sheet. Current owned stock is shown separately; historical opening and inbound quantities are unavailable without a close snapshot.';
+  $('day-state-banner').textContent = closed ? 'Day closed' : 'Day open';
   $('day-save').disabled = closed; $('day-close').disabled = closed; $('day-reopen').disabled = !closed;
   for (const id of ['stock-wrap', 'exp-list', 'purchase-list', 'transfer-list']) $(id)?.querySelectorAll('input,textarea,button').forEach(node => { node.disabled = closed; });
   $('cf-carry').disabled = closed;
   const draft = readDayDraft();
-  $('day-draft-banner').innerHTML = !draft ? '' : `<span>Unsaved draft retained for up to 24 hours${draft.baseRevision !== loadedDayContext.revision ? '; server revision changed' : ''}.</span> <button class="btn bo" onclick="restoreDayDraft()" ${closed || draft.baseRevision !== loadedDayContext.revision ? 'disabled' : ''}>Restore draft</button> <button class="btn bo" onclick="downloadDayDraft()">Download draft</button> <button class="btn bo" onclick="discardDayDraft()">Discard draft</button>`;
+  $('day-draft-banner').innerHTML = !draft ? '' : `<span>Unsaved changes${draft.baseRevision !== loadedDayContext.revision ? '; a newer version was saved' : ''}.</span> <button class="btn bo" onclick="restoreDayDraft()" ${closed || draft.baseRevision !== loadedDayContext.revision ? 'disabled' : ''}>Restore draft</button> <button class="btn bo" onclick="downloadDayDraft()">Download draft</button> <button class="btn bo" onclick="discardDayDraft()">Discard draft</button>`;
 }
 function makeEmptyDay(shop, date) { const cats = {}; Object.keys(CATS).forEach(k => cats[k] = { rows: [] }); return { shop, date, cats, expenses: [], purchases: [], transfers: [], carryForward: 0 }; }
 
@@ -457,7 +457,7 @@ async function printSalesLog() {
 async function printShipments() {
   try {
     const records = await movementPager.exportAll(); if (!records) return;
-    printSection('Movements', '<h1>Retained stock movements</h1>' + movementHTML(records, true));
+    printSection('Movements', '<h1>Stock movements</h1>' + movementHTML(records, true));
   } catch (error) { return handleApiError(error); }
 }
 
@@ -521,7 +521,7 @@ async function printHistory() {
   try {
     const filters = historyPager.query().toString(), days = await historyPager.exportAll(); if (!days) return;
     const rows = days.map(day => { const f = historyTotals(day); return `<tr><td>${esc(day.shop)}</td><td>${esc(day.date)}</td><td>${esc(day.status || 'open')}</td><td>${day.revision ?? 0}</td><td>${f ? pkr(f.revenue) : 'Open full day'}</td><td>${f ? pkr(f.expenses) : 'Unavailable'}</td><td>${f ? pkr(f.netProfit) : 'Unavailable'}</td></tr>`; }).join('');
-    printSection('Saved daily history', `<h1>Saved daily history</h1><p>All matching saved days · ${days.length} records · ${esc(filters)}. Closed figures are retained snapshots; open drafts require the current ledger. This index does not total draft financial rows.</p><table><thead><tr><th>Shop</th><th>Date</th><th>Status</th><th>Revision</th><th>Closed revenue</th><th>Closed expenses</th><th>Closed net profit</th></tr></thead><tbody>${rows}</tbody></table>`);
+    printSection('Saved daily history', `<h1>Saved daily history</h1><p>All matching saved days · ${days.length} records · ${esc(filters)}. </p><table><thead><tr><th>Shop</th><th>Date</th><th>Status</th><th>Revision</th><th>Closed revenue</th><th>Closed expenses</th><th>Closed net profit</th></tr></thead><tbody>${rows}</tbody></table>`);
   } catch (error) { return handleApiError(error); }
 }
 

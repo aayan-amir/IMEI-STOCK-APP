@@ -2739,3 +2739,59 @@
 .workspace-nav .btn:focus-visible, .primary-nav .ni:focus-visible { outline: 2px solid var(--a1); outline-offset: -3px; }
 #imei-page-status:empty, #sl-page-status:empty, [id$="-status"]:empty { display: none; }
 
+
+/* Shared page controls */
+#main, .pg, .hq-body, .stock-scroll { min-width: 0; min-height: 0; }
+.pg > .filter-row { align-items: flex-end; gap: 12px; margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.filter-field { display: flex; flex: 0 1 190px; flex-direction: column; gap: 6px; min-width: 0; }
+.filter-field:has(input[type="search"]) { flex: 1 1 260px; }
+.filter-field label { margin: 0; font-size: .7rem; font-weight: 600; color: var(--text2); }
+.filter-field input, .filter-field select, .tb input, .tb select { box-sizing: border-box; max-width: 100%; min-height: 38px; border: 1px solid var(--border); border-radius: 7px; background: var(--s1); color: var(--text); padding: 8px 10px; font: inherit; font-size: .82rem; }
+.filter-field input, .filter-field select { width: 100%; }
+.filter-field input:focus-visible, .filter-field select:focus-visible, .tb input:focus-visible, .tb select:focus-visible { outline: 2px solid var(--a1); outline-offset: 2px; }
+.pg > nav[aria-label$="pages"] { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 16px; padding: 0 !important; flex-shrink: 0; }
+.pg > p[role="status"]:not(:empty) { margin: 10px 16px; font-size: .82rem; color: var(--text2); }
+#sl-body, #logs-body { padding: 16px; }
+.hq-body table { width: 100%; }
+.workspace-nav { overflow-x: auto; }
+@media (max-width: 700px) {
+  .tb { gap: 8px; padding: 12px; }
+  .tb .tb-title { flex: 1 0 100%; font-size: 1rem; }
+  .tb .tbsep { display: none; }
+  .tb > input, .tb > select { flex: 1 1 140px; min-width: 0; width: auto !important; font-size: .85rem !important; min-height: 42px; }
+  .tb > .btn { flex: 1 1 auto; min-height: 42px; font-size: .78rem !important; }
+  .pg > .filter-row { gap: 12px; padding: 12px; }
+  .filter-field, .filter-field:has(input[type="search"]) { flex: 1 1 150px; }
+  .filter-field input, .filter-field select { min-height: 44px; font-size: 1rem; }
+  .pg > nav[aria-label$="pages"] { margin: 12px; }
+  .hq-body, #sl-body, #logs-body { padding: 12px; }
+  .workspace-nav { padding: 10px 12px; gap: 6px; }
+  .workspace-nav .btn { min-height: 44px; padding: 8px 12px; }
+}
+@media (max-width: 400px) {
+  .filter-field, .filter-field:has(input[type="search"]) { flex-basis: 100%; }
+  .tb > input, .tb > select { flex-basis: 100%; }
+}
+
+.tb input, .tb select { font-family: var(--sans) !important; font-size: .82rem !important; padding: 8px 10px !important; color: var(--text) !important; }
+.sales-summary { margin: 0 0 16px; padding: 16px; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; }
+.sales-summary h2 { margin: 0 0 12px; color: var(--text2); font-size: .8rem; font-weight: 600; }
+.sales-summary-values { display: flex; flex-wrap: wrap; gap: 16px 24px; }
+.sales-summary-values > div { flex: 1 1 120px; min-width: 0; }
+.sales-summary-values span { display: block; margin-bottom: 5px; color: var(--text2); font-size: .75rem; }
+.sales-summary-values strong { display: block; color: var(--success); font-family: var(--mono); font-size: 1rem; overflow-wrap: anywhere; }
+.sales-groups { padding: 0; }
+
+.toolbar-date { display: flex; flex: 0 1 150px; flex-direction: column; gap: 6px; min-width: 0; }
+.toolbar-date label { margin: 0; color: var(--text2); font-size: .7rem; font-weight: 600; }
+.toolbar-date input { width: 100%; min-width: 0; }
+.log-action { font-size: .82rem; }
+.log-detail { font-size: .75rem; white-space: normal; overflow: visible; overflow-wrap: anywhere; line-height: 1.5; }
+@media (max-width: 700px) {
+  .toolbar-date { flex: 1 1 140px; }
+  .toolbar-date input { min-height: 44px; font-size: 1rem !important; }
+  .log-row { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 6px 10px; }
+  .log-body, .log-ts { grid-column: 2; }
+  .log-dot { grid-column: 1; grid-row: 1; }
+  .log-ts { color: var(--text2); font-size: .7rem; }
+}

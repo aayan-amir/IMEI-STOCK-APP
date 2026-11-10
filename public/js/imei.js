@@ -364,7 +364,7 @@ async function loadIMEIData(options = {}) {
   } catch (error) {
     if (!current()) return;
     if (inventoryPage?.scope !== scope) list.innerHTML = '<div class="empty">Stock could not be loaded. Refresh to retry.</div>';
-    $('imei-page-status').textContent = 'Could not load this page. Refresh to retry. Last loaded data is retained.';
+    $('imei-page-status').textContent = 'Could not load this page. Refresh to retry. ';
     return handleApiError(error);
   } finally { if (current()) { inventoryLoading = false; renderInventoryPager(); } }
 }
@@ -450,7 +450,6 @@ function renderIMEIStock() {
       <div style="flex:1;min-width:0;">
         <div style="font-weight:700;font-size:.9rem;color:var(--white);">${fmtPhoneName(g.brand, g.model)}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">
-          <span style="font-family:var(--mono);font-size:.7rem;font-weight:700;background:rgba(22,163,74,.15);color:var(--a1);border:1px solid rgba(22,163,74,.3);padding:2px 9px;border-radius:20px;">${count} unit${count !== 1 ? 's' : ''}</span>
           ${inStockCount ? `<span class="badge badge-green">${inStockCount} in stock</span>` : ''}
           ${soldCount ? `<span class="badge badge-red">${soldCount} sold</span>` : ''}
           <span class="badge badge-blue">${esc((CATS[g.cat]?.label) || titleCase(g.cat || 'Other'))}</span>
@@ -789,7 +788,7 @@ var imeiDetailContext = null, imeiEvidencePager = null;
 async function openIMEIDetail(imei) {
   if (authRole !== 'admin' || !/^\d{15}$/.test(imei)) { showToast('Owner access and a valid IMEI are required', 'error'); return; }
   imeiDetailContext = { imei, source: 'sales', items: [] };
-  showModal(`<h3>Phone history</h3><p style="font-family:var(--mono)">${esc(imei)}</p><p>Live retained evidence. Older records may have gaps. No missing movement or staff name is inferred.</p><div class="filter-row">${[['sales','Sales and returns'],['receipts','Received'],['dispatches','Sent to shops'],['activity','Activity']].map(([source,label]) => `<button class="btn bo" onclick="loadIMEIEvidence('${source}')">${label}</button>`).join('')}</div><p id="imei-evidence-status" role="status" aria-live="polite"></p><div id="imei-history-body"></div><div class="mf"><button class="btn bo" id="imei-evidence-prev" onclick="imeiEvidencePager.previous()" disabled>Previous</button><button class="btn bo" id="imei-evidence-next" onclick="imeiEvidencePager.next()" disabled>Next</button><button class="btn bo" onclick="closeModal()">Close</button></div>`);
+  showModal(`<h3>Phone history</h3><p style="font-family:var(--mono)">${esc(imei)}</p><div class="filter-row">${[['sales','Sales and returns'],['receipts','Received'],['dispatches','Sent to shops'],['activity','Activity']].map(([source,label]) => `<button class="btn bo" onclick="loadIMEIEvidence('${source}')">${label}</button>`).join('')}</div><p id="imei-evidence-status" role="status" aria-live="polite"></p><div id="imei-history-body"></div><div class="mf"><button class="btn bo" id="imei-evidence-prev" onclick="imeiEvidencePager.previous()" disabled>Previous</button><button class="btn bo" id="imei-evidence-next" onclick="imeiEvidencePager.next()" disabled>Next</button><button class="btn bo" onclick="closeModal()">Close</button></div>`);
   return loadIMEIEvidence('sales');
 }
 function loadIMEIEvidence(source) {
@@ -801,7 +800,7 @@ function loadIMEIEvidence(source) {
     scope: () => JSON.stringify([listOwner(), context === imeiDetailContext, context.generation === generation, context.source, source, !!$('imei-history-body')]),
     onPage: items => { context.items = items; }, render: () => {
       const body = $('imei-history-body'); if (!body) return;
-      body.innerHTML = context.items.length ? context.items.map(item => `<div class="shop-card"><div class="shop-card-body"><strong>${esc(item.action || (source === 'sales' ? item.reversedAt ? 'Sale returned / reversed' : 'Sale recorded' : source === 'receipts' ? 'Stock received' : 'Sent to shop'))}</strong><p>${esc(item.businessDate || item.date || item.ts || '')} · ${esc(item.soldByShop || item.toShop || item.shop || '')}</p>${source === 'sales' ? `<p>Original sale: ${pkr(item.salePrice)}</p><button class="btn bo" onclick="printSaleReceipt('${item._id}')">Receipt</button>` : ''}<small>Source record: ${esc(item._id)}</small></div></div>`).join('') : '<div class="empty">No retained records for this source. Older history may be incomplete.</div>';
+      body.innerHTML = context.items.length ? context.items.map(item => `<div class="shop-card"><div class="shop-card-body"><strong>${esc(item.action || (source === 'sales' ? item.reversedAt ? 'Sale returned / reversed' : 'Sale recorded' : source === 'receipts' ? 'Stock received' : 'Sent to shop'))}</strong><p>${esc(item.businessDate || item.date || item.ts || '')} · ${esc(item.soldByShop || item.toShop || item.shop || '')}</p>${source === 'sales' ? `<p>Original sale: ${pkr(item.salePrice)}</p><button class="btn bo" onclick="printSaleReceipt('${item._id}')">Receipt</button>` : ''}<small>Source record: ${esc(item._id)}</small></div></div>`).join('') : '<div class="empty">No history found.</div>';
     } });
   return imeiEvidencePager.load();
 }
@@ -843,7 +842,7 @@ async function loadSalesLog(options = {}) {
   } catch (error) {
     if (!current()) return;
     if (salesPage?.scope !== scope) $('sl-body').innerHTML = '<div class="empty">Sales could not be loaded. Refresh to retry.</div>';
-    $('sl-page-status').textContent = 'Could not load this page. Last loaded data is retained; refresh to retry.';
+    $('sl-page-status').textContent = 'Could not load this page. Refresh to retry.';
     return handleApiError(error);
   } finally { if (current()) { salesLoading = false; renderSalesPager(); } }
 }
@@ -872,11 +871,11 @@ function renderSalesLog() {
   sales.forEach(s => { const d = s.soldAt ? (s.businessDate || StocklyBusinessRules.businessDate(s.soldAt)) : 'Unknown'; if (!byDate[d]) byDate[d] = []; byDate[d].push(s); });
   const totals = StocklyBusinessRules.sumSaleEvents(sales);
   const tRev = totals.revenue, tPL = totals.profit;
-  let html = `<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin:.7rem .7rem .4rem;padding:.55rem .8rem;background:var(--s2);border:1px solid var(--border);border-radius:10px;">
-<div style="flex:1;min-width:110px;"><div style="font-size:.55rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Revenue (this page)</div><div style="font-family:var(--mono);font-size:.95rem;color:var(--success)">${pkr(tRev)}</div></div>
-<div style="flex:1;min-width:110px;"><div style="font-size:.55rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Phone profit (this page)</div><div style="font-family:var(--mono);font-size:.95rem;color:${tPL >= 0 ? 'var(--success)' : 'var(--danger)'}">${pkr(tPL)}</div></div>
-<div style="flex:1;min-width:90px;"><div style="font-size:.55rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Net phone units (this page)</div><div style="font-family:var(--mono);font-size:.95rem;color:var(--a1)">${totals.units}</div></div>
-  </div><div style="padding:0 .7rem .7rem">`;
+  let html = `<section class="sales-summary" aria-label="Listed sales"><h2>Listed sales</h2><div class="sales-summary-values">
+<div><span>Revenue</span><strong>${pkr(tRev)}</strong></div>
+<div><span>Phone profit</span><strong style="color:${tPL >= 0 ? 'var(--success)' : 'var(--danger)'}">${pkr(tPL)}</strong></div>
+<div><span>Net units</span><strong>${totals.units}</strong></div>
+</div></section><div class="sales-groups">`;
   Object.entries(byDate).forEach(([date, daySales]) => {
     const uid = date.replace(/-/g, '');
     const dayRev = StocklyBusinessRules.sumMoney(daySales.map(s => s.salePrice || 0));

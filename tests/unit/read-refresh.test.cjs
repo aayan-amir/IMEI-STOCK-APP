@@ -41,7 +41,8 @@ test('boot shares the shop-switch stats request instead of issuing it twice', as
   const { s, b } = screen(); s.localStorage.removeItem('authToken'); let statsCalls = 0, stockCalls = 0;
   s.renderDynamicShops = () => {}; s.applyPhoneMode = () => {}; s.applyShopMode = () => {}; s.loadBusinessCapabilities = async () => {};
   s.loadIMEIData = async () => { stockCalls++; }; s.api = async () => { statsCalls++; return stats(1); };
-  b.load('public/js/app.js'); s.localStorage.setItem('authToken','token-A'); await s.bootApp();
+  b.load('public/js/app.js'); s.activePage = 'saleslog'; s.localStorage.setItem('authToken','token-A'); await s.bootApp();
+  assert.equal(s.activePage, 'scan');
   assert.equal(statsCalls, 1); assert.equal(stockCalls, 1);
 });
 

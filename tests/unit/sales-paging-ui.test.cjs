@@ -17,7 +17,7 @@ test('sales page keeps server filters and scoped financial totals without techni
   await s.loadSalesLog();
   assert.match(url, /^\/api\/v2\/sales\?/); assert.match(url, /from=2026-11-09/); assert.match(url, /limit=50/);
   assert.equal(s.document.getElementById('sl-page-status').textContent, '');
-  assert.match(s.document.getElementById('sl-body').innerHTML, /Phone profit.*this page/);
+  assert.match(s.document.getElementById('sl-body').innerHTML, /aria-label="Listed sales"/);
   await s.nextSalesPage(); assert.equal(s.allSalesData.length, 1);
 });
 test('failed and superseded sales pages retain the correct account and filter context', async () => {
