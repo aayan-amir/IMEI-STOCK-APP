@@ -10,6 +10,7 @@ async function bootApp() {
   activeShop = shop;
   switchShop(shop);                       // switchShop(shop) already calls loadIMEIData if activePage is scan/imeistock
   if (authRole === 'shop') applyShopMode(shop);
+  syncWorkspaceNavigation(activePage);
   loadBusinessCapabilities();
   $('work-date').value = today();
   $('monthly-month').value = ym(today()); $('exp-month-filter').value = ym(today()); $('ship-month-filter').value = ym(today());

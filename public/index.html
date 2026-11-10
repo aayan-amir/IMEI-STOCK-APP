@@ -152,81 +152,14 @@
 
   <div id="wrap" style="display:none;">
     <div id="sb">
-      <div class="sb-sec">
-        <div class="sb-lbl" data-admin-only="true">Overview</div>
-        <div class="ni" id="ni-ceo" role="button" tabindex="0" onclick="nav('ceo')">
-          <div class="nd" style="background:var(--a5)"></div>Overview
-        </div>
-
-      </div>
-      <hr class="sdiv">
-      <div class="sb-sec">
-        <div class="sb-lbl">Inventory</div>
-        <div class="ni on" id="ni-scan" role="button" tabindex="0" onclick="nav('scan')">
-          <div class="nd" style="background:var(--a1)"></div>IMEI Scan
-        </div>
-        <div class="ni" role="button" tabindex="0" onclick="openCamera('free')">
-          <div class="nd" style="background:var(--a4)"></div>Barcode Scanner
-        </div>
-        <div class="ni" id="ni-imeistock" role="button" tabindex="0" onclick="nav('imeistock')">
-          <div class="nd" style="background:var(--a2)"></div>Phones
-        </div>
-        <div class="ni" id="ni-stocktakes" role="button" tabindex="0" style="display:none" onclick="nav('stocktakes')">
-          <div class="nd" style="background:var(--a2)"></div>Stock checks
-        </div>
-        <div class="ni" id="ni-warehouse" role="button" tabindex="0" onclick="nav('warehouse')">
-          <div class="nd" style="background:var(--a6)"></div>Warehouse
-        </div>
-        <div class="ni" id="ni-shipments" role="button" tabindex="0" onclick="nav('shipments')">
-          <div class="nd" style="background:var(--a4)"></div>Movements
-        </div>
-      </div>
-      <hr class="sdiv">
-      <div class="sb-sec">
-        <div class="sb-lbl" data-admin-only="true">Sales</div>
-        <div class="ni" id="ni-saleslog" role="button" tabindex="0" onclick="nav('saleslog')">
-          <div class="nd" style="background:var(--success)"></div>Sales Log
-        </div>
-        <div class="ni" id="ni-contacts" role="button" tabindex="0" onclick="nav('contacts')">
-          <div class="nd" style="background:var(--a4)"></div>Customers
-        </div>
-      </div>
-      <hr class="sdiv">
-      <div class="sb-sec">
-        <div class="sb-lbl" data-admin-only="true">Daily Close</div>
-        <div class="ni" id="ni-stock" role="button" tabindex="0" onclick="nav('stock')">
-          <div class="nd" style="background:var(--a5)"></div>Daily Sheet
-        </div>
-        <div class="ni" id="ni-history" role="button" tabindex="0" onclick="nav('history')">
-          <div class="nd" style="background:var(--text2)"></div>History
-        </div>
-        <div class="ni" id="ni-expenses" role="button" tabindex="0" onclick="nav('expenses')">
-          <div class="nd" style="background:var(--danger)"></div>Expenses
-        </div>
-      </div>
-      <hr class="sdiv">
-      <div class="sb-sec">
-        <div class="sb-lbl" data-admin-only="true">Reports</div>
-        <div class="ni" id="ni-reports" role="button" tabindex="0" onclick="nav('reports')">
-          <div class="nd" style="background:var(--a5)"></div>Saved Reports
-        </div>
-        <div class="ni" id="ni-monthly" role="button" tabindex="0" onclick="nav('monthly')">
-          <div class="nd" style="background:var(--a1)"></div>Monthly P&L
-        </div>
-        <div class="ni" id="ni-analytics" role="button" tabindex="0" onclick="nav('analytics')">
-          <div class="nd" style="background:var(--a2)"></div>Analytics
-        </div>
-      </div>
-      <hr class="sdiv">
-      <div class="sb-sec">
-        <div class="sb-lbl" data-admin-only="true">Administration</div>
-        <div class="ni" id="ni-logs" role="button" tabindex="0" onclick="nav('logs')">
-          <div class="nd" style="background:var(--text3)"></div>Activity Log
-        </div>
-        <div class="ni" id="ni-backup" role="button" tabindex="0" onclick="nav('backup')">
-          <div class="nd" style="background:var(--success)"></div>Backup
-        </div>
-      </div>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <button type="button" class="ni" id="ni-ceo" data-admin-only="true" data-section="overview" onclick="nav('ceo')">Overview</button>
+        <button type="button" class="ni on" id="ni-imeistock" data-section="inventory" onclick="nav('imeistock')">Stock</button>
+        <button type="button" class="ni" id="ni-saleslog" data-admin-only="true" data-section="sales" onclick="nav('saleslog')">Sales</button>
+        <button type="button" class="ni" id="ni-stock" data-admin-only="true" data-section="daily" onclick="nav('stock')">Daily Close</button>
+        <button type="button" class="ni" id="ni-monthly" data-admin-only="true" data-section="reports" onclick="nav('monthly')">Reports</button>
+        <button type="button" class="ni" id="ni-backup" data-admin-only="true" data-section="settings" onclick="nav('backup')">Settings</button>
+      </nav>
       <div class="sb-stats">
         <div
           style="font-size:.54rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.3rem"
@@ -239,6 +172,31 @@
     </div>
 
     <div id="main">
+      <nav class="workspace-nav" data-workspace="inventory" aria-label="Stock sections">
+        <button type="button" class="btn bo" data-workspace-page="imeistock" onclick="nav('imeistock')">Phones</button>
+        <button type="button" class="btn bo" id="ni-scan" data-workspace-page="scan" onclick="nav('scan')">Scan</button>
+        <button type="button" class="btn bo" id="ni-warehouse" data-workspace-page="warehouse" data-admin-only="true" onclick="nav('warehouse')">Warehouse</button>
+        <button type="button" class="btn bo" id="ni-shipments" data-workspace-page="shipments" data-admin-only="true" onclick="nav('shipments')">Movement History</button>
+        <button type="button" class="btn bo" id="ni-stocktakes" data-workspace-page="stocktakes" style="display:none" data-admin-only="true" onclick="nav('stocktakes')">Stock Checks</button>
+      </nav>
+      <nav class="workspace-nav" data-workspace="sales" aria-label="Sales sections" hidden>
+        <button type="button" class="btn bo" data-workspace-page="saleslog" data-admin-only="true" onclick="nav('saleslog')">Sales</button>
+        <button type="button" class="btn bo" id="ni-contacts" data-workspace-page="contacts" data-admin-only="true" onclick="nav('contacts')">Customers</button>
+      </nav>
+      <nav class="workspace-nav" data-workspace="daily" aria-label="Daily Close sections" hidden>
+        <button type="button" class="btn bo" data-workspace-page="stock" data-admin-only="true" onclick="nav('stock')">Daily Sheet</button>
+        <button type="button" class="btn bo" id="ni-expenses" data-workspace-page="expenses" data-admin-only="true" onclick="nav('expenses')">Expenses</button>
+        <button type="button" class="btn bo" id="ni-history" data-workspace-page="history" data-admin-only="true" onclick="nav('history')">Previous Days</button>
+      </nav>
+      <nav class="workspace-nav" data-workspace="reports" aria-label="Reports sections" hidden>
+        <button type="button" class="btn bo" data-workspace-page="monthly" data-admin-only="true" onclick="nav('monthly')">Monthly Profit</button>
+        <button type="button" class="btn bo" id="ni-reports" data-workspace-page="reports" data-admin-only="true" onclick="nav('reports')">Saved Reports</button>
+        <button type="button" class="btn bo" id="ni-analytics" data-workspace-page="analytics" data-admin-only="true" onclick="nav('analytics')">Product Summary</button>
+      </nav>
+      <nav class="workspace-nav" data-workspace="settings" aria-label="Settings sections" hidden>
+        <button type="button" class="btn bo" data-workspace-page="backup" data-admin-only="true" onclick="nav('backup')">Backup & Restore</button>
+        <button type="button" class="btn bo" id="ni-logs" data-workspace-page="logs" data-admin-only="true" onclick="nav('logs')">Activity History</button>
+      </nav>
 
       <!-- ══ IMEI SCAN ══ -->
       <div class="pg on" id="pg-scan">
@@ -495,7 +453,7 @@
       <!-- ══ IMEI STOCK LIST ══ -->
       <div class="pg" id="pg-imeistock">
         <div class="tb">
-          <div class="tb-title">IMEI Stock</div>
+          <div class="tb-title">Stock</div>
           <div class="tb-badge" id="imei-shop-badge">Shop Name</div>
           <div class="tbsep"></div>
           <button class="btn bo" style="font-size:.65rem" onclick="loadIMEIData()">↻ Refresh</button>
@@ -526,7 +484,7 @@
             </div>
           </div>
           <div class="section-title"><span id="imeiCount">0 phones</span></div>
-          <p id="imei-page-status" role="status" aria-live="polite">Group counts and selection apply to the loaded page.</p>
+          <p id="imei-page-status" role="status" aria-live="polite"></p>
           <div id="imeiList"></div>
           <nav aria-label="Stock pages" style="display:flex;gap:8px;padding:12px 0">
             <button class="btn bo" id="imei-prev" onclick="previousIMEIPage()" disabled>Previous</button>
@@ -727,7 +685,7 @@
       <!-- ══ SHIPMENTS ══ -->
       <div class="pg" id="pg-shipments">
         <div class="tb">
-          <div class="tb-title">Shipments</div>
+          <div class="tb-title">Movement History</div>
           <div class="tbsep"></div>
           <label for="ship-shop-filter">Destination</label><select id="ship-shop-filter" onchange="loadShipments()"
             style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
@@ -746,7 +704,7 @@
       <!-- ══ MONTHLY P&L ══ -->
       <div class="pg" id="pg-monthly">
         <div class="tb">
-          <div class="tb-title">Monthly P&L</div>
+          <div class="tb-title">Monthly Profit</div>
           <div class="tbsep"></div>
           <input type="month" id="monthly-month" onchange="renderMonthly()"
             style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">
@@ -805,7 +763,7 @@
       <!-- ══ ANALYTICS ══ -->
       <div class="pg" id="pg-analytics">
         <div class="tb">
-          <div class="tb-title">Model Analytics</div>
+          <div class="tb-title">Product Summary</div>
           <div class="tbsep"></div>
           <select id="analytics-days" onchange="renderAnalytics()"
             style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--a5);font-family:var(--mono);font-size:.68rem;padding:.24rem .5rem;outline:none;">

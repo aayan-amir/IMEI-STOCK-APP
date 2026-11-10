@@ -12,7 +12,7 @@ for (const [name, load, pager, state, prefix] of [['contacts', 'loadContacts', '
   test(`${name} replace bounded pages and preserve the last good page after failure`, async () => {
     const s = screen(), calls = []; s.api = async (_method, url) => { calls.push(url); return page(url.includes('cursor=next') ? 'two' : 'one', 'next'); };
     await s[load](); assert.match(calls[0], /\/api\/v2\//); assert.match(calls[0], /limit=50/);
-    assert.match(s.document.getElementById(`${prefix}-status`).textContent, /1.*100/);
+    assert.equal(s.document.getElementById(`${prefix}-status`).textContent, '');
     await s[pager].next(); assert.equal(s[state][0]._id, 'two');
     s.api = async () => { throw Error('offline'); }; assert.equal(await s[pager].previous(), false); assert.equal(s[state][0]._id, 'two');
   });

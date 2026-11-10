@@ -260,7 +260,7 @@ function showMovementItems(details) {
 function renderShipments() {
   const body = $('ship-body');
   if (!movementPager.isCurrent()) { body.innerHTML = '<div class="empty" role="status">Load matching movement records.</div>'; return; }
-  body.innerHTML = allMovementData.length ? movementHTML(allMovementData) : '<div class="empty"><h3>No movements on this page</h3><p>Refresh or change the destination and month.</p></div>';
+  body.innerHTML = allMovementData.length ? movementHTML(allMovementData) : '<div class="empty"><h3>No movements found</h3><p>Refresh or change the destination and month.</p></div>';
 }
 
 // ── BACKUP ──

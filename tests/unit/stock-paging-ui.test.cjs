@@ -10,11 +10,12 @@ function screen() {
 }
 const phone = id => ({ id, _id: id, imei: id, brand: 'Test', model: 'Phone', status: 'in_stock', buyPrice: 0, salePrice: 0 });
 const page = (ids, nextCursor = null, total = 2) => ({ items: ids.map(phone), nextCursor, hasMore: !!nextCursor, total });
-test('inventory loads a bounded server-filtered page and labels its partial count', async () => {
+test('inventory loads a bounded server-filtered page with a simple total', async () => {
   const s = screen(), calls = []; s.api = async (_method, url) => { calls.push(url); return page(['one', 'two'], 'next-token', 200); };
   await s.loadIMEIData();
   assert.match(calls[0], /^\/api\/v2\/stock\?/); assert.match(calls[0], /limit=50/);
-  assert.match(s.document.getElementById('imeiCount').textContent, /2.*200.*matching/);
+  assert.equal(s.document.getElementById('imeiCount').textContent, '200 phones');
+  assert.equal(s.document.getElementById('imei-page-status').textContent, '');
   assert.equal(s.allIMEIStock.length, 2); assert.equal(s.document.getElementById('imei-next').disabled, false);
 });
 test('next and previous replace the rendered page and selection stays on the loaded page', async () => {

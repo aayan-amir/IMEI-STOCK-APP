@@ -235,7 +235,7 @@ function createListPager(config) {
       const scope = config.scope(), request = ++generation;
       const current = () => scope === config.scope() && request === generation;
       pager.loading = true; pager.draw();
-      if (!pager.isCurrent()) $(config.body).innerHTML = '<div class="empty" role="status">Loading matching records…</div>';
+      if (!pager.isCurrent()) $(config.body).innerHTML = '<div class="empty" role="status">Loading…</div>';
       try {
         const query = config.query(); query.set('limit', '50'); if (options.cursor) query.set('cursor', options.cursor);
         const result = await api('GET', `${config.endpoint}?${query}`);
@@ -243,7 +243,7 @@ function createListPager(config) {
         if (!Array.isArray(result.items) || result.items.length > 50 || !Number.isSafeInteger(result.total) || result.total < result.items.length || typeof result.hasMore !== 'boolean' || (result.nextCursor !== null && typeof result.nextCursor !== 'string') || result.hasMore !== !!result.nextCursor) throw Error('Invalid list page. Refresh before continuing.');
         pager.page = { scope, cursor: options.cursor || null, previous: options.previous || [], nextCursor: result.nextCursor, total: result.total };
         config.onPage(result.items); config.render();
-        $(`${config.prefix}-status`).textContent = `${result.items.length} on this page · ${result.total} matching records · Newest first`;
+        $(`${config.prefix}-status`).textContent = '';
       } catch (error) {
         if (!current()) return;
         if (!pager.isCurrent()) $(config.body).innerHTML = '<div class="empty">Could not load this list. Refresh to retry.</div>';

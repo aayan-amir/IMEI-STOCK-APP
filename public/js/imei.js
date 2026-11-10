@@ -391,8 +391,8 @@ function renderIMEIStock() {
     groupedStockMap = {}; updateBulkActions(); return;
   }
   const items = allIMEIStock;
-  $('imeiCount').textContent = `${items.length} on this page · ${inventoryPage?.total ?? items.length} matching phones`;
-  $('imei-page-status').textContent = 'Group counts and selection apply to this page. Stock is live; refresh to include new arrivals.';
+  $('imeiCount').textContent = `${inventoryPage?.total ?? items.length} phones`;
+  $('imei-page-status').textContent = '';
   updateBulkActions();
   const list = $('imeiList');
   if (!list) return;
@@ -450,7 +450,7 @@ function renderIMEIStock() {
       <div style="flex:1;min-width:0;">
         <div style="font-weight:700;font-size:.9rem;color:var(--white);">${fmtPhoneName(g.brand, g.model)}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">
-          <span style="font-family:var(--mono);font-size:.7rem;font-weight:700;background:rgba(22,163,74,.15);color:var(--a1);border:1px solid rgba(22,163,74,.3);padding:2px 9px;border-radius:20px;">${count} unit${count !== 1 ? 's' : ''} on this page</span>
+          <span style="font-family:var(--mono);font-size:.7rem;font-weight:700;background:rgba(22,163,74,.15);color:var(--a1);border:1px solid rgba(22,163,74,.3);padding:2px 9px;border-radius:20px;">${count} unit${count !== 1 ? 's' : ''}</span>
           ${inStockCount ? `<span class="badge badge-green">${inStockCount} in stock</span>` : ''}
           ${soldCount ? `<span class="badge badge-red">${soldCount} sold</span>` : ''}
           <span class="badge badge-blue">${esc((CATS[g.cat]?.label) || titleCase(g.cat || 'Other'))}</span>
@@ -866,7 +866,7 @@ function renderSalesLog() {
   const body = $('sl-body');
   if (salesPage && salesPage.scope !== salesLogScope()) { body.innerHTML = '<div class="empty">Load the selected sales filters before viewing events.</div>'; return; }
   const sales = allSalesData;
-  $('sl-page-status').textContent = `${sales.length} on this page · ${salesPage?.total ?? sales.length} matching events. Totals and reversal actions apply to this page.`;
+  $('sl-page-status').textContent = '';
   if (!sales.length) { body.innerHTML = `<div class="empty"><div class="empty-icon">—</div><h3>No sales found</h3><p>Try adjusting the date filters</p></div>`; return; }
   const byDate = {};
   sales.forEach(s => { const d = s.soldAt ? (s.businessDate || StocklyBusinessRules.businessDate(s.soldAt)) : 'Unknown'; if (!byDate[d]) byDate[d] = []; byDate[d].push(s); });
@@ -886,7 +886,7 @@ function renderSalesLog() {
     onclick="toggleDateGroup('${uid}')" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background=''">
     <div style="flex:1;">
       <div style="font-weight:700;font-size:.82rem;color:var(--white);font-family:var(--mono)">${date}</div>
-      <div style="font-size:.62rem;color:var(--text2);margin-top:1px">${daySales.length} events on this page</div>
+      <div style="font-size:.62rem;color:var(--text2);margin-top:1px">${daySales.length} entries</div>
     </div>
     <div style="text-align:right;flex-shrink:0;">
       <div style="font-family:var(--mono);font-size:.8rem;color:var(--success)">${pkr(dayRev)}</div>

@@ -11,12 +11,12 @@ function screen() {
 }
 const event = id => ({ _id: id, kind: 'sale', units: 1, businessDate: '2026-11-09', soldAt: '2026-11-09T00:00:00.000Z', imei: id, brand: 'Test', model: 'Phone', salePrice: 0, buyPrice: 0, profit: 0, salePriceMinor: 0, buyPriceMinor: 0, profitMinor: 0 });
 const page = (ids, nextCursor = null) => ({ items: ids.map(event), total: 200, hasMore: !!nextCursor, nextCursor });
-test('sales page uses server filters and labels page-only phone profit and event counts', async () => {
+test('sales page keeps server filters and scoped financial totals without technical status copy', async () => {
   const s = screen(); let url;
   s.document.getElementById('sl-from').value = '2026-11-09'; s.api = async (_method, value) => { url = value; return page(['one'], 'next'); };
   await s.loadSalesLog();
   assert.match(url, /^\/api\/v2\/sales\?/); assert.match(url, /from=2026-11-09/); assert.match(url, /limit=50/);
-  assert.match(s.document.getElementById('sl-page-status').textContent, /1.*200.*events/);
+  assert.equal(s.document.getElementById('sl-page-status').textContent, '');
   assert.match(s.document.getElementById('sl-body').innerHTML, /Phone profit.*this page/);
   await s.nextSalesPage(); assert.equal(s.allSalesData.length, 1);
 });

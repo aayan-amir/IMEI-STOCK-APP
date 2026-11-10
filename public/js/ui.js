@@ -1,3 +1,26 @@
+var workspacePages = {
+  overview: ['ceo'], inventory: ['scan', 'imeistock', 'warehouse', 'shipments', 'stocktakes'],
+  sales: ['saleslog', 'contacts'], daily: ['stock', 'history', 'expenses'],
+  reports: ['monthly', 'reports', 'analytics'], settings: ['backup', 'logs']
+};
+function workspaceForPage(page) { return Object.keys(workspacePages).find(section => workspacePages[section].includes(page)); }
+function syncWorkspaceNavigation(page) {
+  const section = workspaceForPage(page), limited = shopModeActive || (IS_PHONE && authRole !== 'admin');
+  document.querySelectorAll('[data-workspace]').forEach(group => { group.hidden = group.dataset.workspace !== section; });
+  document.querySelectorAll('[data-section]').forEach(button => {
+    const selected = button.dataset.section === section;
+    button.classList.toggle('on', selected);
+    if (selected) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+    button.hidden = limited && button.dataset.adminOnly === 'true';
+  });
+  document.querySelectorAll('[data-workspace-page]').forEach(button => {
+    const selected = button.dataset.workspacePage === page;
+    button.classList.toggle('active', selected);
+    if (selected) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+    button.hidden = limited && button.dataset.adminOnly === 'true';
+  });
+}
+
 /* ── UI: navigation, sidebar, modal, clock, switchShop ── */
 /* Auto-split from index.html — 2026-04-25T15:26:28.693Z */
 
@@ -16,6 +39,7 @@ function nav(page) {
   document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
   $('pg-' + page)?.classList.add('on');
   $('ni-' + page)?.classList.add('on');
+  syncWorkspaceNavigation(page);
   ({
     scan: () => $('imeiInput')?.focus(),
     imeistock: () => loadIMEIData(),
