@@ -55,6 +55,15 @@ function createApp({ config = readRuntimeConfig(), database = require('./db') } 
   app.use('/api/restore', express.json({ limit: '9mb' }));
   app.use('/api/days', express.json({ limit: '2mb' }));
   app.use(express.json());
+  app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
+  app.get('/dashboard', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+  app.get(['/index.html', '/dashboard/index.html'], (req, res) => {
+    const queryAt = req.originalUrl.indexOf('?');
+    res.redirect(302, '/dashboard' + (queryAt === -1 ? '' : req.originalUrl.slice(queryAt)));
+  });
   app.use(express.static(path.join(__dirname, 'public')));
   app.use('/api', rateLimit({ windowMs: 60_000, limit: 300, standardHeaders: true, legacyHeaders: false }));
   app.use('/api/clients/lookup', rateLimit({

@@ -4,6 +4,8 @@ Current setup and verification limits: [Ready-to-run handoff](docs/READY-TO-RUN.
 
 A multi-tenant inventory and operations app for phone businesses.
 
+Website routes: `/` is the public landing page; `/dashboard` is the app and login. Old `/index.html` links redirect to `/dashboard` and preserve query parameters. API and asset paths remain unchanged. Installed web apps launch `/dashboard`; the original app HTML stays in `public/index.html` for native packaging.
+
 It supports client-based isolation, IMEI lifecycle tracking, shop operations, warehouse/dispatch workflows, daily accounting, analytics, reporting, backups, and super-admin tenant management.
 
 ---
