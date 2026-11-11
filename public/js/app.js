@@ -42,13 +42,30 @@ initNativeBack();
 
 // ── INITIALIZE ──
 // Override auth check to show Client ID box first if not set
-(async () => {
+async function initializeApp() {
+  $('topbar').style.display = 'none';
+  $('wrap').style.display = 'none';
+  $('auth-overlay').classList.remove('hidden');
   const token = localStorage.getItem('authToken');
   const role = localStorage.getItem('authRole');
   const shop = localStorage.getItem('authShop');
   const clientId = localStorage.getItem('clientId');
 
-  if (token && role && clientId) {
+  if (token && ['admin', 'shop'].includes(role) && clientId) {
+    authRole = role; authShop = shop || null;
+    const current = () => token === localStorage.getItem('authToken') && clientId === localStorage.getItem('clientId') && role === authRole && shop === localStorage.getItem('authShop');
+    try {
+      await api('GET', '/api/capabilities');
+    } catch (error) {
+      if (current()) {
+        authRole = null; authShop = null;
+        $('auth-client-input').value = clientId;
+        $('auth-client-err').textContent = 'Could not verify your session. Please sign in again.';
+        $('auth-client-err').style.display = 'block';
+      }
+      return;
+    }
+    if (!current()) return;
     currentClientId = clientId;
     currentClientShops = JSON.parse(localStorage.getItem('clientShops') || '[]');
     renderDynamicShops();
@@ -70,4 +87,5 @@ initNativeBack();
       setTimeout(() => $('auth-client-input')?.focus(), 80);
     }
   }
-})();
+}
+var startupPromise = initializeApp();
