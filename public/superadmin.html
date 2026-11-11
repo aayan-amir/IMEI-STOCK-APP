@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Stock-ly — Platform administration</title>
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/superadmin.css">
+  <script src="/js/superadmin.js" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="/dashboard">stock-ly</a><a href="/dashboard">Back to shop login</a></header>
+  <main>
+    <section id="platform-login" class="login card" aria-labelledby="login-title">
+      <h1 id="login-title">Platform administration</h1>
+      <p>Sign in to manage client accounts.</p>
+      <form id="platform-login-form" method="post" action="/superadmin">
+        <label for="platform-password">Platform password</label>
+        <input id="platform-password" type="password" autocomplete="current-password" required>
+        <button id="platform-login-button" type="submit">Sign in</button>
+      </form>
+      <p id="platform-login-error" class="error" role="alert"></p>
+    </section>
+    <section id="platform-management" hidden aria-labelledby="management-title">
+      <div class="heading"><h1 id="management-title">Client accounts</h1><button id="platform-signout" type="button" class="secondary">Sign out</button></div>
+      <p id="platform-status" role="status" aria-live="polite"></p>
+      <div class="management-grid">
+        <section class="card" aria-labelledby="clients-title">
+          <div class="heading"><h2 id="clients-title">Clients</h2><button id="platform-refresh" type="button" class="secondary">Refresh</button></div>
+          <div id="platform-list"></div>
+        </section>
+        <section class="card" aria-labelledby="platform-form-title">
+          <h2 id="platform-form-title">Create client</h2>
+          <form id="platform-client-form" method="post" action="/superadmin">
+            <fieldset id="platform-fields">
+              <label for="platform-client-id">Client ID</label><input id="platform-client-id" maxlength="64" pattern="[A-Za-z0-9_-]+" required autocomplete="off">
+              <label for="platform-admin-password">Owner password</label><input id="platform-admin-password" type="password" autocomplete="new-password">
+              <label for="platform-gate-password">Site password</label><input id="platform-gate-password" type="password" autocomplete="new-password">
+              <p id="platform-password-note">Set both passwords for a new client.</p>
+              <div class="shop-builder"><div><label for="platform-shop-name">Shop name</label><input id="platform-shop-name" maxlength="64" autocomplete="off"></div><div><label for="platform-shop-color">Colour</label><input id="platform-shop-color" type="color" value="#16a34a"></div><button id="platform-add-shop" type="button" class="secondary">Add shop</button></div>
+              <div id="platform-shops" class="shops"></div>
+              <div class="form-actions"><button id="platform-save" type="submit">Create client</button><button id="platform-cancel" type="button" class="secondary">New client</button></div>
+            </fieldset>
+          </form>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

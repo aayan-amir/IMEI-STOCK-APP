@@ -80,7 +80,6 @@ async function initializeApp() {
       renderDynamicShops();
       $('auth-client').style.display = '';
       $('auth-role').style.display = 'none';
-      $('auth-superadmin').style.display = 'none';
       $('auth-client-input').value = clientId;
       setTimeout(() => $('auth-gate-input-combined')?.focus(), 80);
     } else {

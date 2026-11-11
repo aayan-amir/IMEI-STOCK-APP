@@ -47,6 +47,7 @@ function createApp({ config = readRuntimeConfig(), database = require('./db') } 
     'connect-src': ["'self'"],
     'upgrade-insecure-requests': null,
   } } }));
+  app.use('/api/superadmin', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   app.get('/health/live', (req, res) => res.json({ status: 'ok' }));
   app.get('/health/ready', (req, res) => {
     const ready = !app.locals.draining && database.mongoose.connection.readyState === 1;
@@ -56,6 +57,11 @@ function createApp({ config = readRuntimeConfig(), database = require('./db') } 
   app.use('/api/days', express.json({ limit: '2mb' }));
   app.use(express.json());
   app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
+  app.get('/superadmin', (req, res) => {
+    res.set({ 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' });
+    res.sendFile(path.join(__dirname, 'public', 'superadmin.html'));
+  });
+  app.get('/superadmin.html', (req, res) => res.redirect(302, '/superadmin'));
   app.get('/dashboard', (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));

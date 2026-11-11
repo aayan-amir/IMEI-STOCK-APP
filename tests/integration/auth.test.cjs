@@ -140,3 +140,31 @@ test('day API rejects a payload belonging to a different shop or date', async ()
     assert.equal(await Day.countDocuments({ shop: 'B', date: '2026-11-09' }), 0);
   });
 });
+
+test('platform client management preserves passwords, revokes sessions and rejects stale status changes', async () => {
+  const clientId = fixture.namespace + '_platform';
+  const bodyHeaders = { 'Content-Type': 'application/json' };
+  await withApp(app, async request => {
+    const write = (path, body) => request('/api/superadmin' + path, { method: 'POST', headers: bodyHeaders, body: JSON.stringify({ ...body, superAdminPassword: 'isolated-platform-secret' }) });
+    assert.equal((await write('/verify', {})).status, 200);
+    assert.equal((await write('/clients', { clientId, adminPassword: 'owner-dummy', gatePassword: 'site-dummy', shops: [{ id: 'ORIGINAL_ID', name: 'Original shop', color: '#16a34a' }] })).status, 200);
+    const original = await fixture.db.Client.findOne({ clientId });
+    const oldVersion = original.authVersion;
+    assert.equal((await write('/clients', { clientId, adminPassword: '', gatePassword: '', shops: [{ id: 'ORIGINAL_ID', name: 'Renamed shop', color: '#16a34a' }] })).status, 200);
+    const updated = await fixture.db.Client.findOne({ clientId });
+    assert.equal(await updated.compareAdminPassword('owner-dummy'), true);
+    assert.equal(await updated.compareGatePassword('site-dummy'), true);
+    assert.equal(updated.shops[0].id, 'ORIGINAL_ID');
+    assert.notEqual(updated.authVersion, oldVersion);
+    const token = await createSession({ clientId, role: 'admin', shop: null, authVersion: updated.authVersion });
+    const list = await request('/api/superadmin/clients', { headers: { 'X-Super-Admin-Password': 'isolated-platform-secret' } });
+    assert.equal(list.headers.get('cache-control'), 'no-store');
+    const listed = (await list.json()).find(c => c.clientId === clientId);
+    assert.ok(listed); assert.equal(listed.adminPassword, undefined); assert.equal(listed.gatePassword, undefined);
+    assert.equal((await write('/clients/' + clientId + '/status', { expectedStatus: 'active', status: 'paused' })).status, 200);
+    assert.equal((await request('/api/capabilities', { headers: headers(token) })).status, 401);
+    assert.equal((await write('/clients/' + clientId + '/status', { expectedStatus: 'active', status: 'active' })).status, 409);
+    assert.equal((await write('/clients/' + clientId + '/status', { expectedStatus: 'paused', status: 'active' })).status, 200);
+    assert.equal((await request('/api/capabilities', { headers: headers(token) })).status, 401);
+  });
+});

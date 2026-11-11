@@ -6,6 +6,8 @@ A multi-tenant inventory and operations app for phone businesses.
 
 Website routes: `/` is the public landing page; `/dashboard` is the app and login. Old `/index.html` links redirect to `/dashboard` and preserve query parameters. API and asset paths remain unchanged. Installed web apps launch `/dashboard`; the original app HTML stays in `public/index.html` for native packaging.
 
+Platform operators use `/superadmin` directly. It has its own login and client management page, is not linked from the customer site, and uses the existing `SUPER_ADMIN_PASSWORD` configuration. Reloading or signing out clears platform access without signing out shop users. Each platform API request still verifies the platform password on the server.
+
 It supports client-based isolation, IMEI lifecycle tracking, shop operations, warehouse/dispatch workflows, daily accounting, analytics, reporting, backups, and super-admin tenant management.
 
 ---

@@ -21,6 +21,11 @@ for (const [name, args] of [['submitAdd', []], ['submitSell', []], ['saveDay', [
       browser.context.editProductQty('id', 'Charger', 2);
       browser.context.document.getElementById('ep-qty').value = '2';
     }
+    if (name === 'deleteShopExp') {
+      browser.context.allShopExp = [{ _key: 'id' }];
+      browser.context.expenseDataScope = browser.context.expenseReadScope();
+      browser.context.confirmModal = async () => true;
+    }
     const input = browser.context.document.getElementById('fBrand');
     input.value = 'Retain brand';
     const result = await browser.context[name](...args);

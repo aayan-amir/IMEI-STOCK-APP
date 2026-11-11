@@ -159,7 +159,7 @@ function expireSession(token) {
   if ($('topbar')) $('topbar').style.display = 'none';
   if ($('wrap')) $('wrap').style.display = 'none';
   $('auth-overlay')?.classList.remove('hidden');
-  for (const [id, display] of [['auth-client', ''], ['auth-superadmin', 'none'], ['auth-role', 'none']]) {
+  for (const [id, display] of [['auth-client', ''], ['auth-role', 'none']]) {
     if ($(id)) $(id).style.display = display;
   }
   if ($('auth-client-input')) $('auth-client-input').value = localStorage.getItem('clientId') || '';
