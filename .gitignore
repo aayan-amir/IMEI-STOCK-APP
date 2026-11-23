@@ -61,3 +61,6 @@ Desktop.ini
 /android/keystore.properties
 *.apk
 *.aab
+
+# Local browser automation sessions
+/.playwright-cli/

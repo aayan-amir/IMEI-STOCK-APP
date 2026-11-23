@@ -3,42 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f3ee">
-  <title>Stock-ly — Stock and sales for phone shops</title>
-  <meta name="description" content="Keep track of phones by IMEI, record sales, manage your shops, and close your day with Stock-ly.">
+  <meta name="theme-color" content="#f7f9f4">
+  <title>Stock-ly — Phone inventory and sales for your shops</title>
+  <meta name="description" content="Track phones by IMEI, manage stock across shops, record sales and review your daily figures. Contact Stock-ly sales for a walkthrough.">
   <link rel="canonical" href="https://stock-ly.app/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Stock-ly — Stock and sales for phone shops">
-  <meta property="og:description" content="Know your stock. Run your shop. Phone inventory, sales and daily records in one place.">
+  <meta property="og:title" content="Stock-ly — Phone inventory and sales for your shops">
+  <meta property="og:description" content="A clear view of your stock, sales and daily business. Ask for a Stock-ly walkthrough.">
   <meta property="og:url" content="https://stock-ly.app/">
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
   <link rel="stylesheet" href="/css/landing.css">
+  <script src="/js/landing.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
-  <div class="page-shell">
-    <header class="site-header">
-      <a class="brand" href="/" aria-label="Stock-ly home"><span class="brand-dot" aria-hidden="true"></span>stock-ly</a>
-      <nav aria-label="Main navigation">
-        <a class="section-link" href="#features">Features</a>
-        <a class="section-link" href="#how-it-works">How it works</a>
-        <a class="sign-in" href="/dashboard">Sign in <span aria-hidden="true">↗</span></a>
-      </nav>
-    </header>
-
-    <main id="main">
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <p class="intro">A little more order for your phone shop.</p>
-          <h1 id="hero-title">Know your stock.<br>Run your shop.</h1>
-          <p class="hero-description">Every IMEI, every sale, and your daily figures. Keep them together, so you can get on with business.</p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="/dashboard">Open dashboard <span aria-hidden="true">→</span></a>
-            <a class="text-link" href="#how-it-works">Take a closer look <span aria-hidden="true">↓</span></a>
-          </div>
-          <p class="sign-in-note">Already using Stock-ly? Sign in with your shop’s Client ID.</p>
-        </div>
-
+  <header class="site-header"><div class="container header-inner">
+    <a class="brand" href="/" aria-label="Stock-ly home"><span class="brand-dot" aria-hidden="true"></span>stock-ly</a>
+    <nav aria-label="Main navigation"><a class="section-link" href="#features">The product</a><a class="section-link" href="#how-it-works">How it works</a><a class="section-link" href="#faq">Questions</a><a class="sign-in" href="/dashboard">Sign in</a><a class="button button-small" href="#contact">Contact sales <span aria-hidden="true">↗</span></a></nav>
+  </div></header>
+  <main id="main">
+    <section class="hero container" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <h1 id="hero-title">Inventory for phone shops.</h1>
+        <p class="hero-description">Scan phones by IMEI, track stock across shops, and record sales and expenses in one place.</p>
+        <div class="hero-actions"><a class="button" href="#contact">Contact sales <span aria-hidden="true">↗</span></a><a class="button button-outline" href="#features">Explore features <span aria-hidden="true">↓</span></a></div>
+        <p class="hero-note">Have an account? <a href="/dashboard">Go to your dashboard →</a></p>
+      </div>
+      <div class="hero-visual" id="product">
         <figure class="product-preview" aria-labelledby="preview-caption">
           <div class="preview-bar"><span class="preview-brand"><span class="brand-dot" aria-hidden="true"></span>stock-ly</span><span class="preview-address">/dashboard</span></div>
           <div class="preview-body">
@@ -54,33 +45,38 @@
               <div class="phone-description"><h3>Samsung Galaxy S24</h3><p>256GB · Onyx black</p><span class="sample-imei">IMEI ending 2806</span></div>
               <span class="stock-label">In stock</span>
             </div>
-            <div class="preview-footer"><span class="status-dot" aria-hidden="true"></span>Ready for the next sale.</div>
+
           </div>
           <figcaption id="preview-caption">An example of your Stock-ly workspace. Sample stock shown.</figcaption>
         </figure>
-      </section>
-
-      <section class="features" id="features" aria-labelledby="features-title">
-        <div class="section-heading"><p class="section-kicker">Less chasing records.</p><h2 id="features-title">Keep the details.<br>Lose the extra work.</h2></div>
-        <div class="feature-list">
-          <article><span class="feature-mark" aria-hidden="true">↗</span><div><h3>Follow the phone, not a paper trail.</h3><p>Find a phone by IMEI, check its stock status, and look up its recorded history.</p></div></article>
-          <article><span class="feature-mark" aria-hidden="true">⇄</span><div><h3>Keep your shops connected.</h3><p>Receive stock in the warehouse, send it to a shop, and keep track of where it went.</p></div></article>
-          <article><span class="feature-mark" aria-hidden="true">✓</span><div><h3>Finish the day with clear figures.</h3><p>Record sales and expenses, review your daily sheet, and keep previous days close at hand.</p></div></article>
-        </div>
-      </section>
-
-      <section class="workflow" id="how-it-works" aria-labelledby="workflow-title">
-        <div class="workflow-intro"><p class="section-kicker">Fits your daily routine.</p><h2 id="workflow-title">From the first phone<br>to the last sale.</h2></div>
-        <ol class="steps">
-          <li><span class="step-number" aria-hidden="true">1</span><h3>Add your stock.</h3><p>Scan or enter an IMEI. Add a single phone or a batch, with the details you need.</p></li>
-          <li><span class="step-number" aria-hidden="true">2</span><h3>Make the sale.</h3><p>Find the phone, enter the sale, and keep a record you can look up later.</p></li>
-          <li><span class="step-number" aria-hidden="true">3</span><h3>Close your day.</h3><p>Review sales and expenses, save your daily records, and see how the month is going.</p></li>
-        </ol>
-      </section>
-
-      <section class="closing" aria-labelledby="closing-title"><div><p class="section-kicker">Back to business.</p><h2 id="closing-title">Your shop is waiting.</h2><p>Open Stock-ly and pick up where you left off.</p></div><a class="button button-primary" href="/dashboard">Go to dashboard <span aria-hidden="true">→</span></a></section>
-    </main>
-    <footer class="site-footer"><a class="brand" href="/" aria-label="Stock-ly home"><span class="brand-dot" aria-hidden="true"></span>stock-ly</a><p>Stock and sales. Made for phone shops.</p><a href="/dashboard">Sign in <span aria-hidden="true">↗</span></a></footer>
-  </div>
+      </div>
+    </section>
+    <section class="section container" id="features" aria-labelledby="features-title">
+      <div class="section-heading"><div><h2 id="features-title">Stock, sales and reporting</h2></div></div>
+      <div class="feature-grid" role="region" aria-label="Product features" tabindex="0">
+        <article class="feature-card"><div class="feature-icon" aria-hidden="true">▥</div><h3>Find a phone by its IMEI.</h3><p>Scan or enter an IMEI to add stock, look up a phone or record a sale. Keep its model, storage and colour alongside its identity.</p><div class="feature-example"><span>Search stock</span><strong>IMEI, brand or model <span aria-hidden="true">⌕</span></strong></div></article>
+        <article class="feature-card"><div class="feature-icon" aria-hidden="true">⇄</div><h3>See stock across your shops.</h3><p>Receive phones at the warehouse, dispatch them to a shop and look back at movement history when you need to check where they went.</p><div class="shop-flow"><span>Warehouse</span><b aria-hidden="true">→</b><span>Main shop</span></div></article>
+        <article class="feature-card"><div class="feature-icon" aria-hidden="true">↗</div><h3>Keep sales close at hand.</h3><p>Record the sale against the phone, review previous sales and retrieve a receipt without searching through separate records.</p><div class="feature-example"><span>Recorded sale</span><strong>Phone details + selling shop <span class="check" aria-hidden="true">✓</span></strong></div></article>
+        <article class="feature-card"><div class="feature-icon" aria-hidden="true">◷</div><h3>Make sense of the day.</h3><p>Record expenses, review your daily sheet and revisit previous days. Monthly reports help you see how business is going.</p><div class="feature-example"><span>Daily close</span><strong>Sales · Expenses · Profit</strong></div></article>
+      </div>
+    </section>
+    <section class="care-section" aria-labelledby="care-title"><div class="container care-grid"><div><h2 id="care-title">Account access and backups</h2><a class="text-link" href="mailto:ayanwork1@gmail.com?subject=Stock-ly%20sales%20enquiry">Ask us about your setup <span aria-hidden="true">↗</span></a></div><div class="care-list">
+      <article><div><h3>Separate owner and shop access</h3><p>Owners have business management tools. Shop staff sign in to their configured shop for day-to-day stock and sales work.</p></div></article>
+      <article><div><h3>Business records stay in your account</h3><p>Stock-ly separates client accounts and checks access on the server when a request is made.</p></div></article>
+      <article><div><h3>Backups you can download</h3><p>Owners can export a business backup. Reviewed recovery is available into an empty account, keeping existing records from being overwritten.</p></div></article>
+    </div></div></section>
+    <section class="section container workflow" id="how-it-works" aria-labelledby="workflow-title"><div class="section-heading"><div><h2 id="workflow-title">A day with Stock-ly</h2></div></div><ol class="steps"><li><span class="step-number">1</span><h3>Add your phones</h3><p>Enter or scan IMEIs, then add phone details. Use batch intake when more stock arrives.</p></li><li><span class="step-number">2</span><h3>Work from your shop</h3><p>Find available phones, record sales and check stock as your team serves customers.</p></li><li><span class="step-number">3</span><h3>Review and close</h3><p>Bring sales and expenses together, close your day and revisit the figures when you need them.</p></li></ol></section>
+    <section class="section container faq-section" id="faq" aria-labelledby="faq-title"><div><h2 id="faq-title">Frequently asked questions</h2><p>Have a different question?<br><a href="mailto:ayanwork1@gmail.com">Email our sales team ↗</a></p></div><div class="faqs">
+      <details><summary>Can I use Stock-ly for more than one shop?</summary><p>Yes. An account can have multiple configured shops, with warehouse receiving, dispatch records and separate shop access.</p></details>
+      <details><summary>Does it work on a phone?</summary><p>The web app works on desktop and mobile browsers. You can enter an IMEI manually or use a compatible camera or barcode scanner. Camera scanning needs browser permission.</p></details>
+      <details><summary>How do I get an account or see a demo?</summary><p>Contact sales at <a href="mailto:ayanwork1@gmail.com">ayanwork1@gmail.com</a>. Tell us how many shops you run and what you need to track, and ask for a walkthrough and pricing.</p></details>
+      <details><summary>Can I take a copy of my records?</summary><p>Owners can download business backups and export supported lists and reports. Ask us to walk you through what is included and how recovery works.</p></details>
+      <details><summary>I already have an account. Where do I sign in?</summary><p>Go to the <a href="/dashboard">dashboard</a> and use your Client ID and site password. Your owner or shop access continues from there.</p></details>
+    </div></section>
+    <section class="contact-section" id="contact" aria-labelledby="contact-title"><div class="container contact-grid"><div><h2 id="contact-title">Contact Aayan</h2><p>Ask me about Stock-ly, request a walkthrough, or tell me what you need for your shop.</p><a class="contact-email" href="mailto:ayanwork1@gmail.com?subject=Stock-ly%20sales%20enquiry">ayanwork1@gmail.com <span aria-hidden="true">↗</span></a></div>
+      <form class="contact-form" id="sales-form" action="mailto:ayanwork1@gmail.com" method="get"><h3>Write a message</h3><div class="form-row"><div><label for="sales-name">Your name</label><input id="sales-name" name="name" autocomplete="name" maxlength="100" required></div><div><label for="sales-shop">Shop or business</label><input id="sales-shop" name="business" autocomplete="organization" maxlength="150" required></div></div><div class="form-row"><div><label for="sales-email">Your email</label><input id="sales-email" name="email" type="email" autocomplete="email" maxlength="200" required></div><div><label for="sales-count">Number of shops</label><select id="sales-count" name="shops"><option>1 shop</option><option>2–5 shops</option><option>6+ shops</option></select></div></div><label for="sales-message">What would you like help with?</label><textarea id="sales-message" name="message" rows="4" required maxlength="2000" placeholder="A walkthrough, pricing, or a question about your setup…"></textarea><button class="button" type="submit">Open email draft <span aria-hidden="true">↗</span></button><p class="form-note">Opens your email app with these details. Review and send your message there.</p><p id="sales-status" role="status" aria-live="polite"></p></form>
+    </div></section>
+  </main>
+  <footer class="site-footer container"><div><a class="brand" href="/" aria-label="Stock-ly home"><span class="brand-dot" aria-hidden="true"></span>stock-ly</a><p>Inventory software for phone shops.</p></div><nav aria-label="Footer"><a href="#features">Product</a><a href="#contact">Contact sales</a><a href="/dashboard">Sign in</a></nav><p class="footer-note">© Stock-ly</p></footer>
 </body>
 </html>
