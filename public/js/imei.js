@@ -97,11 +97,18 @@ function clearBatchQueue() {
   renderBatchQueue();
 }
 
+let checkoutPhone = null;
+let checkoutOwner = null;
+let checkoutExtras = [];
+let checkoutLookups = new Set();
+
 async function handleImeiSubmit() {
   const raw = $('imeiInput').value.trim().replace(/\D/g, '');
   if (!raw) { showToast('Enter or scan an IMEI', 'error'); return; }
   if (raw.length !== 15) { showToast(`IMEI must be exactly 15 digits (got ${raw.length})`, 'error'); return; }
-  pendingIMEI = raw; $('imeiInput').value = '';
+  $('imeiInput').value = '';
+  if (scanMode === 'sell') return lookupCheckoutPhone(raw);
+  pendingIMEI = raw;
   if (scanMode === 'add') {
     try {
       const r = await api('GET', `/api/lookup/${pendingIMEI}`);
@@ -117,22 +124,114 @@ async function handleImeiSubmit() {
       }
     } catch (e) { $('imeiInput').value = raw; return handleApiError(e); }
     showAddForm();
-  } else {
-    try {
-      const r = await api('GET', `/api/lookup/${pendingIMEI}`);
-      if (!r.imei) {
-        showToast('IMEI not found in stock', 'error');
-        showPreview('Not Found', `<p style="color:var(--danger);font-size:.8rem">IMEI <code style="font-family:var(--mono)">${pendingIMEI}</code> is not in stock.</p>`);
-        return;
-      }
-      if (r.status === 'sold') {
-        showToast('This phone is already sold!', 'error');
-        showPreview('Already Sold', phoneCardHTML(r, true));
-        return;
-      }
-      showSellForm(r);
-    } catch (e) { $('imeiInput').value = raw; return handleApiError(e); }
   }
+}
+
+async function lookupCheckoutPhone(imei) {
+  if (checkoutOwner && checkoutOwner !== saleScope()) cancelForm();
+  const scope = destructiveScope();
+  const lookups = checkoutLookups;
+  const current = () => lookups === checkoutLookups && scope === destructiveScope();
+  if (lookups.has(imei) || checkoutPhone?.imei === imei || checkoutExtras.some(row => row.phone.imei === imei)) {
+    showToast('This IMEI is already in checkout', 'warn');
+    return;
+  }
+  if (lookups.size + checkoutExtras.length + Number(!!checkoutPhone) >= 25) {
+    showToast('Checkout can contain up to 25 phones', 'warn');
+    return;
+  }
+  lookups.add(imei);
+  try {
+    const phone = await api('GET', '/api/lookup/' + imei);
+    if (!current()) return;
+    if (!phone.imei || phone.status !== 'in_stock') {
+      showToast(imei + ': ' + (phone.imei ? 'Phone is unavailable' : 'IMEI not found in stock'), 'error');
+      if (!checkoutPhone && phone.status === 'sold') showPreview('Already Sold', phoneCardHTML(phone, true));
+      return;
+    }
+    if (!checkoutPhone) {
+      checkoutOwner = saleScope();
+      checkoutPhone = phone;
+      pendingIMEI = phone.imei;
+      showSellForm(phone);
+    } else {
+      checkoutExtras.push({ phone, price: '' });
+      renderCheckoutExtras();
+      updateCheckoutTotal();
+      updateCrossShopWarning();
+    }
+  } catch (error) {
+    if (current()) {
+      if (!$('imeiInput').value) $('imeiInput').value = imei;
+      handleApiError(error);
+    }
+  } finally {
+    lookups.delete(imei);
+  }
+}
+
+function renderCheckoutExtras() {
+  const list = $('checkoutExtras');
+  $('removeFirstCheckoutPhone').hidden = !checkoutExtras.length;
+  list.replaceChildren();
+  for (const row of checkoutExtras) {
+    const group = document.createElement('div');
+    group.className = 'form-group';
+    const label = document.createElement('label');
+    const price = document.createElement('input');
+    price.id = 'sale-price-' + row.phone.imei;
+    label.htmlFor = price.id;
+    label.textContent = [row.phone.brand, row.phone.model, row.phone.imei, 'Price (PKR)'].filter(Boolean).join(' · ');
+    price.type = 'number';
+    price.min = '0.01';
+    price.step = '0.01';
+    price.value = row.price;
+    price.oninput = () => { row.price = price.value; updateCheckoutTotal(); };
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'btn bo';
+    remove.textContent = 'Remove';
+    remove.setAttribute('aria-label', 'Remove phone ' + row.phone.imei);
+    remove.onclick = () => {
+      checkoutExtras = checkoutExtras.filter(entry => entry !== row);
+      renderCheckoutExtras();
+      updateCheckoutTotal();
+      updateCrossShopWarning();
+      $('addCheckoutPhone').focus();
+    };
+    group.append(label, price, remove);
+    list.append(group);
+  }
+}
+
+function removeFirstCheckoutPhone() {
+  const next = checkoutExtras.shift();
+  if (!next) return;
+  checkoutPhone = next.phone;
+  pendingIMEI = next.phone.imei;
+  $('fSalePrice').value = next.price;
+  showSellForm(next.phone, true);
+  renderCheckoutExtras();
+  $('fSalePrice').oninput();
+  $('fSalePrice').focus();
+}
+
+function updateCheckoutTotal() {
+  const total = $('checkoutTotal');
+  if (!checkoutExtras.length) { total.textContent = ''; return; }
+  let amount;
+  try { amount = pkrMinor(checkoutTotalMinor()); }
+  catch { amount = 'Enter a valid price for every phone'; }
+  total.textContent = (checkoutExtras.length + 1) + ' phones · ' + amount;
+}
+
+function checkoutTotalMinor() {
+  const prices = [$('fSalePrice').value, ...checkoutExtras.map(row => row.price)];
+  const amounts = prices.map(price => StocklyBusinessRules.parseMinorUnits(price));
+  if (amounts.some(amount => amount <= 0)) throw Error('Enter a positive price for every phone.');
+  const total = amounts.reduce((sum, amount) => sum + amount, 0);
+  if (!Number.isSafeInteger(total)) throw Error('The checkout total exceeds the supported amount.');
+  return total;
 }
 
 function showAddForm() {
@@ -144,9 +243,18 @@ function showAddForm() {
   autoBrandFromCat('fCat', 'fBrand'); // auto-fill brand based on current category
   setTimeout(() => $('fImei2')?.focus(), 150);
 }
-function showSellForm(phone) {
+function updateCrossShopWarning() {
+  const shop = $('fSoldByShop').value;
+  const phones = [checkoutPhone, ...checkoutExtras.map(row => row.phone)];
+  const otherShops = new Set(phones.filter(phone => phone?.shop && phone.shop !== shop).map(phone => phone.shop));
+  const warning = $('crossShopWarning');
+  warning.style.display = shop && otherShops.size ? 'block' : 'none';
+  warning.textContent = 'Stock from ' + [...otherShops].join(', ') + ' will be recorded as sold by ' + shop + '.';
+}
+
+function showSellForm(phone, keepCheckoutDetails = false) {
   hidePreview();
-  if ($('fPaymentMethod')) $('fPaymentMethod').value = '';
+  if (!keepCheckoutDetails && $('fPaymentMethod')) $('fPaymentMethod').value = '';
   const imeiLine = phone.imei2 ? `<div class="phone-imei">IMEI 1: ${esc(phone.imei)}</div><div class="phone-imei2">IMEI 2: ${esc(phone.imei2)}</div>` : `<div class="phone-imei">${esc(phone.imei)}</div>`;
   $('sellPhoneInfo').innerHTML = `
 <div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px;display:flex;align-items:center;gap:12px">
@@ -162,28 +270,18 @@ ${phone.buyPrice && authRole === 'admin' ? `<div id="profitPreview" style="font-
 
   const soldByShopEl = $('fSoldByShop');
   const defaultShop = (activeShop === 'HQ' ? (SHOPS.length ? SHOPS[0] : null) : activeShop) || null;
-  soldByShopEl.value = authRole === 'shop' ? authShop : defaultShop;
+  if (!keepCheckoutDetails) soldByShopEl.value = authRole === 'shop' ? authShop : defaultShop;
   soldByShopEl.disabled = authRole === 'shop';
 
-  // Cross-shop warning helper
-  function updateCrossShopWarning() {
-    const sel = soldByShopEl.value;
-    const warn = $('crossShopWarning');
-    if (phone.shop && sel && sel !== phone.shop) {
-      warn.style.display = 'block';
-      warn.textContent = `⚠ This phone is from Shop ${phone.shop}'s stock. You are recording this sale under Shop ${sel}.`;
-    } else {
-      warn.style.display = 'none';
-    }
-  }
   soldByShopEl.onchange = updateCrossShopWarning;
   updateCrossShopWarning();
 
   $('sellForm').style.display = 'block';
   $('sellForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   // Wire up profit preview (admin only)
-  if (phone.buyPrice && authRole === 'admin') {
-    $('fSalePrice').oninput = () => {
+  $('fSalePrice').oninput = () => {
+    updateCheckoutTotal();
+    if (phone.buyPrice && authRole === 'admin') {
       const sp = parseFloat($('fSalePrice').value) || 0;
       const profit = sp - phone.buyPrice;
       const el = $('profitPreview');
@@ -193,9 +291,9 @@ ${phone.buyPrice && authRole === 'admin' ? `<div id="profitPreview" style="font-
       } else if (el) {
         el.style.color = 'var(--text2)'; el.textContent = 'Enter sale price to see profit';
       }
-    };
-  }
-  setTimeout(() => $('fSalePrice')?.focus(), 150);
+    }
+  };
+  setTimeout(() => { if (checkoutPhone === phone && checkoutExtras.length === 0 && document.activeElement !== $('imeiInput')) $('fSalePrice')?.focus(); }, 150);
 }
 function cancelForm() {
   batchQueueVersion++;
@@ -205,6 +303,15 @@ function cancelForm() {
   if ($('productForm')) $('productForm').style.display = 'none';
   hidePreview();
   pendingIMEI = '';
+  if (checkoutPhone) {
+    checkoutPhone = null;
+    checkoutOwner = null;
+    checkoutExtras = [];
+    ['fSalePrice', 'fBuyerName', 'fBuyerPhone', 'fSaleNotes', 'fPaymentMethod'].forEach(id => { $(id).value = ''; });
+    renderCheckoutExtras();
+    updateCheckoutTotal();
+  }
+  checkoutLookups = new Set();
   batchQueue = [];
   renderBatchQueue();
 }
@@ -254,11 +361,18 @@ async function submitAdd() {
 
 let pendingSaleRequest = null;
 
+function saleScope() {
+  return JSON.stringify([localStorage.getItem('clientId'), localStorage.getItem('authToken'), authRole, authShop]);
+}
+
 function readSaleIntent() {
   return {
-    scope: JSON.stringify([localStorage.getItem('clientId'), authRole, authShop]),
+    scope: saleScope(),
     payload: {
-      imei: pendingIMEI, salePrice: $('fSalePrice').value,
+      ...(checkoutExtras.length ? { items: [
+        { imei: pendingIMEI, salePrice: $('fSalePrice').value },
+        ...checkoutExtras.map(row => ({ imei: row.phone.imei, salePrice: row.price })),
+      ] } : { imei: pendingIMEI, salePrice: $('fSalePrice').value }),
       ...(typeof hasBusinessCapability === 'function' && hasBusinessCapability('fullyPaidTender') ? { paymentMethod: $('fPaymentMethod').value } : {}),
       buyerName: $('fBuyerName').value.trim(),
       buyerPhone: $('fBuyerPhone').value.trim(),
@@ -269,37 +383,51 @@ function readSaleIntent() {
 }
 
 async function submitSell() {
+  let request, started = false;
   try {
+    if (checkoutOwner && checkoutOwner !== saleScope()) {
+      cancelForm();
+      throw Error('Your session changed. Scan the phones again.');
+    }
+    if (checkoutLookups.size) throw Error('Wait for the phone lookup before confirming the sale.');
     const intent = readSaleIntent();
     const payload = intent.payload;
+    if (payload.items) checkoutTotalMinor();
     if (payload.paymentMethod !== undefined && !['cash', 'bank'].includes(payload.paymentMethod)) throw Error('Choose Cash or Bank before saving this fully paid sale.');
     const fingerprint = JSON.stringify(intent);
     if (!pendingSaleRequest || pendingSaleRequest.fingerprint !== fingerprint) {
       const key = newRequestKey();
       pendingSaleRequest = { fingerprint, key, page: activePage, shop: activeShop };
     }
-    const request = pendingSaleRequest;
-    const d = await api('POST', '/api/stock/sell', payload, { operationId: request.key, ...(payload.paymentMethod ? { saleVersion: '2' } : {}) });
+    request = pendingSaleRequest;
+    if (request.running) return;
+    request.running = started = true;
+    const d = await api('POST', payload.items ? '/api/stock/sell-batch' : '/api/stock/sell', payload, { operationId: request.key, ...(payload.paymentMethod ? { saleVersion: '2' } : {}) });
+    if (payload.items && (!Array.isArray(d.sales) || d.sales.length !== payload.items.length ||
+        d.sales.some((sale, index) => sale?.imei !== payload.items[index].imei))) {
+      throw Error('The checkout could not be confirmed. Retry the same checkout to verify it.');
+    }
     const currentIntent = readSaleIntent();
     const ownsForm = pendingSaleRequest === request && JSON.stringify(currentIntent) === fingerprint;
     if (pendingSaleRequest === request) pendingSaleRequest = null;
     if (currentIntent.scope !== intent.scope) return;
 
     const profit = d.sale?.profit;
-    showToast(`Sale recorded for ${payload.imei}${profit != null && authRole === 'admin' ? ' — Profit: ' + pkr(profit) : ''}`, 'success');
-    const soldIMEI = payload.imei;
-    const soldPrice = d.sale?.salePrice;
-    const soldAt = d.sale?.soldAt || new Date().toISOString();
+    const sold = payload.items ? d.sales : [{ ...d.sale, imei: payload.imei }];
+    showToast(payload.items ? 'Sale recorded for ' + sold.length + ' phones' :
+      'Sale recorded for ' + payload.imei + (profit != null && authRole === 'admin' ? ' - Profit: ' + pkr(profit) : ''), 'success');
     if (ownsForm) {
       cancelForm();
       ['fSalePrice', 'fBuyerName', 'fBuyerPhone', 'fSaleNotes', 'fPaymentMethod'].forEach(id => { if ($(id)) $(id).value = ''; });
     }
-    // Update local cache immediately so imeistock page reflects the sale without waiting for a full refresh
-    const soldIdx = allIMEIStock.findIndex(p => p.imei === soldIMEI);
-    if (soldIdx !== -1) {
-      allIMEIStock[soldIdx] = { ...allIMEIStock[soldIdx], status: 'sold', salePrice: soldPrice, soldAt };
-      renderIMEIStock();
+    let stockChanged = false;
+    for (const sale of sold) {
+      const index = allIMEIStock.findIndex(phone => phone.imei === sale.imei);
+      if (index === -1) continue;
+      allIMEIStock[index] = { ...allIMEIStock[index], status: 'sold', salePrice: sale.salePrice, soldAt: sale.soldAt || new Date().toISOString() };
+      stockChanged = true;
     }
+    if (stockChanged) renderIMEIStock();
     loadSidebarStats();
     if (request.page === activePage && request.shop === activeShop) {
       if (activePage === 'stock') loadDay();
@@ -309,6 +437,8 @@ async function submitSell() {
     }
   } catch (error) {
     return handleApiError(error);
+  } finally {
+    if (started) request.running = false;
   }
 }
 
@@ -800,7 +930,7 @@ function loadIMEIEvidence(source) {
     scope: () => JSON.stringify([listOwner(), context === imeiDetailContext, context.generation === generation, context.source, source, !!$('imei-history-body')]),
     onPage: items => { context.items = items; }, render: () => {
       const body = $('imei-history-body'); if (!body) return;
-      body.innerHTML = context.items.length ? context.items.map(item => `<div class="shop-card"><div class="shop-card-body"><strong>${esc(item.action || (source === 'sales' ? item.reversedAt ? 'Sale returned / reversed' : 'Sale recorded' : source === 'receipts' ? 'Stock received' : 'Sent to shop'))}</strong><p>${esc(item.businessDate || item.date || item.ts || '')} · ${esc(item.soldByShop || item.toShop || item.shop || '')}</p>${source === 'sales' ? `<p>Original sale: ${pkr(item.salePrice)}</p><button class="btn bo" onclick="printSaleReceipt('${item._id}')">Receipt</button>` : ''}<small>Source record: ${esc(item._id)}</small></div></div>`).join('') : '<div class="empty">No history found.</div>';
+      body.innerHTML = context.items.length ? context.items.map(item => `<div class="shop-card"><div class="shop-card-body"><strong>${esc(item.action || (source === 'sales' ? item.reversedAt ? 'Sale returned / reversed' : 'Sale recorded' : source === 'receipts' ? 'Stock received' : 'Sent to shop'))}</strong><p>${esc(item.businessDate || item.date || item.ts || '')} · ${esc(item.soldByShop || item.toShop || item.shop || '')}</p>${source === 'sales' ? `<p>Original sale: ${pkr(item.salePrice)}</p><button class="btn bo" onclick="printSaleReceipt('${item._id}')">Receipt</button>` : ''}<small>Source record: ${esc(item._id)}</small></div></div>`).join('') : '<div class="empty">No retained history found.</div>';
     } });
   return imeiEvidencePager.load();
 }

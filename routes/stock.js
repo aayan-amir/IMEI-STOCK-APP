@@ -6,7 +6,7 @@ const { mongoose } = require('../db');
 const { adminOnly, anyAuth } = require('../middleware/auth');
 const { readSalesLedger } = require('../services/sales-ledger');
 const { sumSaleEvents } = require('../public/js/business-rules');
-const { sellPhone } = require('../services/stock-sales');
+const { sellPhone, sellPhones } = require('../services/stock-sales');
 const { HttpError } = require('../utils/http-error');
 const { inventoryTransaction, lockInventory, assertNotInHQ } = require('../services/inventory-identity');
 const { stockPage } = require('../services/stock-list');
@@ -75,8 +75,8 @@ router.post('/stock/add', anyAuth, async (req, res) => {
 });
 
 // ── Sell phone ────────────────────────────────────────────────────────────
-router.post('/stock/sell', anyAuth, async (req, res) => {
-  const result = await sellPhone({
+async function recordStockSale(req, sell) {
+  return sell({
     connection: req.tenantDb, models: req.models,
     actor: { role: req.authRole, shop: req.authShop },
     validShops: req.validShops, payload: req.body,
@@ -84,7 +84,16 @@ router.post('/stock/sell', anyAuth, async (req, res) => {
     tenderRequired: req.app.locals.fullyPaidSalesEnabled === true,
     clientSaleVersion: req.get('X-Stockly-Sale-Version'),
   });
-  res.json({ success: true, sale: result.sale });
+}
+
+router.post('/stock/sell', anyAuth, async (req, res) => {
+  const { sale } = await recordStockSale(req, sellPhone);
+  res.json({ success: true, sale });
+});
+
+router.post('/stock/sell-batch', anyAuth, async (req, res) => {
+  const { sales } = await recordStockSale(req, sellPhones);
+  res.json({ success: true, sales });
 });
 
 // ── Stats ─────────────────────────────────────────────────────────────────

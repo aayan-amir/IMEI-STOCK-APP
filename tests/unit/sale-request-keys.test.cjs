@@ -75,3 +75,42 @@ test('an earlier acknowledgment cannot clear a newer intent or use its IMEI', as
   requests[2].reject(Error('offline'));
   await retry;
 });
+
+test('scanning two phones submits one checkout with independent prices and a shared buyer', async () => {
+  const state = screen();
+  state.scanMode = 'sell';
+  state.showToast = () => {};
+  state.document.createElement = () => ({
+    children: [], append(...children) { this.children.push(...children); },
+    setAttribute() {},
+  });
+  const extras = state.document.getElementById('checkoutExtras');
+  extras.replaceChildren = () => { extras.children = []; };
+  extras.append = row => extras.children.push(row);
+  const first = '123456789012345', second = '234567890123456';
+  const submitted = [];
+  state.api = async (method, url, payload, options) => {
+    if (method === 'GET') return { imei: url.split('/').at(-1), brand: 'Test', model: 'Phone', shop: 'A', status: 'in_stock' };
+    submitted.push({ url, payload, options });
+    return { success: true, sales: payload.items.map(item => ({ ...item, salePrice: Number(item.salePrice) })) };
+  };
+  for (const imei of [first, second, second]) {
+    state.document.getElementById('imeiInput').value = imei;
+    await state.handleImeiSubmit();
+  }
+  assert.equal(extras.children.length, 1);
+  const extraPrice = extras.children[0].children[1];
+  extraPrice.value = '200.50';
+  extraPrice.oninput();
+  state.document.getElementById('fBuyerName').value = 'Buyer';
+  assert.match(state.document.getElementById('checkoutTotal').textContent, /300\.50/);
+  await state.submitSell();
+  assert.equal(submitted.length, 1);
+  assert.equal(submitted[0].url, '/api/stock/sell-batch');
+  assert.deepEqual(JSON.parse(JSON.stringify(submitted[0].payload.items)), [
+    { imei: first, salePrice: '100' }, { imei: second, salePrice: '200.50' },
+  ]);
+  assert.equal(submitted[0].payload.buyerName, 'Buyer');
+  assert.match(submitted[0].options.operationId, /^[a-f0-9-]{36}$/);
+  assert.equal(extras.children.length, 0);
+});

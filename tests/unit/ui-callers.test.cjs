@@ -36,6 +36,10 @@ for (const [name, ...args] of actions) {
     if (name === 'deleteWarehouseImei') state.hqStock = { items: [{ imei: '123456789012345', entryId: 'a'.repeat(64) }] };
     if (name === 'deleteWarehouseImei') state.warehouseDataOwner = state.warehouseReadScope();
     if (name === 'saveProductQty') state.editProductQty('product-id', 'Charger', 2);
+    if (name === 'deleteShopExp') {
+      state.allShopExp = [{ _key: 'expense-id', shop: 'A', amount: 10 }];
+      state.expenseDataScope = state.expenseReadScope();
+    }
     state.selectedPhoneIds.add('phone-id');
     for (const [id, value] of Object.entries({
       'be-brand': 'Test', pName: 'Charger', pQty: '1', pBuyPrice: '100',

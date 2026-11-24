@@ -352,3 +352,45 @@ test('restore rejects conflicting incoming sale IDs referenced by a receipt', as
     assert.equal((await Sale.findById(sale._id)).salePrice, 200);
   });
 });
+
+function sellBatch(request, items, key) {
+  return request('/api/stock/sell-batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'Idempotency-Key': key },
+    body: JSON.stringify({ items, buyerName: 'Batch buyer' }),
+  });
+}
+
+test('multi-phone checkout saves individual prices and replays the original checkout', async () => {
+  const first = await phone();
+  const second = await phone({ buyPrice: 75 });
+  const items = [{ imei: first.imei, salePrice: '120.01' }, { imei: second.imei, salePrice: '150.50' }];
+  await withApp(app, async request => {
+    const responses = await Promise.all([
+      sellBatch(request, items, 'checkout-replay-key'),
+      sellBatch(request, items, 'checkout-replay-key'),
+    ]);
+    assert.deepEqual(responses.map(response => response.status), [200, 200]);
+    const [original, retry] = await Promise.all(responses.map(response => response.json()));
+    assert.deepEqual(retry, original);
+    assert.deepEqual(original.sales.map(sale => [sale.imei, sale.salePriceMinor, sale.profitMinor, sale.soldByShop, sale.buyerName]), [
+      [first.imei, 12001, 2001, 'A', 'Batch buyer'], [second.imei, 15050, 7550, 'A', 'Batch buyer'],
+    ]);
+    assert.equal(await Sale.countDocuments({ imei: { $in: items.map(item => item.imei) } }), 2);
+    assert.equal((await sellBatch(request, items.slice().reverse(), 'checkout-replay-key')).status, 409);
+  });
+});
+
+test('an unavailable phone rolls back earlier phones in the same checkout', async () => {
+  const first = await phone();
+  const second = await phone({ status: 'sold' });
+  const items = [first, second].map(item => ({ imei: item.imei, salePrice: 200 }));
+  await withApp(app, async request => {
+    assert.equal((await sellBatch(request, items, 'checkout-rollback-key')).status, 409);
+    assert.equal((await Phone.findById(first.id)).status, 'in_stock');
+    assert.equal(await Sale.countDocuments({ imei: first.imei }), 0);
+    assert.equal(await AuditLog.countDocuments({ action: 'stock_sell', 'details.imei': first.imei }), 0);
+    await Phone.updateOne({ _id: second.id }, { $set: { status: 'in_stock' } });
+    assert.equal((await sellBatch(request, items, 'checkout-rollback-key')).status, 200);
+  });
+});
